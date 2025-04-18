@@ -1,0 +1,120 @@
+<div class="container mx-auto px-4 py-8 max-w-3xl"> <!-- Tăng max-width -->
+  <h1 class="text-3xl font-bold mb-6">{{ isEditMode() ? 'Chỉnh sửa Hồ sơ Nông dân' : 'Đăng ký Hồ sơ Nông dân' }}</h1>
+  <p *ngIf="!isEditMode()" class="mb-4 text-sm text-info">Hoàn thành hồ sơ dưới đây để bắt đầu bán hàng trên AgriTradeLS.</p>
+  <p *ngIf="isEditMode() && currentProfile()?.verificationStatus === 'PENDING'" class="mb-4 text-sm text-warning italic">Hồ sơ của bạn đang chờ quản trị viên duyệt.</p>
+  <p *ngIf="isEditMode() && currentProfile()?.verificationStatus === 'REJECTED'" class="mb-4 text-sm text-error italic">Hồ sơ của bạn đã bị từ chối. Vui lòng cập nhật lại thông tin.</p>
+
+
+  <!-- Loading -->
+  <div *ngIf="isFetching()" class="text-center py-10"><span class="loading loading-spinner loading-lg text-primary"></span></div>
+
+  <!-- Success/Error Messages -->
+  <div *ngIf="successMessage()" class="alert alert-success shadow-lg mb-4"><span>{{ successMessage() }}</span></div>
+  <div *ngIf="errorMessage()" class="alert alert-error shadow-lg mb-4"><span>Lỗi: {{ errorMessage() }}</span></div>
+
+  <form *ngIf="!isFetching()" [formGroup]="profileForm" (ngSubmit)="onSubmit()" class="card bg-base-100 shadow-xl">
+    <div class="card-body">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- Farm Name -->
+        <div class="form-control w-full md:col-span-2">
+          <label class="label"><span class="label-text">Tên trang trại/Gian hàng <span class="text-error">*</span></span></label>
+          <input type="text" placeholder="Ví dụ: Trang trại rau sạch ABC" class="input input-bordered w-full" formControlName="farmName" />
+          <!-- Validation -->
+        </div>
+
+        <!-- Description -->
+        <div class="form-control w-full md:col-span-2">
+          <label class="label"><span class="label-text">Mô tả</span></label>
+          <textarea class="textarea textarea-bordered h-24" placeholder="Giới thiệu về trang trại, sản phẩm..." formControlName="description"></textarea>
+        </div>
+
+        <!-- Province -->
+        <div class="form-control w-full">
+          <label class="label"><span class="label-text text-xs font-medium">Tỉnh/Thành phố <span class="text-error">*</span></span></label>
+          <!-- *** Cho phép chọn tỉnh *** -->
+          <select class="select select-sm select-bordered w-full" formControlName="provinceCode"
+                  [ngClass]="{'select-error': profileForm.controls['provinceCode'].invalid && profileForm.controls['provinceCode'].touched}">
+            <option [ngValue]="null" disabled>Chọn Tỉnh/Thành</option>
+            <option *ngFor="let province of (provinces$ | async)" [value]="province.idProvince">{{ province.name }}</option>
+          </select>
+          <label class="label py-0 h-4" *ngIf="profileForm.controls['provinceCode'].invalid && profileForm.controls['provinceCode'].touched">
+            <span class="label-text-alt text-error text-xs">Bắt buộc.</span>
+          </label>
+        </div>
+
+        <!-- District -->
+        <div class="form-control w-full">
+          <label class="label"><span class="label-text text-xs font-medium">Quận/Huyện <span class="text-error">*</span></span></label>
+          <select class="select select-sm select-bordered w-full" formControlName="districtCode"
+                  [ngClass]="{'select-error': profileForm.controls['districtCode'].invalid && profileForm.controls['districtCode'].touched}">
+            <option [ngValue]="null" disabled>Chọn Quận/Huyện</option>
+            <option *ngFor="let district of (districts$ | async)" [value]="district.idDistrict">{{ district.name }}</option>
+          </select>
+          <label class="label py-0 h-4" *ngIf="profileForm.controls['districtCode'].invalid && profileForm.controls['districtCode'].touched">
+            <span class="label-text-alt text-error text-xs">Bắt buộc.</span>
+          </label>
+        </div>
+
+
+
+        <!-- Ward -->
+        <div class="form-control w-full">
+          <label class="label"><span class="label-text text-xs font-medium">Phường/Xã <span class="text-error">*</span></span></label>
+          <select class="select select-sm select-bordered w-full" formControlName="wardCode"
+                  [ngClass]="{'select-error': profileForm.controls['wardCode'].invalid && profileForm.controls['wardCode'].touched}">
+            <option [ngValue]="null" disabled>Chọn Phường/Xã</option>
+            <option *ngFor="let ward of (wards$ | async)" [value]="ward.idWard">{{ ward.name }}</option>
+          </select>
+          <label class="label py-0 h-4" *ngIf="profileForm.controls['wardCode'].invalid && profileForm.controls['wardCode'].touched">
+            <span class="label-text-alt text-error text-xs">Bắt buộc.</span>
+          </label>
+        </div>
+
+        <!-- Address Detail -->
+        <div class="form-control w-full">
+          <label class="label"><span class="label-text text-xs font-medium">Địa chỉ cụ thể</span></label>
+          <input type="text" placeholder="Số nhà, tên đường, thôn/xóm..." class="input input-sm input-bordered w-full" formControlName="addressDetail" />
+        </div>
+
+        <!-- Cover Image URL -->
+        <div class="form-control w-full md:col-span-2">
+          <label class="label"><span class="label-text">URL Ảnh bìa gian hàng</span></label>
+          <input type="url" placeholder="Nhập URL ảnh bìa" class="input input-bordered w-full" formControlName="coverImageUrl" />
+          <!-- TODO: Tích hợp upload ảnh bìa -->
+        </div>
+
+        <!-- B2B Options -->
+        <div class="md:col-span-2 mt-4 pt-4 border-t border-base-300">
+          <h3 class="text-lg font-semibold mb-2">Tùy chọn Bán hàng Doanh nghiệp (B2B)</h3>
+          <div class="form-control">
+            <label class="label cursor-pointer justify-start gap-2">
+              <input type="checkbox" class="checkbox checkbox-primary" formControlName="canSupplyB2b" />
+              <span class="label-text">Tôi có khả năng cung cấp cho doanh nghiệp (B2B)</span>
+            </label>
+          </div>
+
+          <div *ngIf="profileForm.controls['canSupplyB2b'].value" class="mt-4 space-y-4">
+            <div class="form-control w-full">
+              <label class="label"><span class="label-text">Chứng nhận liên quan B2B (VietGAP, VSATTP...)</span></label>
+              <textarea class="textarea textarea-bordered h-20" placeholder="Liệt kê các chứng nhận nếu có" formControlName="b2bCertifications"></textarea>
+            </div>
+            <div class="form-control w-full">
+              <label class="label"><span class="label-text">Giá trị đơn hàng B2B tối thiểu (VNĐ)</span></label>
+              <input type="number" placeholder="Để trống nếu không yêu cầu" class="input input-bordered w-full" formControlName="minB2bOrderValue" min="0" />
+              <!-- Validation -->
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="card-actions justify-end mt-6">
+        <a routerLink="/user/profile" class="btn btn-ghost">Quay lại Profile</a>
+        <button type="submit" class="btn btn-primary" [disabled]="isLoading() || profileForm.invalid">
+          <span *ngIf="isLoading()" class="loading loading-spinner loading-xs"></span>
+          {{ isLoading() ? 'Đang lưu...' : (isEditMode() ? 'Lưu thay đổi' : 'Đăng ký hồ sơ') }}
+        </button>
+      </div>
+    </div>
+  </form>
+</div>

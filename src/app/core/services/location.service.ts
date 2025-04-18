@@ -1,0 +1,111 @@
+// src/app/core/services/location.service.ts
+import { Injectable, inject } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable, of, map } from 'rxjs';
+import {shareReplay, catchError, switchMap} from 'rxjs/operators';
+
+// *** Cập nhật Interfaces để khớp với cấu trúc JSON ***
+export interface Province {
+  idProvince: string; // Đổi thành idProvince
+  name: string;
+}
+export interface District {
+  idProvince: string;
+  idDistrict: string; // Đổi thành idDistrict
+  name: string;
+}
+export interface Ward {
+  idDistrict: string;
+  idWard: string; // Đổi thành idWard (giả sử file wards.json có cấu trúc tương tự)
+  name: string;
+}
+
+@Injectable({
+  providedIn: 'root'
+})
+export class LocationService {
+  private http = inject(HttpClient);
+  private provinces$: Observable<Province[]> | null = null;
+  private districts$: Observable<District[]> | null = null;
+  private wards$: Observable<Ward[]> | null = null;
+  private dataPath = 'assets/data/';
+
+  getProvinces(): Observable<Province[]> {
+    if (!this.provinces$) {
+      this.provinces$ = this.http.get<Province[]>(`${this.dataPath}provinces.json`).pipe(
+        shareReplay(1),
+        catchError(err => {
+          console.error("Error loading provinces.json", err);
+          this.provinces$ = null;
+          return of([]);
+        })
+      );
+    }
+    return this.provinces$;
+  }
+
+  getDistricts(provinceCode: string | null): Observable<District[]> {
+    if (!provinceCode) return of([]);
+    if (!this.districts$) {
+      this.districts$ = this.http.get<District[]>(`${this.dataPath}districts.json`).pipe(
+        shareReplay(1),
+        catchError(err => {
+          console.error("Error loading districts.json", err);
+          this.districts$ = null;
+          return of([]);
+        })
+      );
+    }
+    // *** Lọc theo idProvince ***
+    return this.districts$.pipe(
+      map(districts => districts.filter(d => d.idProvince === provinceCode))
+    );
+  }
+
+  getWards(districtCode: string | null): Observable<Ward[]> {
+    if (!districtCode) return of([]);
+    if (!this.wards$) {
+      this.wards$ = this.http.get<Ward[]>(`${this.dataPath}wards.json`).pipe(
+        shareReplay(1),
+        catchError(err => {
+          console.error("Error loading wards.json", err);
+          this.wards$ = null;
+          return of([]);
+        })
+      );
+    }
+    // *** Lọc theo idDistrict ***
+    return this.wards$.pipe(
+      map(wards => wards.filter(w => w.idDistrict === districtCode))
+    );
+  }
+
+  // --- Các hàm tìm tên (ví dụ) ---
+  // Cần load data trước khi dùng hiệu quả
+  findProvinceName(code: string | null): Observable<string | null> {
+    if (!code) return of(null);
+    return this.getProvinces().pipe(
+      map(provinces => provinces.find(p => p.idProvince === code)?.name ?? null)
+    );
+  }
+  findDistrictName(code: string | null): Observable<string | null> {
+    if (!code) return of(null);
+    // Cần load districts$ trước
+    if (!this.districts$) return this.getDistricts('any').pipe( // Tải lần đầu nếu chưa có
+      switchMap(() => this.findDistrictName(code)) // Gọi lại sau khi tải
+    );
+    return this.districts$.pipe(
+      map(districts => districts.find(d => d.idDistrict === code)?.name ?? null)
+    );
+  }
+  findWardName(code: string | null): Observable<string | null> {
+    if (!code) return of(null);
+    if (!this.wards$) return this.getWards('any').pipe( // Tải lần đầu nếu chưa có
+      switchMap(() => this.findWardName(code))
+    );
+    return this.wards$.pipe(
+      map(wards => wards.find(w => w.idWard === code)?.name ?? null)
+    );
+  }
+
+}

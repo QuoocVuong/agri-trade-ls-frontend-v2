@@ -1,0 +1,73 @@
+<div class="container mx-auto px-4 py-8">
+  <h1 class="text-3xl font-bold mb-6">Quản lý Phân quyền</h1>
+
+  <!-- Loading / Error -->
+  <div *ngIf="isLoadingRoles() || isLoadingPermissions()" class="text-center py-10"><app-loading-spinner></app-loading-spinner></div>
+  <app-alert *ngIf="errorMessage()" type="error" [message]="errorMessage()"></app-alert>
+
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6" *ngIf="!isLoadingRoles() && !isLoadingPermissions()">
+    <!-- Cột danh sách Roles -->
+    <div class="md:col-span-1">
+      <div class="card bg-base-100 shadow">
+        <div class="card-body p-4">
+          <h2 class="card-title text-lg mb-3">Danh sách Vai trò</h2>
+          <ul class="menu menu-sm p-0 space-y-1">
+            <li *ngFor="let role of roles(); trackBy: trackRoleById">
+              <a (click)="selectRole(role)" [class.active]="selectedRole()?.id === role.id">
+                {{ getRoleText(role.name) }}
+              </a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Cột chi tiết Permissions -->
+    <div class="md:col-span-2">
+      <div *ngIf="selectedRole(); else noRoleSelected" class="card bg-base-100 shadow">
+        <form [formGroup]="permissionForm" (ngSubmit)="savePermissions()">
+          <div class="card-body p-4">
+            <div class="flex justify-between items-center mb-4">
+              <h2 class="card-title text-lg">Quyền hạn cho: {{ getRoleText(selectedRole()?.name) }}</h2>
+              <button type="button" class="btn btn-xs btn-ghost" (click)="deselectRole()">Bỏ chọn</button>
+            </div>
+
+            <div *ngIf="isLoadingPermissions()" class="text-center py-5"><app-loading-spinner size="sm"></app-loading-spinner></div>
+            <app-alert *ngIf="errorMessage()" type="error" [message]="errorMessage()"></app-alert>
+
+            <!-- Danh sách Permissions Checkbox -->
+            <div *ngIf="!isLoadingPermissions() && allPermissions().length > 0"
+                 class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 max-h-[60vh] overflow-y-auto pr-2"
+                 formArrayName="permissions">
+              <div *ngFor="let permission of allPermissions(); let i = index; trackBy: trackPermissionByIndex" class="form-control">
+                <label class="label cursor-pointer justify-start gap-2 p-1">
+                  <input type="checkbox" class="checkbox checkbox-primary checkbox-sm" [formControlName]="i" />
+                  <span class="label-text text-sm" [title]="permission.description || permission.name">{{ permission.name }}</span>
+                </label>
+              </div>
+            </div>
+            <div *ngIf="!isLoadingPermissions() && allPermissions().length === 0" class="text-base-content/60 text-sm">
+              Không có quyền hạn nào được định nghĩa.
+            </div>
+
+          </div>
+          <div class="card-actions justify-end p-4 border-t border-base-300">
+            <button type="button" class="btn btn-sm btn-ghost" (click)="deselectRole()">Hủy</button>
+            <button type="submit" class="btn btn-sm btn-primary" [disabled]="isSaving() || permissionForm.invalid || isFormPristine"> <!-- Sử dụng getter isFormPristine -->
+              <span *ngIf="isSaving()" class="loading loading-spinner loading-xs"></span>
+              {{ isSaving() ? 'Đang lưu...' : 'Lưu Quyền' }}
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <ng-template #noRoleSelected>
+        <div class="card bg-base-100 shadow">
+          <div class="card-body items-center justify-center text-center h-60">
+            <p class="text-base-content/60">Chọn một vai trò từ danh sách bên trái để xem và chỉnh sửa quyền hạn.</p>
+          </div>
+        </div>
+      </ng-template>
+    </div>
+  </div>
+</div>

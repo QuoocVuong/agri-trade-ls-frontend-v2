@@ -1,0 +1,55 @@
+<div class="container mx-auto px-4 py-8">
+  <h1 class="text-3xl font-bold mb-6">Lịch sử Đơn hàng</h1>
+
+  <!-- Loading / Error / Empty -->
+  <div *ngIf="isLoading()" class="text-center py-10"><app-loading-spinner></app-loading-spinner></div>
+  <app-alert *ngIf="errorMessage()" type="error" [message]="errorMessage()"></app-alert>
+  <div *ngIf="!isLoading() && (!orderPage() || (orderPage()?.content?.length ?? 0) === 0) && !errorMessage()" class="text-center py-10">
+    <p class="text-lg text-base-content/60">Bạn chưa có đơn hàng nào.</p>
+  </div>
+
+  <!-- Orders Table -->
+  <div *ngIf="!isLoading() && orderPage() && orderPage()!.content.length > 0" class="overflow-x-auto">
+    <table class="table table-zebra w-full">
+      <!-- head -->
+      <thead>
+      <tr>
+        <th>Mã ĐH</th>
+        <th>Ngày đặt</th>
+        <th *ngIf="!isFarmer()">Người bán</th> <!-- Hiện người bán nếu là buyer -->
+        <th *ngIf="isFarmer()">Người mua</th>  <!-- Hiện người mua nếu là farmer -->
+        <th class="text-right">Tổng tiền</th>
+        <th>Trạng thái ĐH</th>
+        <th>Trạng thái TT</th>
+        <th></th> <!-- Cột hành động -->
+      </tr>
+      </thead>
+      <tbody>
+      <tr *ngFor="let order of orderPage()?.content" class="hover">
+        <td class="font-medium">
+          <a (click)="viewDetails(order.id)" class="link link-hover link-primary">{{ order.orderCode }}</a>
+        </td>
+        <td>{{ order.createdAt | date:'dd/MM/yyyy HH:mm' }}</td>
+        <td *ngIf="!isFarmer()">{{ order.farmerName || 'N/A' }}</td>
+        <td *ngIf="isFarmer()">{{ order.buyerName || 'N/A' }}</td>
+        <td class="text-right font-semibold">{{ order.totalAmount | formatBigDecimal:'1.0-0' }} đ</td>
+        <td><span class="badge badge-sm" [ngClass]="getStatusClass(order.status)">{{ getStatusText(order.status) }}</span></td>
+        <td><span class="badge badge-sm" [ngClass]="getPaymentStatusClass(order.paymentStatus)">{{ getPaymentStatusText(order.paymentStatus) }}</span></td>
+        <td>
+          <button class="btn btn-xs btn-ghost" (click)="viewDetails(order.id)">Xem</button>
+        </td>
+      </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination -->
+  <div *ngIf="orderPage() && orderPage()!.totalPages > 1" class="mt-8 flex justify-center">
+    <app-paginator
+      [currentPage]="orderPage()!.number"
+      [totalPages]="orderPage()!.totalPages"
+      (pageChange)="onPageChange($event)">
+    </app-paginator>
+  </div>
+
+</div>

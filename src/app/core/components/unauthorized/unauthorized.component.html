@@ -1,0 +1,12 @@
+<p>unauthorized works!</p>
+<div class="flex flex-col items-center justify-center min-h-[calc(100vh-10rem)] text-center px-4">
+  <svg xmlns="http://www.w3.org/2000/svg" class="h-24 w-24 text-error mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+    <path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /> <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01" /> <circle cx="12" cy="12" r="10" />
+  </svg>
+  <h1 class="text-4xl font-bold mb-2">Truy cập bị từ chối</h1>
+  <p class="text-lg text-base-content/70 mb-6">Rất tiếc, bạn không có quyền truy cập trang này.</p>
+  <div class="space-x-4">
+    <button class="btn btn-primary" (click)="goBack()">Quay lại</button>
+    <a routerLink="/" class="btn btn-ghost">Về Trang chủ</a>
+  </div>
+</div>

@@ -1,0 +1,45 @@
+<div class="p-4 bg-base-200 rounded-box">
+  <h3 class="font-semibold mb-3 text-lg">Danh mục sản phẩm</h3>
+
+  <!-- Loading/Error -->
+  <div *ngIf="isLoading()" class="text-center py-5"><span class="loading loading-spinner text-primary"></span></div>
+  <div *ngIf="errorMessage()" class="text-error text-xs">{{ errorMessage() }}</div>
+
+  <!-- Category List/Tree -->
+  <ul *ngIf="!isLoading() && categories().length > 0" class="menu menu-sm p-0 [&_li>*]:rounded-md">
+    <!-- Nút xem tất cả sản phẩm -->
+    <li>
+      <a (click)="selectCategory(null)"
+         [class.active]="activeCategoryId() === null"> <!-- Active khi không có category nào được chọn -->
+        Tất cả sản phẩm
+      </a>
+    </li>
+    <!-- Lặp qua các category gốc -->
+    <ng-container *ngTemplateOutlet="categoryTree; context: { $implicit: categories() }"></ng-container>
+  </ul>
+</div>
+
+<!-- Template đệ quy cho cây danh mục -->
+<ng-template #categoryTree let-categories>
+  <li *ngFor="let category of categories">
+    <div *ngIf="!(category.children && category.children.length > 0); else categoryWithChildren" class="block"> <!-- Nếu không có con -->
+      <a (click)="selectCategory(category.id, category.slug)"
+         [class.active]="activeCategoryId() === category.id">
+        {{ category.name }}
+      </a>
+    </div>
+    <ng-template #categoryWithChildren> <!-- Nếu có con -->
+      <details [open]="isCategoryOrChildActive(category)"> <!-- Mở nếu active hoặc con active -->
+        <summary class="flex justify-between items-center cursor-pointer"
+                 [class.active]="activeCategoryId() === category.id"
+                 (click)="selectCategory(category.id, category.slug); $event.preventDefault()"> <!-- Chọn khi bấm vào tên -->
+          <span>{{ category.name }}</span>
+          <!-- <span class="submenu-arrow transform transition-transform duration-200">▶</span> -->
+        </summary>
+        <ul class="pl-4 menu-level-2"> <!-- Thêm class để style cấp con -->
+          <ng-container *ngTemplateOutlet="categoryTree; context: { $implicit: category.children }"></ng-container>
+        </ul>
+      </details>
+    </ng-template>
+  </li>
+</ng-template>

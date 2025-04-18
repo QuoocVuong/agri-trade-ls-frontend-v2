@@ -1,0 +1,85 @@
+<!-- Hero Section -->
+<div class="hero min-h-[60vh] bg-base-200 rounded-box mb-10" style="background-image: url(assets/images/langson-landscape.jpg);"> <!-- Thay bằng ảnh nền đẹp -->
+  <div class="hero-overlay bg-opacity-60 rounded-box"></div>
+  <div class="hero-content text-center text-neutral-content">
+    <div class="max-w-md">
+      <h1 class="mb-5 text-5xl font-bold">Nông Sản Sạch Lạng Sơn</h1>
+      <p class="mb-5">Khám phá hương vị tươi ngon, an toàn từ những trang trại uy tín tại Lạng Sơn. Giao hàng tận nơi, đảm bảo chất lượng.</p>
+      <div class="form-control mb-5">
+        <input type="text" placeholder="Tìm kiếm rau củ, trái cây..." class="input input-bordered w-full max-w-xs mx-auto" />
+        <!-- TODO: Xử lý tìm kiếm -->
+      </div>
+      <a routerLink="/products" class="btn btn-primary">Xem tất cả sản phẩm</a>
+    </div>
+  </div>
+</div>
+
+<!-- Featured Categories -->
+<section class="mb-12">
+  <h2 class="text-2xl font-bold text-center mb-6">Danh mục nổi bật</h2>
+  <div *ngIf="isLoadingCategories()" class="text-center py-5"><app-loading-spinner></app-loading-spinner></div>
+  <div *ngIf="!isLoadingCategories() && featuredCategories().length > 0" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+    <a *ngFor="let category of featuredCategories(); trackBy: trackCategoryById"
+       [routerLink]="['/categories', category.slug]"
+       class="card card-compact bg-base-100 shadow hover:shadow-lg transition-shadow text-center p-4 items-center">
+      <figure class="w-16 h-16 mb-2">
+        <img [src]="category.imageUrl || 'assets/images/placeholder-category.png'" [alt]="category.name" class="rounded-full object-cover">
+      </figure>
+      <span class="text-sm font-medium">{{ category.name }}</span>
+    </a>
+  </div>
+</section>
+
+<!-- Newest Products -->
+<section class="mb-12">
+  <div class="flex justify-between items-center mb-6">
+    <h2 class="text-2xl font-bold">Sản phẩm mới nhất</h2>
+    <a routerLink="/products" class="btn btn-sm btn-ghost">Xem tất cả <span class="ml-1">→</span></a>
+  </div>
+  <div *ngIf="isLoadingProducts()" class="text-center py-10"><app-loading-spinner></app-loading-spinner></div>
+  <div *ngIf="!isLoadingProducts() && newestProducts().length > 0" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 lg:gap-6">
+    <app-product-card *ngFor="let product of newestProducts(); trackBy: trackProductById" [product]="product"></app-product-card>
+  </div>
+  <div *ngIf="!isLoadingProducts() && newestProducts().length === 0" class="text-center py-10 text-base-content/60">
+    Chưa có sản phẩm mới nào.
+  </div>
+</section>
+
+<!-- Featured Farmers (Ví dụ cấu trúc) -->
+<!--
+<section class="mb-12">
+   <div class="flex justify-between items-center mb-6">
+       <h2 class="text-2xl font-bold">Nông dân tiêu biểu</h2>
+       <a routerLink="/farmers" class="btn btn-sm btn-ghost">Xem tất cả <span class="ml-1">→</span></a>
+   </div>
+   <div *ngIf="isLoadingFarmers()" class="text-center py-10"><app-loading-spinner></app-loading-spinner></div>
+   <div *ngIf="!isLoadingFarmers() && featuredFarmers().length > 0" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+      <div *ngFor="let farmer of featuredFarmers()" class="card bg-base-100 shadow">
+         <div class="card-body items-center text-center p-4">
+            <div class="avatar mb-2">
+               <div class="w-16 rounded-full ring ring-primary ring-offset-base-100 ring-offset-2">
+                 <img [src]="farmer.avatarUrl || 'assets/images/default-avatar.png'" [alt]="farmer.farmName">
+               </div>
+            </div>
+            <h3 class="card-title text-base">{{ farmer.farmName }}</h3>
+            <p class="text-xs text-base-content/70">{{ farmer.address }}</p>
+            <div class="card-actions mt-3">
+               <a [routerLink]="['/farmer', farmer.id]" class="btn btn-xs btn-outline btn-primary">Xem sản phẩm</a>
+            </div>
+         </div>
+      </div>
+   </div>
+</section>
+-->
+
+<!-- Introduction/Commitment Section -->
+<section class="py-12 bg-gradient-to-r from-green-50 via-emerald-50 to-teal-50 rounded-box">
+  <div class="container mx-auto px-4 text-center max-w-3xl">
+    <h2 class="text-3xl font-bold mb-4 text-primary">Nguồn Gốc Rõ Ràng - Chất Lượng Đảm Bảo</h2>
+    <p class="mb-6 text-lg text-base-content/80">
+      AgriTradeLS kết nối trực tiếp bạn với những người nông dân tâm huyết tại Lạng Sơn, mang đến nông sản tươi ngon, an toàn,
+      được canh tác theo quy trình bền vững. Chúng tôi cam kết về chất lượng và nguồn gốc xuất xứ cho từng sản phẩm.
+    </p>
+    <a routerLink="/about-us" class="btn btn-outline btn-primary">Tìm hiểu thêm về chúng tôi</a>
+  </div>
+</section>

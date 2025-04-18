@@ -1,0 +1,17 @@
+<div class="flex h-screen bg-base-200">
+  <!-- Sidebar cho Farmer -->
+  <app-sidebar [menuType]="'admin'"></app-sidebar> <!-- Truyền loại menu vào sidebar -->
+
+  <div class="flex flex-col flex-1 overflow-hidden">
+    <!-- Header dùng chung -->
+    <app-header></app-header>
+
+    <!-- Nội dung chính của trang Farmer -->
+    <main class="flex-1 overflow-x-hidden overflow-y-auto bg-base-100 p-6">
+      <router-outlet></router-outlet>
+    </main>
+
+    <!-- Có thể thêm Footer riêng cho dashboard nếu cần -->
+    <!-- <app-footer></app-footer> -->
+  </div>
+</div>

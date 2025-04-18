@@ -1,0 +1,115 @@
+<div class="container mx-auto px-4 py-8">
+  <div class="flex justify-between items-center mb-6">
+    <h1 class="text-3xl font-bold">Quản lý Danh mục</h1>
+    <button class="btn btn-primary btn-sm" (click)="openAddModal()">Thêm Danh mục</button>
+  </div>
+
+  <!-- Loading / Error / Empty -->
+  <div *ngIf="isLoading()" class="text-center py-10"><app-loading-spinner></app-loading-spinner></div>
+  <app-alert *ngIf="errorMessage() && !isLoading()" type="error" [message]="errorMessage()"></app-alert>
+  <div *ngIf="!isLoading() && categories().length === 0 && !errorMessage()" class="text-center py-10 text-base-content/60">
+    Chưa có danh mục nào.
+  </div>
+
+  <!-- Categories Table/Tree View -->
+  <div *ngIf="!isLoading() && categories().length > 0" class="overflow-x-auto bg-base-100 rounded-box shadow">
+    <table class="table w-full table-sm">
+      <thead>
+      <tr>
+        <th>Tên Danh mục</th>
+        <th>Slug</th>
+        <th>Danh mục cha</th>
+        <th>Ngày tạo</th>
+        <th>Hành động</th>
+      </tr>
+      </thead>
+      <tbody>
+      <!-- Sử dụng template đệ quy để hiển thị cây -->
+      <ng-container *ngTemplateOutlet="categoryRow; context: { $implicit: categories(), level: 0 }"></ng-container>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+<!-- Template đệ quy cho dòng category -->
+<ng-template #categoryRow let-categories let-level="level">
+  <ng-container *ngFor="let category of categories; trackBy: trackCategoryById">
+    <tr class="hover">
+      <td [style.padding-left.rem]="level * 1.5 + 1"> <!-- Thụt lề -->
+        <div class="flex items-center space-x-2">
+          <img *ngIf="category.imageUrl" [src]="category.imageUrl" [alt]="category.name" class="w-6 h-6 object-cover rounded-sm">
+          <span class="font-medium">{{ category.name }}</span>
+        </div>
+      </td>
+      <td class="font-mono text-xs">{{ category.slug }}</td>
+      <td class="text-xs">{{ getParentCategoryName(category.parentId) }}</td>
+      <td class="text-xs">{{ category.createdAt | date:'dd/MM/yy' }}</td>
+      <td>
+        <button class="btn btn-xs btn-ghost" (click)="openEditModal(category)">Sửa</button>
+        <button class="btn btn-xs btn-ghost text-error" (click)="deleteCategory(category)">Xóa</button>
+      </td>
+    </tr>
+    <!-- Gọi đệ quy cho các con -->
+    <ng-container *ngIf="category.children && category.children.length > 0">
+      <ng-container *ngTemplateOutlet="categoryRow; context: { $implicit: category.children, level: level + 1 }"></ng-container>
+    </ng-container>
+  </ng-container>
+</ng-template>
+
+
+<!-- Modal Thêm/Sửa Category -->
+<app-modal [title]="isEditMode() ? 'Chỉnh sửa Danh mục' : 'Thêm Danh mục mới'"
+           [isOpen]="showCategoryModal()"
+           (closed)="closeModal()"
+           [showActions]="true" [hideDefaultCancel]="true" modalBoxClasses="w-11/12 max-w-xl">
+  <form *ngIf="showCategoryModal()" [formGroup]="categoryForm" (ngSubmit)="saveCategory()">
+    <!-- Error Message trong Modal -->
+    <app-alert *ngIf="errorMessage()" type="error" [message]="errorMessage()" class="mb-4"></app-alert>
+
+    <div class="grid grid-cols-1 gap-4">
+      <!-- Name -->
+      <div class="form-control w-full">
+        <label class="label"><span class="label-text">Tên danh mục <span class="text-error">*</span></span></label>
+        <input type="text" placeholder="Nhập tên danh mục" class="input input-sm input-bordered w-full" formControlName="name" />
+        <!-- Validation -->
+      </div>
+      <!-- Slug (Optional - có thể tự tạo từ tên) -->
+      <div class="form-control w-full">
+        <label class="label"><span class="label-text">Slug (Để trống sẽ tự tạo)</span></label>
+        <input type="text" placeholder="vi-du-slug" class="input input-sm input-bordered w-full" formControlName="slug" />
+        <!-- Validation -->
+      </div>
+      <!-- Parent Category -->
+      <div class="form-control w-full">
+        <label class="label"><span class="label-text">Danh mục cha (Để trống nếu là gốc)</span></label>
+        <select class="select select-sm select-bordered w-full" formControlName="parentId">
+          <option [ngValue]="null">-- Là danh mục gốc --</option>
+          <!-- Chỉ hiển thị những category không phải là chính nó hoặc con của nó -->
+          <option *ngFor="let cat of flatCategories()" [value]="cat.id" [disabled]="cat.id === selectedCategoryId()">
+            {{ cat.name }}
+          </option>
+        </select>
+      </div>
+      <!-- Description -->
+      <div class="form-control w-full">
+        <label class="label"><span class="label-text">Mô tả</span></label>
+        <textarea class="textarea textarea-bordered h-20 text-sm" placeholder="Mô tả ngắn..." formControlName="description"></textarea>
+      </div>
+      <!-- Image URL -->
+      <div class="form-control w-full">
+        <label class="label"><span class="label-text">URL Hình ảnh đại diện</span></label>
+        <input type="url" placeholder="Nhập URL ảnh" class="input input-sm input-bordered w-full" formControlName="imageUrl" />
+        <!-- TODO: Tích hợp upload ảnh -->
+      </div>
+    </div>
+
+    <div class="mt-6"> <!-- Chỉ cần class hoặc không cần div nếu modal-action đã style đủ -->
+      <button type="button" class="btn btn-sm btn-ghost" (click)="closeModal()">Hủy</button>
+      <button type="submit" class="btn btn-sm btn-primary" [disabled]="isSubmitting() || categoryForm.invalid">
+        <span *ngIf="isSubmitting()" class="loading loading-spinner loading-xs"></span>
+        {{ isSubmitting() ? 'Đang lưu...' : (isEditMode() ? 'Lưu thay đổi' : 'Thêm mới') }}
+      </button>
+    </div>
+  </form>
+</app-modal>

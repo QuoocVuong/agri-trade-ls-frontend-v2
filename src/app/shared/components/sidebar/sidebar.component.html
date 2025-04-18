@@ -1,0 +1,48 @@
+<aside class="w-64 bg-base-300 text-base-content flex-shrink-0 hidden lg:block"> <!-- Chỉ hiển thị trên lg trở lên -->
+  <div class="p-4 font-bold text-lg">Menu</div>
+  <ul class="menu p-4 w-full">
+    <!-- Menu cho User -->
+    <ng-container *ngIf="menuType === 'user'">
+      <li><a routerLink="/user/profile" routerLinkActive="active"><svg>...</svg>Trang cá nhân</a></li>
+      <li><a routerLink="/user/orders" routerLinkActive="active"><svg>...</svg>Đơn hàng của tôi</a></li>
+      <li><a routerLink="/user/addresses" routerLinkActive="active"><svg>...</svg>Sổ địa chỉ</a></li>
+      <li><a routerLink="/user/favorites" routerLinkActive="active"><svg>...</svg>Sản phẩm yêu thích</a></li>
+      <!-- Link đăng ký bán hàng/doanh nghiệp nếu user chưa có role tương ứng -->
+      <li *ngIf="!isFarmer()"><a routerLink="/user/register-farmer"><svg>...</svg>Đăng ký bán hàng</a></li>
+      <li *ngIf="!isBusinessBuyer()"><a routerLink="/user/register-business"><svg>...</svg>Đăng ký doanh nghiệp</a></li>
+    </ng-container>
+
+    <!-- Menu cho Farmer -->
+    <ng-container *ngIf="menuType === 'farmer'">
+      <li><a routerLink="/farmer/dashboard" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}"><svg>...</svg>Bảng điều khiển</a></li>
+      <li>
+        <details> <!-- Menu con cho Sản phẩm -->
+          <summary><svg>...</svg>Sản phẩm</summary>
+          <ul>
+            <li><a routerLink="/farmer/products" routerLinkActive="active">Danh sách sản phẩm</a></li>
+            <li><a routerLink="/farmer/products/new" routerLinkActive="active">Thêm sản phẩm mới</a></li>
+          </ul>
+        </details>
+      </li>
+      <li><a routerLink="/farmer/orders" routerLinkActive="active"><svg>...</svg>Đơn hàng</a></li>
+      <li><a routerLink="/farmer/reviews" routerLinkActive="active"><svg>...</svg>Đánh giá</a></li>
+      <li><a routerLink="/farmer/profile" routerLinkActive="active"><svg>...</svg>Hồ sơ gian hàng</a></li>
+    </ng-container>
+
+    <!-- Menu cho Admin -->
+    <ng-container *ngIf="menuType === 'admin'">
+      <li><a routerLink="/admin/dashboard" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}"><svg>...</svg>Bảng điều khiển</a></li>
+      <li><a routerLink="/admin/users" routerLinkActive="active"><svg>...</svg>Quản lý người dùng</a></li>
+      <li><a routerLink="/admin/farmers/pending" routerLinkActive="active"><svg>...</svg>Duyệt nông dân</a></li>
+      <li><a routerLink="/admin/categories" routerLinkActive="active"><svg>...</svg>Quản lý danh mục</a></li>
+      <li><a routerLink="/admin/products" routerLinkActive="active"><svg>...</svg>Quản lý sản phẩm</a></li>
+      <li><a routerLink="/admin/orders" routerLinkActive="active"><svg>...</svg>Quản lý đơn hàng</a></li>
+      <li><a routerLink="/admin/reviews/pending" routerLinkActive="active"><svg>...</svg>Duyệt đánh giá</a></li>
+      <li><a routerLink="/admin/roles" routerLinkActive="active"><svg>...</svg>Quản lý phân quyền</a></li>
+    </ng-container>
+
+    <!-- Menu chung ở cuối -->
+    <li><a routerLink="/chat" routerLinkActive="active"><svg>...</svg>Tin nhắn</a></li>
+    <li><a (click)="logout()"><svg>...</svg>Đăng xuất</a></li>
+  </ul>
+</aside>

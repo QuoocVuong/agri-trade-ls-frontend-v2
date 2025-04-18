@@ -1,1 +1,9 @@
-/* You can add global styles to this file, and also import other style files */
+/* src/styles.css */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Thêm các style global tùy chỉnh ở đây nếu cần */
+body {
+  /* Ví dụ: font-family: 'Inter', sans-serif; */
+}

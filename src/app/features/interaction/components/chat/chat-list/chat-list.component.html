@@ -1,0 +1,56 @@
+<div class="p-4 h-full flex flex-col">
+  <h2 class="text-lg font-semibold mb-4 px-2">Tin nhắn</h2>
+  <!-- TODO: Thêm ô tìm kiếm phòng chat -->
+  <!-- <div class="px-2 mb-3">
+    <input type="text" placeholder="Tìm kiếm cuộc trò chuyện..." class="input input-sm input-bordered w-full">
+  </div> -->
+
+  <!-- Loading -->
+  <div *ngIf="isLoading()" class="flex-grow flex items-center justify-center">
+    <app-loading-spinner></app-loading-spinner>
+  </div>
+
+  <!-- Empty List -->
+  <div *ngIf="!isLoading() && chatRooms().length === 0" class="flex-grow flex items-center justify-center text-center text-base-content/60 px-4">
+    <p>Bạn chưa có cuộc trò chuyện nào. Bắt đầu nhắn tin với người bán/người mua khác!</p>
+  </div>
+
+  <!-- Chat Room List -->
+  <ul *ngIf="!isLoading() && chatRooms().length > 0" class="menu p-0 space-y-1 flex-grow overflow-y-auto">
+    <li *ngFor="let room of chatRooms(); trackBy: trackRoomById">
+      <a (click)="selectRoom(room)"
+         [class.active]="selectedRoomId() === room.id"
+         class="flex items-center space-x-3 p-2 rounded-lg hover:bg-base-300 transition-colors duration-150">
+        <!-- Avatar -->
+        <div class="avatar indicator">
+          <!-- Badge số tin nhắn chưa đọc -->
+          <span *ngIf="room.myUnreadCount && room.myUnreadCount > 0"
+                class="indicator-item indicator-top indicator-end badge badge-secondary badge-xs z-10">
+                {{ room.myUnreadCount > 9 ? '9+' : room.myUnreadCount }}
+          </span>
+          <div class="w-10 h-10 rounded-full">
+            <img [src]="room.otherUser?.avatarUrl || 'assets/images/default-avatar.png'" [alt]="room.otherUser?.fullName || 'User'">
+          </div>
+        </div>
+        <!-- Info -->
+        <div class="flex-grow overflow-hidden">
+          <div class="flex justify-between items-center">
+            <span class="font-semibold text-sm truncate">{{ room.otherUser?.fullName || 'Người dùng' }}</span>
+            <span *ngIf="room.lastMessageTime" class="text-xs text-base-content/60 flex-shrink-0 ml-1">
+              {{ room.lastMessageTime | date:'HH:mm' }} <!-- Hoặc định dạng khác -->
+            </span>
+          </div>
+          <p *ngIf="room.lastMessage" class="text-xs text-base-content/70 truncate"
+             [class.font-semibold]="room.myUnreadCount && room.myUnreadCount > 0"> <!-- In đậm nếu chưa đọc -->
+            <!-- Hiển thị người gửi nếu là tin nhắn cuối -->
+            <span *ngIf="room.lastMessage?.sender?.id === currentUserId()">Bạn: </span>
+            {{ room.lastMessage.content }}
+          </p>
+          <p *ngIf="!room.lastMessage" class="text-xs text-base-content/50 italic">
+            Chưa có tin nhắn.
+          </p>
+        </div>
+      </a>
+    </li>
+  </ul>
+</div>

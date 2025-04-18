@@ -1,0 +1,114 @@
+<div class="container mx-auto px-4 py-8">
+  <h1 class="text-3xl font-bold mb-6">Duyệt Hồ sơ Nông dân</h1>
+
+  <!-- Loading / Error / Empty -->
+  <div *ngIf="isLoading()" class="text-center py-10"><app-loading-spinner></app-loading-spinner></div>
+  <app-alert *ngIf="errorMessage()" type="error" [message]="errorMessage()"></app-alert>
+  <div *ngIf="!isLoading() && (!pendingFarmersPage() || (pendingFarmersPage()?.content?.length ?? 0) === 0) && !errorMessage()" class="text-center py-10 text-base-content/60">
+    Không có hồ sơ nông dân nào đang chờ duyệt.
+  </div>
+
+  <!-- Pending Farmers Table -->
+  <div *ngIf="!isLoading() && pendingFarmersPage() && pendingFarmersPage()!.content.length > 0" class="overflow-x-auto bg-base-100 rounded-box shadow">
+    <table class="table table-zebra w-full table-sm">
+      <thead>
+      <tr>
+        <th>ID User</th>
+        <th>Người dùng</th>
+        <th>Tên trang trại</th>
+        <th>Địa chỉ (Tỉnh)</th>
+        <th>Ngày ĐK Profile</th>
+        <th>Hành động</th>
+      </tr>
+      </thead>
+      <tbody>
+      <tr *ngFor="let profile of pendingFarmersPage()?.content; trackBy: trackUserById" class="hover">
+        <td class="font-mono text-xs">{{ profile.id }}</td>
+        <td>
+          <div class="flex items-center space-x-3">
+            <div class="avatar">
+              <div class="mask mask-squircle w-8 h-8">
+                <img [src]="profile.avatarUrl || 'assets/images/default-avatar.png'" [alt]="profile.fullName" />
+              </div>
+            </div>
+            <div>
+              <div class="font-bold text-sm">{{ profile.fullName }}</div>
+              <div class="text-xs opacity-70">{{ profile.email }}</div>
+            </div>
+          </div>
+        </td>
+        <td class="text-sm">{{ profile.farmerProfile?.farmName || 'N/A' }}</td>
+        <td class="text-xs">{{ profile.farmerProfile?.provinceCode }}</td> <!-- Cần map code tỉnh -->
+        <td class="text-xs">{{ profile.farmerProfile?.createdAt | date:'dd/MM/yy HH:mm' }}</td>
+        <td>
+          <div class="flex gap-1">
+            <button class="btn btn-xs btn-info btn-outline" (click)="viewFarmerDetails(profile)">Chi tiết</button>
+            <button class="btn btn-xs btn-success" (click)="approveFarmer(profile.id)">Duyệt</button>
+            <button class="btn btn-xs btn-warning" (click)="openRejectModal(profile)">Từ chối</button>
+          </div>
+        </td>
+      </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination -->
+  <div *ngIf="pendingFarmersPage() && pendingFarmersPage()!.totalPages > 1" class="mt-6 flex justify-center">
+    <app-paginator
+      [currentPage]="pendingFarmersPage()!.number"
+      [totalPages]="pendingFarmersPage()!.totalPages"
+      (pageChange)="onPageChange($event)">
+    </app-paginator>
+  </div>
+
+  <!-- Modal Xem Chi Tiết Farmer -->
+  <app-modal title="Chi tiết Hồ sơ Nông dân" [isOpen]="showDetailModal()" (closed)="closeDetailModal()" modalBoxClasses="w-11/12 max-w-2xl">
+    <!-- Nội dung chi tiết giống phần hiển thị trong profile-view.component.html -->
+    <div *ngIf="selectedFarmer() as profile" class="text-sm space-y-3 max-h-[70vh] overflow-y-auto p-1">
+      <h3 class="font-semibold text-lg">Thông tin cơ bản</h3>
+      <p><strong>ID User:</strong> {{ profile.id }}</p>
+      <p><strong>Họ tên:</strong> {{ profile.fullName }}</p>
+      <p><strong>Email:</strong> {{ profile.email }}</p>
+      <p><strong>SĐT:</strong> {{ profile.phoneNumber || 'N/A' }}</p>
+      <p><strong>Ngày tham gia:</strong> {{ profile.createdAt | date:'dd/MM/yyyy HH:mm' }}</p>
+      <p><strong>Vai trò:</strong> {{ profile.roles?.join(', ') }}</p>
+      <div class="divider my-2"></div>
+      <h3 class="font-semibold text-lg">Hồ sơ Nông dân</h3>
+      <div *ngIf="profile.farmerProfile as fp; else noFarmerProfile">
+        <p><strong>Tên trang trại:</strong> {{ fp.farmName }}</p>
+        <p><strong>Mô tả:</strong> {{ fp.description || 'N/A' }}</p>
+        <p><strong>Địa chỉ:</strong> {{ fp.addressDetail }}, {{ fp.wardCode }}, {{ fp.districtCode }}, {{ fp.provinceCode }}</p>
+        <p><strong>Trạng thái:</strong> <span class="badge badge-sm" [ngClass]="getStatusClass(fp.verificationStatus)">{{ getStatusText(fp.verificationStatus) }}</span></p>
+        <p><strong>Ngày tạo Profile:</strong> {{ fp.createdAt | date:'dd/MM/yyyy HH:mm' }}</p>
+        <p><strong>Có bán B2B:</strong> {{ fp.canSupplyB2b ? 'Có' : 'Không' }}</p>
+        <p *ngIf="fp.canSupplyB2b"><strong>Chứng nhận B2B:</strong> {{ fp.b2bCertifications || 'N/A' }}</p>
+        <p *ngIf="fp.canSupplyB2b"><strong>Đơn hàng B2B tối thiểu:</strong> {{ fp.minB2bOrderValue | formatBigDecimal:'1.0-0' }} đ</p>
+        <p *ngIf="fp.coverImageUrl"><strong>Ảnh bìa:</strong> <a [href]="fp.coverImageUrl" target="_blank" class="link link-primary">Xem ảnh</a></p>
+      </div>
+      <ng-template #noFarmerProfile><p class="text-warning">Không tìm thấy thông tin hồ sơ nông dân.</p></ng-template>
+    </div>
+    <div modal-actions>
+      <button class="btn btn-sm" (click)="closeDetailModal()">Đóng</button>
+    </div>
+  </app-modal>
+
+  <!-- Modal Nhập Lý Do Từ Chối -->
+  <app-modal title="Từ chối Hồ sơ Nông dân" [isOpen]="showRejectModal()" (closed)="closeRejectModal()" [showActions]="true" [hideDefaultCancel]="true">
+    <div *ngIf="farmerToReject() as farmerInfo">
+      <p class="mb-4 text-sm">Nhập lý do từ chối cho hồ sơ của: <br><strong>ID:</strong> {{ farmerInfo.id }} <br><strong>Tên:</strong> {{ farmerInfo.name }}</p>
+      <!-- Dòng 99 -->
+      <textarea class="textarea textarea-bordered w-full h-24"
+                placeholder="Nhập lý do..."
+                [formControl]="rejectReasonControl"></textarea> <!-- *** Sửa thành [formControl] *** -->
+      <app-alert *ngIf="errorMessage()" type="error" [message]="errorMessage()" class="mt-2"></app-alert> <!-- Hiển thị lỗi nếu có -->
+    </div>
+    <div modal-actions>
+      <button class="btn btn-sm btn-ghost" (click)="closeRejectModal()">Hủy</button>
+      <button class="btn btn-sm btn-error" (click)="rejectFarmer()" [disabled]="isLoading()">
+        <span *ngIf="isLoading()" class="loading loading-spinner loading-xs"></span>
+        Xác nhận Từ chối
+      </button>
+    </div>
+  </app-modal>
+
+</div>

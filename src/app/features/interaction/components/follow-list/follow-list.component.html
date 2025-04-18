@@ -1,0 +1,44 @@
+<div class="container mx-auto px-4 py-8">
+  <h1 class="text-3xl font-bold mb-6">{{ listTitle() }}</h1>
+
+  <!-- Loading / Error / Empty -->
+  <div *ngIf="isLoading()" class="text-center py-10"><app-loading-spinner></app-loading-spinner></div>
+  <app-alert *ngIf="errorMessage()" type="error" [message]="errorMessage()"></app-alert>
+  <div *ngIf="!isLoading() && (!usersPage() || usersPage()?.content.length === 0) && !errorMessage()" class="text-center py-10 text-base-content/60">
+    <span *ngIf="mode === 'my-following'">Bạn chưa theo dõi ai.</span>
+    <span *ngIf="mode === 'my-followers'">Chưa có ai theo dõi bạn.</span>
+    <span *ngIf="mode === 'user-followers'">Người dùng này chưa có ai theo dõi.</span>
+  </div>
+
+  <!-- User List -->
+  <div *ngIf="!isLoading() && usersPage() && usersPage()!.content.length > 0" class="space-y-3">
+    <div *ngFor="let user of usersPage()?.content; trackBy: trackUserById" class="card card-side bg-base-100 shadow-sm flex items-center p-3">
+      <a [routerLink]="['/farmer', user.userId]" class="avatar mr-4"> <!-- Link tới trang farmer -->
+        <div class="w-12 h-12 rounded-full">
+          <img [src]="user.avatarUrl || 'assets/images/default-avatar.png'" [alt]="user.fullName">
+        </div>
+      </a>
+      <div class="flex-grow">
+        <a [routerLink]="['/farmer', user.userId]" class="font-semibold link link-hover">{{ user.fullName }}</a>
+        <!-- Hiển thị thêm farmName nếu có -->
+        <!-- <p class="text-xs text-base-content/70">{{ user.farmName }}</p> -->
+      </div>
+      <!-- Nút Follow/Unfollow (ví dụ) -->
+      <div class="flex-shrink-0">
+        <!-- TODO: Thêm logic kiểm tra isFollowing và nút tương ứng -->
+        <!-- <button class="btn btn-sm btn-primary btn-outline" (click)="toggleFollow(user)">Theo dõi</button> -->
+        <!-- <button class="btn btn-sm btn-ghost" (click)="toggleFollow(user)">Đang theo dõi</button> -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Pagination -->
+  <div *ngIf="usersPage() && usersPage()!.totalPages > 1" class="mt-8 flex justify-center">
+    <app-paginator
+      [currentPage]="usersPage()!.number"
+      [totalPages]="usersPage()!.totalPages"
+      (pageChange)="onPageChange($event)">
+    </app-paginator>
+  </div>
+
+</div>

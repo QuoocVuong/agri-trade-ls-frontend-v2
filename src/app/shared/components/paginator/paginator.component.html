@@ -1,0 +1,27 @@
+<!-- Sử dụng join và btn-group của DaisyUI -->
+<div class="join">
+  <button class="join-item btn btn-sm"
+          (click)="goToPrevious()"
+          [disabled]="currentPage === 0">
+    «
+  </button>
+
+  <ng-container *ngFor="let page of pages()">
+    <button *ngIf="isNumber(page)"
+            class="join-item btn btn-sm"
+            [class.btn-active]="page === currentPage"
+            [class.btn-disabled]="page === currentPage"
+            (click)="goToPage(page)">
+      {{ page + 1 }} <!-- Hiển thị số trang bắt đầu từ 1 -->
+    </button>
+    <button *ngIf="!isNumber(page)" class="join-item btn btn-sm btn-disabled">
+      ...
+    </button>
+  </ng-container>
+
+  <button class="join-item btn btn-sm"
+          (click)="goToNext()"
+          [disabled]="currentPage === totalPages - 1">
+    »
+  </button>
+</div>

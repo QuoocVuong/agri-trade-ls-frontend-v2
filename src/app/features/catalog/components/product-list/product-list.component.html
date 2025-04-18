@@ -1,0 +1,65 @@
+<div class="flex flex-col md:flex-row gap-6 lg:gap-8">
+  <!-- Sidebar Filters -->
+  <aside class="w-full md:w-1/4 lg:w-1/5 flex-shrink-0">
+    <!-- Component Category Sidebar -->
+    <app-category-sidebar (categorySelected)="onCategorySelected($event)"></app-category-sidebar>
+
+    <!-- Các bộ lọc khác -->
+    <div class="mt-6 p-4 bg-base-200 rounded-box">
+      <h3 class="font-semibold mb-3">Bộ lọc khác</h3>
+      <form [formGroup]="filterForm" (ngSubmit)="applyFilter()">
+        <div class="form-control mb-4">
+          <label class="label"><span class="label-text">Tìm theo tên</span></label>
+          <input type="text" placeholder="Nhập từ khóa..." class="input input-sm input-bordered" formControlName="keyword" />
+        </div>
+        <!-- Thêm các bộ lọc giá, rating... -->
+        <!-- <button type="submit" class="btn btn-sm btn-primary w-full mt-2">Áp dụng</button> -->
+        <!-- Bỏ nút nếu dùng valueChanges -->
+      </form>
+    </div>
+  </aside>
+
+  <!-- Main Content - Product Grid -->
+  <div class="flex-grow">
+    <!-- Header khu vực sản phẩm -->
+    <div class="flex flex-col sm:flex-row justify-between items-center mb-4 gap-2">
+      <h2 class="text-2xl font-bold">
+        <span *ngIf="currentCategory()">{{ currentCategory()?.name }}</span>
+        <span *ngIf="!currentCategory()">Tất cả Sản phẩm</span>
+        <span *ngIf="paginationData()" class="text-sm font-normal text-base-content/70 ml-2">
+             ({{ paginationData()?.totalElements }} sản phẩm)
+         </span>
+      </h2>
+      <!-- Sắp xếp -->
+      <select class="select select-sm select-bordered w-full sm:w-auto">
+        <option disabled selected>Sắp xếp theo</option>
+        <option value="createdAt,desc">Mới nhất</option>
+        <option value="price,asc">Giá tăng dần</option>
+        <option value="price,desc">Giá giảm dần</option>
+        <option value="averageRating,desc">Đánh giá cao</option>
+      </select>
+    </div>
+
+    <!-- Loading/Error/Empty States -->
+    <div *ngIf="isLoading()" class="text-center py-20"><span class="loading loading-spinner loading-lg text-primary"></span></div>
+    <div *ngIf="errorMessage()" class="alert alert-warning shadow-sm"><span>{{ errorMessage() }}</span></div>
+    <div *ngIf="!isLoading() && products().length === 0 && !errorMessage()" class="text-center py-20">
+      <p class="text-lg text-base-content/60">Không tìm thấy sản phẩm nào phù hợp.</p>
+    </div>
+
+    <!-- Product Grid -->
+    <div *ngIf="!isLoading() && products().length > 0" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 lg:gap-6">
+      <app-product-card *ngFor="let product of products(); trackBy: trackProductById" [product]="product"></app-product-card>
+    </div>
+
+    <!-- Pagination -->
+    <div *ngIf="paginationData() && paginationData()!.totalPages > 1" class="mt-8 flex justify-center">
+      <app-paginator
+        [currentPage]="paginationData()!.number"
+        [totalPages]="paginationData()!.totalPages"
+        (pageChange)="onPageChange($event)">
+      </app-paginator>
+    </div>
+
+  </div>
+</div>

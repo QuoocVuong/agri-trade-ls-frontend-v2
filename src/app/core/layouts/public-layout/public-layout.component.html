@@ -1,0 +1,12 @@
+<div class="flex flex-col min-h-screen">
+  <!-- Header dùng chung -->
+  <app-header></app-header>
+
+  <!-- Nội dung chính của trang public -->
+  <main class="flex-grow container mx-auto px-4 py-6 lg:py-8">
+    <router-outlet></router-outlet> <!-- Nội dung của các trang con sẽ hiển thị ở đây -->
+  </main>
+
+  <!-- Footer dùng chung -->
+  <app-footer></app-footer>
+</div>

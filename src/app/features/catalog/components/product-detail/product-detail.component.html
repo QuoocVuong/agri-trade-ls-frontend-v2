@@ -1,0 +1,134 @@
+<div class="container mx-auto px-4 py-6 md:py-8">
+  <!-- Loading -->
+  <div *ngIf="isLoading()" class="text-center py-20"><span class="loading loading-spinner loading-lg text-primary"></span></div>
+  <!-- Error -->
+  <div *ngIf="errorMessage()" class="alert alert-error shadow-lg mb-6"><span>Lỗi: {{ errorMessage() }}</span></div>
+
+  <!-- Product Details -->
+  <div *ngIf="product() as p; else notFound"> <!-- Dùng alias 'p' cho gọn -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
+      <!-- Image Gallery -->
+      <div>
+        <div class="aspect-square bg-base-200 rounded-lg overflow-hidden mb-4 shadow">
+          <img [src]="selectedImage() || 'assets/images/placeholder-image.png'" [alt]="p.name" class="w-full h-full object-cover">
+        </div>
+        <!-- Thumbnails -->
+        <div class="grid grid-cols-4 sm:grid-cols-5 gap-2">
+          <button *ngFor="let img of p.images"
+                  (click)="selectImage(img.imageUrl)"
+                  class="aspect-square rounded overflow-hidden border-2 transition-all"
+                  [ngClass]="selectedImage() === img.imageUrl ? 'border-primary scale-105' : 'border-transparent hover:border-base-300'">
+            <img [src]="img.imageUrl" [alt]="p.name + ' thumbnail ' + img.displayOrder" class="w-full h-full object-cover">
+          </button>
+        </div>
+      </div>
+
+      <!-- Product Info & Actions -->
+      <div>
+        <!-- Farmer Info -->
+        <div class="mb-4 flex items-center gap-3">
+          <a [routerLink]="['/farmer', p.farmer?.farmerId]" class="avatar">
+            <div class="w-10 rounded-full ring ring-secondary ring-offset-base-100 ring-offset-1">
+              <img [src]="p.farmer?.farmerAvatarUrl || 'assets/images/default-avatar.png'" [alt]="p.farmer?.farmName || 'Farmer'">
+            </div>
+          </a>
+          <div>
+            <a [routerLink]="['/farmer', p.farmer?.farmerId]" class="font-semibold hover:text-primary block">{{ p.farmer?.farmName || 'Nông dân' }}</a>
+            <span class="text-xs text-base-content/70">Tại {{ p.provinceCode }}</span> <!-- Cần map code tỉnh -->
+            <!-- Thêm nút Follow -->
+          </div>
+        </div>
+
+        <!-- Product Name -->
+        <h1 class="text-3xl lg:text-4xl font-bold mb-2">{{ p.name }}</h1>
+
+        <!-- Rating & Review Count -->
+        <div class="flex items-center space-x-2 mb-4 text-sm">
+          <div class="flex items-center text-xs" *ngIf="p.averageRating && p.averageRating > 0">
+            <svg *ngFor="let i of [1,2,3,4,5]" class="w-4 h-4 fill-current" [ngClass]="i <= p.averageRating ? 'text-warning' : 'text-base-300'" viewBox="0 0 24 24"><path d="M12 .587l3.668 7.568 8.332 1.151-6.064 5.828 1.48 8.279-7.416-3.967-7.417 3.967 1.481-8.279-6.064-5.828 8.332-1.151z"/></svg>
+            <span class="ml-1 text-base-content/80 font-medium">({{ p.averageRating | number:'1.1-1' }})</span>
+          </div>
+          <span class="text-base-content/60" *ngIf="p.ratingCount > 0">({{ p.ratingCount }} đánh giá)</span>
+          <span class="text-base-content/60" *ngIf="p.ratingCount === 0">Chưa có đánh giá</span>
+          <div class="divider divider-horizontal mx-1"></div>
+          <span class="text-base-content/60">{{ p.favoriteCount }} lượt yêu thích</span>
+        </div>
+
+        <!-- Price -->
+        <div class="mb-4">
+          <span class="text-3xl font-bold text-primary">{{ p.price | formatBigDecimal:'1.0-0' }} đ</span>
+          <span class="text-base-content/70"> / {{ p.unit }}</span>
+          <!-- TODO: Hiển thị giá B2B nếu là Business Buyer -->
+        </div>
+
+        <!-- Stock Status -->
+        <div class="mb-6 text-sm">
+          <span *ngIf="p.stockQuantity > 0" class="badge badge-success badge-outline">Còn hàng ({{ p.stockQuantity }})</span>
+          <span *ngIf="p.stockQuantity <= 0" class="badge badge-error badge-outline">Hết hàng</span>
+        </div>
+
+        <!-- Quantity & Add to Cart -->
+        <form [formGroup]="quantityForm" (ngSubmit)="addToCart()">
+          <div class="flex items-center space-x-4 mb-6">
+            <label for="quantity" class="font-medium">Số lượng:</label>
+            <div class="join">
+              <button type="button" class="btn btn-sm join-item" (click)="changeQuantity(-1)" [disabled]="(quantityForm.controls.quantity.value ?? 1) <= 1">-</button>
+              <input type="number" id="quantity" formControlName="quantity"
+                     class="input input-sm input-bordered w-16 text-center join-item" min="1" [max]="p.stockQuantity">
+              <button type="button" class="btn btn-sm join-item" (click)="changeQuantity(1)" [disabled]="(quantityForm.controls.quantity.value ?? 0) >= (p.stockQuantity ?? 0)">+</button>
+            </div>
+          </div>
+          <div class="flex items-center gap-3">
+            <button type="submit" class="btn btn-primary flex-grow" [disabled]="isAddingToCart() || quantityForm.invalid || p.stockQuantity <= 0">
+              <span *ngIf="isAddingToCart()" class="loading loading-spinner loading-xs"></span>
+              {{ isAddingToCart() ? 'Đang thêm...' : 'Thêm vào giỏ hàng' }}
+            </button>
+            <button type="button" class="btn btn-ghost btn-circle" title="Yêu thích" (click)="toggleFavorite()" [disabled]="isTogglingFavorite()">
+              <span *ngIf="isTogglingFavorite()" class="loading loading-spinner loading-xs"></span>
+              <svg *ngIf="!isTogglingFavorite()" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 transition-colors"
+                   [ngClass]="isFavorite() ? 'fill-error text-error' : 'text-base-content/50 hover:text-error'"
+                   fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg>
+            </button>
+          </div>
+        </form>
+
+        <!-- Description -->
+        <div class="mt-8 prose max-w-none prose-sm" [innerHTML]="p.description | safeHtml"> <!-- Cần Pipe safeHtml -->
+          <!-- Hoặc dùng [textContent] nếu không muốn render HTML -->
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Related Products & Reviews (Ví dụ đặt trong Tabs) -->
+    <div role="tablist" class="tabs tabs-lifted mt-12">
+      <input type="radio" name="product_tabs" role="tab" class="tab" aria-label="Đánh giá" checked />
+      <div role="tabpanel" class="tab-content bg-base-100 border-base-300 rounded-box p-6">
+        <h3 class="text-xl font-semibold mb-4">Đánh giá sản phẩm ({{ p.ratingCount }})</h3>
+        <!-- Form viết review (chỉ hiện khi đăng nhập và đã mua?) -->
+        <app-review-form [productId]="p.id" (reviewSubmitted)="onReviewSubmitted($event)" class="mb-6"></app-review-form>
+        <!-- Danh sách review -->
+        <app-review-list [productId]="p.id"></app-review-list>
+      </div>
+
+      <input type="radio" name="product_tabs" role="tab" class="tab" aria-label="Sản phẩm liên quan" />
+      <div role="tabpanel" class="tab-content bg-base-100 border-base-300 rounded-box p-6">
+        <h3 class="text-xl font-semibold mb-4">Sản phẩm liên quan</h3>
+        <div *ngIf="p.relatedProducts && p.relatedProducts.length > 0" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          <app-product-card *ngFor="let related of p.relatedProducts; trackBy: trackRelatedProductById" [product]="related"></app-product-card>
+        </div>
+        <p *ngIf="!p.relatedProducts || p.relatedProducts.length === 0" class="text-base-content/60">Không có sản phẩm liên quan.</p>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Template hiển thị khi không tìm thấy sản phẩm -->
+  <ng-template #notFound>
+    <div *ngIf="!isLoading()" class="text-center py-20">
+      <h2 class="text-2xl font-bold mb-4">Không tìm thấy sản phẩm</h2>
+      <p class="text-lg text-base-content/70 mb-6">Sản phẩm bạn tìm kiếm không tồn tại hoặc đã bị xóa.</p>
+      <a routerLink="/products" class="btn btn-primary">Xem tất cả sản phẩm</a>
+    </div>
+  </ng-template>
+</div>
