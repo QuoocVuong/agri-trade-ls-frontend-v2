@@ -112,4 +112,16 @@ export class ProductService {
     return this.http.delete<ApiResponse<void>>(`${this.adminApiUrl}/products/${productId}/force`);
   }
 
+  // Trong ProductService.ts
+  getPublicProductsByFarmerId(farmerId: number, page: number, size: number, sort?: string): Observable<PagedApiResponse<ProductSummaryResponse>> {
+    let params = new HttpParams()
+      .set('page', page.toString())
+      .set('size', size.toString());
+    if (sort) params = params.set('sort', sort);
+    // Gọi API public mới
+    // *** SỬA Ở ĐÂY: Xây dựng URL đúng từ environment.apiUrl ***
+    const url = `${environment.apiUrl}/public/farmer/${farmerId}/products`;
+    return this.http.get<PagedApiResponse<ProductSummaryResponse>>(url, { params });
+  }
+
 }

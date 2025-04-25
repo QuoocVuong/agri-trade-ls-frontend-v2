@@ -1,20 +1,64 @@
-<div class="flex flex-col md:flex-row gap-6 lg:gap-8">
+<div class="flex flex-col md:flex-row gap-6 lg:gap-8 container mx-auto px-4 py-8">
   <!-- Sidebar Filters -->
   <aside class="w-full md:w-1/4 lg:w-1/5 flex-shrink-0">
     <!-- Component Category Sidebar -->
-    <app-category-sidebar (categorySelected)="onCategorySelected($event)"></app-category-sidebar>
+    <div class="bg-base-100 rounded-xl shadow-md p-4 mb-6">
+      <h3 class="text-lg font-semibold mb-3 text-primary">Danh mục</h3>
+      <app-category-sidebar (categorySelected)="onCategorySelected($event)"></app-category-sidebar>
+    </div>
 
     <!-- Các bộ lọc khác -->
-    <div class="mt-6 p-4 bg-base-200 rounded-box">
-      <h3 class="font-semibold mb-3">Bộ lọc khác</h3>
+    <div class="bg-base-100 rounded-xl shadow-md p-4">
+      <h3 class="text-lg font-semibold mb-4 text-primary">Bộ lọc tìm kiếm</h3>
       <form [formGroup]="filterForm" (ngSubmit)="applyFilter()">
         <div class="form-control mb-4">
-          <label class="label"><span class="label-text">Tìm theo tên</span></label>
-          <input type="text" placeholder="Nhập từ khóa..." class="input input-sm input-bordered" formControlName="keyword" />
+          <label class="label"><span class="label-text font-medium">Tìm theo tên</span></label>
+          <div class="relative">
+            <input type="text"
+                   placeholder="Nhập từ khóa..."
+                   class="input input-sm input-bordered w-full pl-10 rounded-full focus:ring-2 focus:ring-primary"
+                   formControlName="keyword"
+                   aria-label="Tìm kiếm sản phẩm theo từ khóa" />
+            <svg class="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-base-content/50"
+                 xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </div>
         </div>
-        <!-- Thêm các bộ lọc giá, rating... -->
-        <!-- <button type="submit" class="btn btn-sm btn-primary w-full mt-2">Áp dụng</button> -->
-        <!-- Bỏ nút nếu dùng valueChanges -->
+        <!-- Bộ lọc giá -->
+        <div class="form-control mb-4">
+          <label class="label"><span class="label-text font-medium">Khoảng giá</span></label>
+          <div class="flex gap-2">
+            <input type="number"
+                   placeholder="Từ"
+                   class="input input-sm input-bordered w-full rounded-full"
+                   formControlName="minPrice"
+                   aria-label="Giá tối thiểu" />
+            <input type="number"
+                   placeholder="Đến"
+                   class="input input-sm input-bordered w-full rounded-full"
+                   formControlName="maxPrice"
+                   aria-label="Giá tối đa" />
+          </div>
+        </div>
+        <!-- Bộ lọc đánh giá -->
+        <div class="form-control mb-4">
+          <label class="label"><span class="label-text font-medium">Đánh giá tối thiểu</span></label>
+          <select class="select select-sm select-bordered w-full rounded-full"
+                  formControlName="minRating"
+                  aria-label="Chọn đánh giá tối thiểu">
+            <option value="0">Tất cả</option>
+            <option value="1">1 sao trở lên</option>
+            <option value="2">2 sao trở lên</option>
+            <option value="3">3 sao trở lên</option>
+            <option value="4">4 sao trở lên</option>
+          </select>
+        </div>
+        <button type="submit"
+                class="btn btn-sm btn-primary w-full rounded-full mt-4 hover:bg-primary-dark transition-colors"
+                [disabled]="filterForm.invalid">
+          Áp dụng bộ lọc
+        </button>
       </form>
     </div>
   </aside>
@@ -22,44 +66,72 @@
   <!-- Main Content - Product Grid -->
   <div class="flex-grow">
     <!-- Header khu vực sản phẩm -->
-    <div class="flex flex-col sm:flex-row justify-between items-center mb-4 gap-2">
-      <h2 class="text-2xl font-bold">
+    <div class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
+      <h2 class="text-2xl md:text-3xl font-bold animate-fade-in">
         <span *ngIf="currentCategory()">{{ currentCategory()?.name }}</span>
         <span *ngIf="!currentCategory()">Tất cả Sản phẩm</span>
         <span *ngIf="paginationData()" class="text-sm font-normal text-base-content/70 ml-2">
-             ({{ paginationData()?.totalElements }} sản phẩm)
-         </span>
+          ({{ paginationData()?.totalElements }} sản phẩm)
+        </span>
       </h2>
       <!-- Sắp xếp -->
-      <select class="select select-sm select-bordered w-full sm:w-auto">
-        <option disabled selected>Sắp xếp theo</option>
-        <option value="createdAt,desc">Mới nhất</option>
-        <option value="price,asc">Giá tăng dần</option>
-        <option value="price,desc">Giá giảm dần</option>
-        <option value="averageRating,desc">Đánh giá cao</option>
-      </select>
+<!--      <select class="select select-sm select-bordered w-full sm:w-48 rounded-full focus:ring-2 focus:ring-primary"-->
+<!--              (change)="onSortChange($event)"-->
+<!--              aria-label="Sắp xếp sản phẩm">-->
+<!--        <option disabled selected>Sắp xếp theo</option>-->
+<!--        <option value="createdAt,desc">Mới nhất</option>-->
+<!--        <option value="price,asc">Giá tăng dần</option>-->
+<!--        <option value="price,desc">Giá giảm dần</option>-->
+<!--        <option value="averageRating,desc">Đánh giá cao</option>-->
+<!--      </select>-->
     </div>
 
     <!-- Loading/Error/Empty States -->
-    <div *ngIf="isLoading()" class="text-center py-20"><span class="loading loading-spinner loading-lg text-primary"></span></div>
-    <div *ngIf="errorMessage()" class="alert alert-warning shadow-sm"><span>{{ errorMessage() }}</span></div>
+    <div *ngIf="isLoading()" class="text-center py-20 animate-pulse">
+      <span class="loading loading-spinner loading-lg text-primary"></span>
+    </div>
+    <div *ngIf="errorMessage()" class="alert alert-warning shadow-md rounded-lg mb-6">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-warning" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M12 3a9 9 0 100 18 9 9 0 000-18z" />
+      </svg>
+      <span>{{ errorMessage() }}</span>
+    </div>
     <div *ngIf="!isLoading() && products().length === 0 && !errorMessage()" class="text-center py-20">
       <p class="text-lg text-base-content/60">Không tìm thấy sản phẩm nào phù hợp.</p>
+<!--      <button class="btn btn-ghost btn-sm mt-4" (click)="resetFilters()">Xóa bộ lọc</button>-->
     </div>
 
     <!-- Product Grid -->
-    <div *ngIf="!isLoading() && products().length > 0" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 lg:gap-6">
-      <app-product-card *ngFor="let product of products(); trackBy: trackProductById" [product]="product"></app-product-card>
+    <div *ngIf="!isLoading() && products().length > 0"
+         class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 lg:gap-6">
+      <app-product-card *ngFor="let product of products(); trackBy: trackProductById"
+                        [product]="product"
+                        class="animate-fade-in"></app-product-card>
     </div>
 
     <!-- Pagination -->
-    <div *ngIf="paginationData() && paginationData()!.totalPages > 1" class="mt-8 flex justify-center">
+    <div *ngIf="paginationData() && paginationData()!.totalPages > 1"
+         class="mt-8 flex justify-center">
       <app-paginator
         [currentPage]="paginationData()!.number"
         [totalPages]="paginationData()!.totalPages"
-        (pageChange)="onPageChange($event)">
+        (pageChange)="onPageChange($event)"
+        class="btn-group">
       </app-paginator>
     </div>
-
   </div>
 </div>
+
+<style>
+  /* Custom animations */
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .animate-fade-in {
+    animation: fadeIn 0.5s ease-out;
+  }
+  .btn-primary-dark {
+    background-color: #1e40af; /* Darker primary color for hover */
+  }
+</style>

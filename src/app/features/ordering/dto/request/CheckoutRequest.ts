@@ -18,4 +18,5 @@ export interface CheckoutRequest {
   newShippingAddress?: NewAddressRequest | null; // Thông tin địa chỉ mới (bắt buộc nếu không có shippingAddressId)
   paymentMethod: PaymentMethod; // Enum PaymentMethod
   notes?: string | null;
+  purchaseOrderNumber?: string | null;
 }

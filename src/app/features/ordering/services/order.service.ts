@@ -17,6 +17,7 @@ export class OrderService {
   private orderApiUrl = `${environment.apiUrl}/orders`;
   private farmerOrderApiUrl = `${environment.apiUrl}/farmer/orders`;
   private adminOrderApiUrl = `${environment.apiUrl}/admin/orders`;
+  private InvoiceApiUrl  = `${environment.apiUrl}`;
 
   // --- Buyer APIs ---
   checkout(request: CheckoutRequest): Observable<ApiResponse<OrderResponse[]>> { // Backend trả về List<OrderResponse>
@@ -90,6 +91,12 @@ export class OrderService {
 
   cancelOrderByAdmin(orderId: number): Observable<ApiResponse<OrderResponse>> {
     return this.http.post<ApiResponse<OrderResponse>>(`${this.adminOrderApiUrl}/${orderId}/cancel`, {});
+  }
+
+  // Trong OrderService.ts
+  downloadInvoice(orderId: number): Observable<Blob> { // Trả về Blob
+    const url = `${this.orderApiUrl}/${orderId}/invoice/download`; // Hoặc /api/orders/...
+    return this.http.get(url, { responseType: 'blob' }); // Yêu cầu response dạng blob
   }
 
 }

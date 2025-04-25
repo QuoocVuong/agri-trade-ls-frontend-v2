@@ -8,7 +8,8 @@ import { ApiResponse } from '../../../../core/models/api-response.model';
 import { LocationService, Province, District, Ward } from '../../../../core/services/location.service'; // Import LocationService và models đã cập nhật
 import { Observable, of, firstValueFrom } from 'rxjs'; // Import firstValueFrom để chờ async/await
 import { ToastrService } from 'ngx-toastr';
-import {AlertComponent} from '../../../../shared/components/alert/alert.component'; // Import Toastr
+import {AlertComponent} from '../../../../shared/components/alert/alert.component';
+import {AddressResponse} from '../../dto/response/AddressResponse'; // Import Toastr
 
 @Component({
   selector: 'app-address-form',
@@ -20,6 +21,9 @@ export class AddressFormComponent implements OnInit, OnChanges {
   @Input() addressToEdit: Address | null = null;
   @Output() addressSaved = new EventEmitter<Address>();
   @Output() cancelled = new EventEmitter<void>();
+  // *** KHAI BÁO INPUT ***
+  @Input() initialAddress: Address | null = null; // Input để nhận địa chỉ cần sửa
+
 
   private fb = inject(FormBuilder);
   private userProfileService = inject(UserProfileService);
@@ -41,11 +45,17 @@ export class AddressFormComponent implements OnInit, OnChanges {
     // Gọi patchFormWithLocationData trong ngOnChanges khi addressToEdit thay đổi lần đầu
   }
 
+  // ngOnChanges(changes: SimpleChanges): void {
+  //   if (changes['addressToEdit'] && this.addressForm) {
+  //     // Cần đảm bảo provinces$ đã load xong trước khi patch (hoặc xử lý bất đồng bộ)
+  //     // Cách đơn giản là gọi patch sau khi load tỉnh ở ngOnInit nếu là edit mode ban đầu
+  //     // Hoặc gọi lại patchFormWithLocationData ở đây
+  //     this.patchFormWithLocationData();
+  //   }
+  // }
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['addressToEdit'] && this.addressForm) {
-      // Cần đảm bảo provinces$ đã load xong trước khi patch (hoặc xử lý bất đồng bộ)
-      // Cách đơn giản là gọi patch sau khi load tỉnh ở ngOnInit nếu là edit mode ban đầu
-      // Hoặc gọi lại patchFormWithLocationData ở đây
+    // *** SỬA Ở ĐÂY: Kiểm tra input 'initialAddress' ***
+    if (changes['initialAddress'] && this.addressForm) {
       this.patchFormWithLocationData();
     }
   }
@@ -53,7 +63,7 @@ export class AddressFormComponent implements OnInit, OnChanges {
   private initForm(): void {
     this.addressForm = this.fb.group({
       fullName: ['', [Validators.required, Validators.maxLength(100)]],
-      phoneNumber: ['', [Validators.required, Validators.pattern(/(84|0[3|5|7|8|9])+([0-9]{8})\b/g), Validators.maxLength(20)]],
+      phoneNumber: ['', [Validators.required, Validators.pattern(/^(84|0)(3|5|7|8|9)[0-9]{8}$/), Validators.maxLength(20)]],
       addressDetail: ['', [Validators.required, Validators.maxLength(255)]],
       // Các control này vẫn lưu code (ví dụ: '12', '121', '12101')
       provinceCode: [null, Validators.required],
@@ -90,8 +100,10 @@ export class AddressFormComponent implements OnInit, OnChanges {
 
   // Patch form, cần xử lý bất đồng bộ khi load huyện/xã
   private async patchFormWithLocationData(): Promise<void> {
-    if (this.addressToEdit) {
-      const address = this.addressToEdit;
+    // if (this.addressToEdit) {
+    //   const address = this.addressToEdit;
+    if (this.initialAddress) {
+      const address = this.initialAddress; // <-- Dùng initialAddress
       // Patch các trường không phụ thuộc địa giới trước
       this.addressForm.patchValue({
         fullName: address.fullName,
@@ -155,19 +167,28 @@ export class AddressFormComponent implements OnInit, OnChanges {
 
     // Lấy giá trị từ form (bao gồm cả control bị disable như provinceCode)
     const requestData: AddressRequest = this.addressForm.getRawValue();
-    let apiCall: Observable<ApiResponse<Address>>;
+    // let apiCall: Observable<ApiResponse<Address>>;
+    let apiCall: Observable<ApiResponse<AddressResponse>>; // Service trả về AddressResponse
 
-    if (this.addressToEdit && this.addressToEdit.id) {
-      apiCall = this.userProfileService.updateAddress(this.addressToEdit.id, requestData);
+    // if (this.addressToEdit && this.addressToEdit.id) {
+    //   apiCall = this.userProfileService.updateAddress(this.addressToEdit.id, requestData);
+    if (this.initialAddress && this.initialAddress.id) {
+      apiCall = this.userProfileService.updateAddress(this.initialAddress.id, requestData);
     } else {
       apiCall = this.userProfileService.addAddress(requestData);
     }
 
     apiCall.subscribe({
-      next: (response) => {
+      next: (response: ApiResponse<AddressResponse>) => {
         if (response.success && response.data) {
-          this.toastr.success(this.addressToEdit ? 'Cập nhật địa chỉ thành công!' : 'Thêm địa chỉ thành công!');
-          this.addressSaved.emit(response.data); // Gửi sự kiện lưu thành công
+        //   this.toastr.success(this.addressToEdit ? 'Cập nhật địa chỉ thành công!' : 'Thêm địa chỉ thành công!');
+        //   this.addressSaved.emit(response.data); // Gửi sự kiện lưu thành công
+        // } else {
+          this.toastr.success(this.initialAddress ? 'Cập nhật địa chỉ thành công!' : 'Thêm địa chỉ thành công!');
+          // *** SỬA KIỂU DỮ LIỆU EMIT: Cần map AddressResponse sang Address nếu cần ***
+          // Hoặc thay đổi kiểu của EventEmitter thành AddressResponse
+          // Tạm thời giả sử Address và AddressResponse giống nhau:
+          this.addressSaved.emit(response.data as any); // <-- Ép kiểu tạm thời, cần xem xét lại
         } else {
           this.errorMessage.set(response.message || 'Lưu địa chỉ thất bại.');
           this.toastr.error(response.message || 'Lưu địa chỉ thất bại.');

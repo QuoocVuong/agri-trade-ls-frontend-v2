@@ -4,12 +4,13 @@ import { RouterLink } from '@angular/router';
 import { UserProfileService } from '../../services/user-profile.service';
 import { UserProfileResponse } from '../../dto/response/UserProfileResponse';
 import { ApiResponse } from '../../../../core/models/api-response.model';
-import { AuthService } from '../../../../core/services/auth.service'; // Import AuthService
+import { AuthService } from '../../../../core/services/auth.service';
+import {AlertComponent} from '../../../../shared/components/alert/alert.component'; // Import AuthService
 
 @Component({
   selector: 'app-profile-view',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, AlertComponent ],
   templateUrl: './profile-view.component.html',
 })
 export class ProfileViewComponent implements OnInit {

@@ -20,6 +20,8 @@ export interface ProductSummaryResponse {
   stockQuantity: number;
   createdAt: Date | null;
   updatedAt: Date | null;
+  isFavorite: boolean;
+  isNew: boolean;
   // Có thể thêm favorite count nếu cần hiển thị nhanh
   // favoriteCount?: number;
 }

@@ -1,82 +1,170 @@
-<div class="container mx-auto px-4 py-6 md:py-8">
-  <h1 class="text-3xl font-bold mb-6">Thông tin tài khoản</h1>
+<div class="container mx-auto px-4 py-6 md:py-8 lg:py-10 max-w-5xl">
+  <!-- Header -->
+  <h1 class="text-2xl md:text-3xl font-bold mb-6 text-primary">Thông tin tài khoản</h1>
 
   <!-- Loading -->
-  <div *ngIf="isLoading()" class="text-center py-10">
+  <div *ngIf="isLoading()" class="flex justify-center py-12">
     <span class="loading loading-spinner loading-lg text-primary"></span>
   </div>
 
   <!-- Error -->
-  <div *ngIf="errorMessage()" class="alert alert-error shadow-lg mb-6">
-    <!-- ... (icon và message lỗi) ... -->
-    <span>Lỗi: {{ errorMessage() }}</span>
-  </div>
+  <app-alert *ngIf="errorMessage() && !isLoading()" type="error" [message]="errorMessage()" class="mb-6 animate-fade-in"></app-alert>
 
   <!-- Profile Details -->
-  <div *ngIf="profile() && !isLoading()" class="card bg-base-100 shadow-xl lg:card-side"> <!-- card-side trên lg -->
+  <div *ngIf="profile() && !isLoading()" class="card bg-base-100 shadow-lg rounded-lg lg:card-side overflow-hidden animate-slide-in">
     <!-- Avatar Section -->
-    <figure class="p-6 flex justify-center lg:w-1/4">
+    <figure class="p-6 flex justify-center lg:w-1/4 bg-base-200">
       <div class="avatar">
-        <div class="w-32 lg:w-40 rounded-full ring ring-primary ring-offset-base-100 ring-offset-2">
-          <img [src]="profile()?.avatarUrl || 'assets/images/default-avatar.png'" alt="Avatar" />
+        <div class="w-32 lg:w-36 rounded-full ring ring-primary ring-offset-base-100 ring-offset-2 transition-transform hover:scale-105">
+          <img [src]="profile()?.avatarUrl || 'assets/images/default-avatar.png'" [alt]="profile()?.fullName || 'Avatar'" />
         </div>
       </div>
     </figure>
 
     <!-- Info Section -->
-    <div class="card-body lg:w-3/4">
-      <div class="flex flex-col sm:flex-row justify-between items-start mb-4">
+    <div class="card-body lg:w-3/4 p-6 md:p-8">
+      <div class="flex flex-col sm:flex-row justify-between items-start gap-4 mb-6">
         <div>
-          <h2 class="card-title text-2xl mb-1" [textContent]="profile()?.fullName"></h2>
-          <p class="text-base-content/70" [textContent]="profile()?.email"></p>
-          <p class="text-base-content/70">Số điện thoại: <span [textContent]="profile()?.phoneNumber || 'Chưa cập nhật'"></span></p>
-          <p class="text-base-content/70">Ngày tham gia: <span [textContent]="profile()?.createdAt | date:'dd/MM/yyyy'"></span></p>
-          <p class="mt-2">Vai trò:
-            <span *ngFor="let role of profile()?.roles" class="badge badge-primary badge-outline ml-1">
+          <h2 class="card-title text-2xl font-semibold" [textContent]="profile()?.fullName"></h2>
+          <p class="text-sm text-base-content/70 mt-1" [textContent]="profile()?.email"></p>
+          <p class="text-sm text-base-content/70 mt-1">
+            Số điện thoại: <span [textContent]="profile()?.phoneNumber || 'Chưa cập nhật'"></span>
+          </p>
+          <p class="text-sm text-base-content/70 mt-1">
+            Ngày tham gia: <span [textContent]="profile()?.createdAt | date:'dd/MM/yyyy'"></span>
+          </p>
+          <div class="mt-3 flex items-center gap-2">
+            <span class="text-sm font-medium">Vai trò:</span>
+            <span *ngFor="let role of profile()?.roles" class="badge badge-primary badge-outline text-xs">
               {{ role.replace('ROLE_', '') }}
             </span>
-          </p>
+          </div>
         </div>
         <!-- Actions -->
-        <div class="mt-4 sm:mt-0 flex flex-col sm:flex-row sm:items-center gap-2">
-          <a routerLink="/user/profile/edit" class="btn btn-sm btn-outline btn-primary w-full sm:w-auto">Chỉnh sửa</a>
-          <a routerLink="/user/profile/change-password" class="btn btn-sm btn-outline w-full sm:w-auto">Đổi mật khẩu</a>
+        <div class="mt-4 sm:mt-0 flex flex-col sm:flex-row gap-2">
+          <a
+            routerLink="/user/profile/edit"
+            class="btn btn-sm btn-primary btn-outline w-full sm:w-auto hover:bg-primary/10 transition-colors"
+            aria-label="Chỉnh sửa thông tin cá nhân">
+            Chỉnh sửa
+          </a>
+          <a
+            routerLink="/user/profile/change-password"
+            class="btn btn-sm btn-outline w-full sm:w-auto hover:bg-base-300 transition-colors"
+            aria-label="Đổi mật khẩu">
+            Đổi mật khẩu
+          </a>
         </div>
       </div>
 
       <!-- Farmer Profile -->
-      <div *ngIf="profile()?.farmerProfile as farmerProfile" class="mt-4 pt-4 border-t border-base-300">
-        <h3 class="text-lg font-semibold mb-2">Thông tin Nông dân</h3>
-        <!-- ... (hiển thị thông tin farmer như trước) ... -->
-        <div class="mt-3">
-          <a routerLink="/user/profile/farmer-profile" class="btn btn-sm btn-link px-0">Xem/Sửa hồ sơ Nông dân</a>
-          <a routerLink="/farmer/dashboard" class="btn btn-sm btn-link px-0 ml-4">Vào Kênh người bán</a>
+      <div *ngIf="profile()?.farmerProfile as farmerProfile" class="mt-6 pt-6 border-t border-base-300">
+        <h3 class="text-lg font-semibold mb-3">Thông tin Nông dân</h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+          <div>
+            <p class="text-base-content/70">Tên gian hàng:</p>
+            <p class="font-medium">{{ farmerProfile.farmName || 'Chưa cập nhật' }}</p>
+          </div>
+          <div>
+            <p class="text-base-content/70">Địa chỉ:</p>
+            <p class="font-medium">{{ farmerProfile.address || 'Chưa cập nhật' }}</p>
+          </div>
+          <div>
+            <p class="text-base-content/70">Tỉnh/Thành:</p>
+            <p class="font-medium">{{ farmerProfile.provinceCode || 'Chưa cập nhật' }}</p>
+          </div>
+          <div>
+            <p class="text-base-content/70">Trạng thái:</p>
+            <p class="font-medium">{{ farmerProfile.status || 'Chưa cập nhật' }}</p>
+          </div>
+        </div>
+        <div class="mt-4 flex flex-col sm:flex-row gap-2">
+          <a
+            routerLink="/user/profile/farmer-profile"
+            class="btn btn-sm btn-link text-primary hover:text-primary-dark transition-colors"
+            aria-label="Xem hoặc sửa hồ sơ nông dân">
+            Xem/Sửa hồ sơ Nông dân
+          </a>
+          <a
+            routerLink="/farmer/dashboard"
+            class="btn btn-sm btn-link text-primary hover:text-primary-dark transition-colors"
+            aria-label="Vào kênh người bán">
+            Vào Kênh người bán
+          </a>
         </div>
       </div>
 
       <!-- Business Profile -->
-      <div *ngIf="profile()?.businessProfile as businessProfile" class="mt-4 pt-4 border-t border-base-300">
-        <h3 class="text-lg font-semibold mb-2">Thông tin Doanh nghiệp</h3>
-        <!-- ... (hiển thị thông tin business như trước) ... -->
-        <div class="mt-3">
-          <a routerLink="/user/profile/business-profile" class="btn btn-sm btn-link px-0">Xem/Sửa hồ sơ Doanh nghiệp</a>
+      <div *ngIf="profile()?.businessProfile as businessProfile" class="mt-6 pt-6 border-t border-base-300">
+        <h3 class="text-lg font-semibold mb-3">Thông tin Doanh nghiệp</h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+          <div>
+            <p class="text-base-content/70">Tên doanh nghiệp:</p>
+            <p class="font-medium">{{ businessProfile.companyName || 'Chưa cập nhật' }}</p>
+          </div>
+          <div>
+            <p class="text-base-content/70">Mã số thuế:</p>
+            <p class="font-medium">{{ businessProfile.taxCode || 'Chưa cập nhật' }}</p>
+          </div>
+          <div>
+            <p class="text-base-content/70">Địa chỉ:</p>
+            <p class="font-medium">{{ businessProfile.address || 'Chưa cập nhật' }}</p>
+          </div>
+          <div>
+            <p class="text-base-content/70">Trạng thái:</p>
+            <p class="font-medium">{{ businessProfile.status || 'Chưa cập nhật' }}</p>
+          </div>
+        </div>
+        <div class="mt-4">
+          <a
+            routerLink="/user/profile/business-profile"
+            class="btn btn-sm btn-link text-primary hover:text-primary-dark transition-colors"
+            aria-label="Xem hoặc sửa hồ sơ doanh nghiệp">
+            Xem/Sửa hồ sơ Doanh nghiệp
+          </a>
         </div>
       </div>
 
       <!-- Register Links -->
-      <div *ngIf="isConsumerOnly()" class="mt-6 pt-6 border-t border-base-300 grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div class="card bg-base-200 p-4">
-          <h3 class="font-semibold mb-1">Bạn là Nông dân?</h3>
-          <p class="text-sm text-base-content/70 mb-3">Đăng ký gian hàng để bán nông sản của bạn.</p>
-          <a routerLink="/user/profile/farmer-profile" class="btn btn-sm btn-success self-start">Đăng ký bán hàng</a>
+      <div *ngIf="isConsumerOnly()" class="mt-8 pt-8 border-t border-base-300 grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="card bg-base-200 shadow-md rounded-lg p-5 hover:shadow-lg transition-shadow">
+          <h3 class="font-semibold text-base mb-2">Bạn là Nông dân?</h3>
+          <p class="text-sm text-base-content/70 mb-4">Đăng ký gian hàng để bán nông sản của bạn.</p>
+          <a
+            routerLink="/user/profile/farmer-profile"
+            class="btn btn-sm btn-success w-full md:w-auto"
+            aria-label="Đăng ký bán hàng nông dân">
+            Đăng ký bán hàng
+          </a>
         </div>
-        <div class="card bg-base-200 p-4">
-          <h3 class="font-semibold mb-1">Mua hàng cho Doanh nghiệp?</h3>
-          <p class="text-sm text-base-content/70 mb-3">Đăng ký tài khoản B2B để nhận ưu đãi.</p>
-          <a routerLink="/user/profile/business-profile" class="btn btn-sm btn-info self-start">Đăng ký Doanh nghiệp</a>
+        <div class="card bg-base-200 shadow-md rounded-lg p-5 hover:shadow-lg transition-shadow">
+          <h3 class="font-semibold text-base mb-2">Mua hàng cho Doanh nghiệp?</h3>
+          <p class="text-sm text-base-content/70 mb-4">Đăng ký tài khoản B2B để nhận ưu đãi.</p>
+          <a
+            routerLink="/user/profile/business-profile"
+            class="btn btn-sm btn-info w-full md:w-auto"
+            aria-label="Đăng ký tài khoản doanh nghiệp">
+            Đăng ký Doanh nghiệp
+          </a>
         </div>
       </div>
-
     </div>
   </div>
 </div>
+
+<style>
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes slide-in {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .animate-fade-in {
+    animation: fade-in 0.3s ease-out;
+  }
+  .animate-slide-in {
+    animation: slide-in 0.3s ease-out;
+  }
+</style>

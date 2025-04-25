@@ -1,64 +1,102 @@
-<div class="container mx-auto px-4 py-8">
-  <h1 class="text-3xl font-bold mb-6">Quản lý Đơn hàng của tôi</h1>
+<div class="container mx-auto px-4 py-6 md:py-8 lg:py-10 max-w-6xl">
+  <!-- Header -->
+  <h1 class="text-2xl md:text-3xl font-bold mb-6">Quản lý Đơn hàng của tôi</h1>
 
   <!-- Filter Form -->
-  <form [formGroup]="filterForm" class="mb-6 p-4 bg-base-200 rounded-box grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+  <form [formGroup]="filterForm" class="mb-6 p-4 bg-base-200 rounded-lg grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
     <div class="form-control w-full">
-      <label class="label"><span class="label-text">Tìm kiếm (Mã ĐH, Tên người mua...)</span></label>
-      <input type="text" placeholder="Nhập từ khóa..." class="input input-sm input-bordered w-full" formControlName="keyword" />
+      <label class="label">
+        <span class="label-text font-medium">Tìm kiếm (Mã ĐH, Tên người mua...)</span>
+      </label>
+      <input
+        type="text"
+        placeholder="Nhập từ khóa..."
+        class="input input-sm input-bordered w-full"
+        formControlName="keyword" />
     </div>
     <div class="form-control w-full">
-      <label class="label"><span class="label-text">Trạng thái đơn hàng</span></label>
+      <label class="label">
+        <span class="label-text font-medium">Trạng thái đơn hàng</span>
+      </label>
       <select class="select select-sm select-bordered w-full" formControlName="status">
         <option value="">Tất cả trạng thái</option>
         <option *ngFor="let status of orderStatuses" [value]="status">{{ getStatusText(status) }}</option>
       </select>
     </div>
-    <!-- Nút reset -->
-    <button type="button" class="btn btn-sm btn-ghost self-end" (click)="filterForm.reset({keyword: '', status: ''})">Xóa lọc</button>
+    <button
+      type="button"
+      class="btn btn-sm btn-ghost self-end"
+      (click)="filterForm.reset({ keyword: '', status: '' })">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 mr-1">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+      </svg>
+      Xóa bộ lọc
+    </button>
   </form>
 
   <!-- Loading / Error / Empty -->
-  <div *ngIf="isLoading() && !ordersPage()" class="text-center py-10"><app-loading-spinner></app-loading-spinner></div>
-  <app-alert *ngIf="errorMessage()" type="error" [message]="errorMessage()"></app-alert>
+  <div *ngIf="isLoading() && !ordersPage()" class="flex justify-center py-12">
+    <app-loading-spinner size="lg"></app-loading-spinner>
+  </div>
+  <app-alert *ngIf="errorMessage()" type="error" [message]="errorMessage()" class="mb-6"></app-alert>
   <div *ngIf="!isLoading() && (!ordersPage() || (ordersPage()?.content?.length ?? 0) === 0) && !errorMessage()" class="text-center py-10 text-base-content/60">
     Bạn chưa có đơn hàng nào.
   </div>
 
   <!-- Orders Table -->
-  <div *ngIf="!isLoading() && ordersPage() && ordersPage()!.content.length > 0" class="overflow-x-auto bg-base-100 rounded-box shadow">
-    <table class="table w-full table-sm">
+  <div *ngIf="!isLoading() && ordersPage() && ordersPage()!.content.length > 0" class="overflow-x-auto bg-base-100 rounded-lg shadow-md">
+    <table class="table w-full">
       <thead>
-      <tr>
-        <th>Mã ĐH</th>
-        <th>Ngày đặt</th>
-        <th>Người mua</th>
-        <th class="text-right">Tổng tiền</th>
-        <th>Trạng thái ĐH</th>
-        <th>Trạng thái TT</th>
-        <th>Hành động</th>
+      <tr class="text-sm">
+        <th class="p-4">Mã ĐH</th>
+        <th class="p-4">Ngày đặt</th>
+        <th class="p-4">Người mua</th>
+        <th class="p-4 text-right">Tổng tiền</th>
+        <th class="p-4">Trạng thái ĐH</th>
+        <th class="p-4">Trạng thái TT</th>
+        <th class="p-4">Hành động</th>
       </tr>
       </thead>
       <tbody>
-      <tr *ngFor="let order of ordersPage()?.content; trackBy: trackOrderById" class="hover">
-        <td class="font-mono text-xs">
-          <a (click)="viewOrderDetails(order.id)" class="link link-hover link-primary">{{ order.orderCode }}</a>
-          <span class="block text-xs opacity-70">{{ order.orderType }}</span>
+      <tr *ngFor="let order of ordersPage()?.content; trackBy: trackOrderById" class="hover:bg-base-200/50 transition-colors">
+        <td class="p-4">
+          <div>
+            <a (click)="viewOrderDetails(order.id)" class="link link-hover link-primary font-mono text-sm">{{ order.orderCode }}</a>
+            <span class="block text-xs text-base-content/70">{{ order.orderType }}</span>
+          </div>
         </td>
-        <td class="text-xs">{{ order.createdAt | date:'dd/MM/yy HH:mm' }}</td>
-        <td class="text-xs">{{ order.buyerName || 'N/A' }}</td>
-        <td class="text-right text-xs font-semibold">{{ order.totalAmount | formatBigDecimal:'1.0-0' }} đ</td>
-        <td><span class="badge badge-sm" [ngClass]="getStatusClass(order.status)">{{ getStatusText(order.status) }}</span></td>
-        <td><span class="badge badge-sm" [ngClass]="getPaymentStatusClass(order.paymentStatus)">{{ getPaymentStatusText(order.paymentStatus) }}</span></td>
+        <td class="text-sm">{{ order.createdAt | date:'dd/MM/yy HH:mm' }}</td>
+        <td class="text-sm">{{ order.buyerName || 'N/A' }}</td>
+        <td class="text-sm text-right font-semibold">{{ order.totalAmount | formatBigDecimal:'1.0-0' }} đ</td>
         <td>
-          <div class="flex gap-1">
-            <button class="btn btn-xs btn-ghost" (click)="viewOrderDetails(order.id)" title="Xem chi tiết">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /></svg>
+            <span class="badge badge-sm" [ngClass]="getStatusClass(order.status)">
+              {{ getStatusText(order.status) }}
+            </span>
+        </td>
+        <td>
+            <span class="badge badge-sm" [ngClass]="getPaymentStatusClass(order.paymentStatus)">
+              {{ getPaymentStatusText(order.paymentStatus) }}
+            </span>
+        </td>
+        <td>
+          <div class="flex gap-2">
+            <button
+              class="btn btn-xs btn-ghost hover:bg-primary/10"
+              (click)="viewOrderDetails(order.id)"
+              title="Xem chi tiết">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+              </svg>
             </button>
-            <button class="btn btn-xs btn-ghost text-info" title="Cập nhật trạng thái"
-                    (click)="openUpdateStatusModal(order)"
-                    [disabled]="order.status === 'DELIVERED' || order.status === 'CANCELLED' || order.status === 'RETURNED'">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125" /></svg>
+            <button
+              class="btn btn-xs btn-ghost text-info hover:bg-info/10"
+              title="Cập nhật trạng thái"
+              (click)="openUpdateStatusModal(order)"
+              [disabled]="order.status === 'DELIVERED' || order.status === 'CANCELLED' || order.status === 'RETURNED'">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125" />
+              </svg>
             </button>
           </div>
         </td>
@@ -77,34 +115,43 @@
   </div>
 
   <!-- Modal Cập nhật Trạng thái -->
-  <app-modal title="Cập nhật trạng thái Đơn hàng" [isOpen]="showStatusModal()" (closed)="closeStatusModal()" [showActions]="true" [hideDefaultCancel]="true">
-    <div *ngIf="orderToUpdateStatus() as order">
-      <p class="mb-4 text-sm">Đơn hàng: <strong>#{{ order.orderCode }}</strong></p>
-      <p class="mb-2 text-sm">Trạng thái hiện tại: <span class="badge badge-sm" [ngClass]="getStatusClass(order.status)">{{ getStatusText(order.status) }}</span></p>
+  <app-modal
+    title="Cập nhật trạng thái Đơn hàng"
+    [isOpen]="showStatusModal()"
+    (closed)="closeStatusModal()"
+    [showActions]="true"
+    [hideDefaultCancel]="true">
+    <div *ngIf="orderToUpdateStatus() as order" class="space-y-4">
+      <p class="text-sm">Đơn hàng: <strong>#{{ order.orderCode }}</strong></p>
+      <p class="text-sm">Trạng thái hiện tại: <span class="badge badge-sm" [ngClass]="getStatusClass(order.status)">{{ getStatusText(order.status) }}</span></p>
       <div class="form-control w-full">
-        <label class="label"><span class="label-text">Chọn trạng thái mới <span class="text-error">*</span></span></label>
-        <select class="select select-bordered w-full select-sm" [formControl]="newStatusControl">
+        <label class="label">
+          <span class="label-text font-medium">Chọn trạng thái mới <span class="text-error">*</span></span>
+        </label>
+        <select
+          class="select select-sm select-bordered w-full"
+          [formControl]="newStatusControl"
+          [ngClass]="{'select-error': newStatusControl.invalid && newStatusControl.touched}">
           <option [ngValue]="null" disabled>Chọn trạng thái</option>
-          <!-- Chỉ hiển thị các trạng thái hợp lệ mà Farmer có thể chuyển đến -->
           <option *ngFor="let status of farmerAllowedStatuses" [value]="status" [disabled]="status === order.status">
             {{ getStatusText(status) }}
           </option>
         </select>
-        <label class="label" *ngIf="newStatusControl.invalid && newStatusControl.touched">
-          <span class="label-text-alt text-error">Vui lòng chọn trạng thái mới.</span>
+        <label *ngIf="newStatusControl.invalid && newStatusControl.touched" class="label py-1">
+          <span class="label-text-alt text-error text-xs">Vui lòng chọn trạng thái mới.</span>
         </label>
       </div>
-      <!-- Có thể thêm ô nhập ghi chú nếu OrderStatusUpdateRequest có trường notes -->
-      <!-- <textarea class="textarea textarea-bordered mt-3 h-20 text-sm" placeholder="Ghi chú (tùy chọn)"></textarea> -->
       <app-alert *ngIf="statusUpdateError()" type="error" [message]="statusUpdateError()" class="mt-3"></app-alert>
     </div>
-    <div modal-actions>
+    <div modal-actions class="flex gap-2">
       <button class="btn btn-sm btn-ghost" (click)="closeStatusModal()">Hủy</button>
-      <button class="btn btn-sm btn-primary" (click)="saveNewStatus()" [disabled]="statusUpdateLoading() || newStatusControl.invalid || newStatusControl.value === orderToUpdateStatus()?.status">
+      <button
+        class="btn btn-sm btn-primary"
+        (click)="saveNewStatus()"
+        [disabled]="statusUpdateLoading() || newStatusControl.invalid || newStatusControl.value === orderToUpdateStatus()?.status">
         <span *ngIf="statusUpdateLoading()" class="loading loading-spinner loading-xs"></span>
         Xác nhận
       </button>
     </div>
   </app-modal>
-
 </div>

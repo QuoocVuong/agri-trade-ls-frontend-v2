@@ -3,12 +3,13 @@ import { CommonModule } from '@angular/common';
 import { UserProfileService } from '../../services/user-profile.service';
 import { Address } from '../../domain/address.model';
 import { ApiResponse } from '../../../../core/models/api-response.model';
-import { AddressFormComponent } from '../address-form/address-form.component'; // Import form component
+import { AddressFormComponent } from '../address-form/address-form.component';
+import {AlertComponent} from '../../../../shared/components/alert/alert.component'; // Import form component
 
 @Component({
   selector: 'app-address-list',
   standalone: true,
-  imports: [CommonModule, AddressFormComponent], // Import AddressForm
+  imports: [CommonModule, AddressFormComponent, AlertComponent,], // Import AddressForm
   templateUrl: './address-list.component.html',
 })
 export class AddressListComponent implements OnInit {

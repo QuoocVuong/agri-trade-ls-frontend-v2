@@ -11,6 +11,7 @@ import { CommonModule } from '@angular/common';
 })
 export class SidebarComponent {
   @Input() menuType: 'user' | 'farmer' | 'admin' = 'user'; // Nhận loại menu từ layout cha
+  isMenuOpen: boolean = false;
 
   private authService = inject(AuthService);
   private router = inject(Router);
@@ -23,6 +24,11 @@ export class SidebarComponent {
     this.authService.logout();
     this.router.navigate(['/auth/login']);
   }
+
+  toggleMenu(): void {
+    this.isMenuOpen = !this.isMenuOpen;
+  }
+
 
   // Thêm SVG icons vào các mục menu nếu muốn
 }

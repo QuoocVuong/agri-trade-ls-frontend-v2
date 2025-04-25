@@ -49,6 +49,9 @@ export class OrderDetailComponent implements OnInit, OnDestroy {
   errorMessage = signal<string | null>(null);
   successMessage = signal<string | null>(null);
 
+
+  isDownloadingInvoice = signal(false);
+
   // Xác định vai trò và quyền
   currentUser = this.authService.currentUser;
   isAdmin = this.authService.hasRoleSignal('ROLE_ADMIN');
@@ -295,7 +298,31 @@ export class OrderDetailComponent implements OnInit, OnDestroy {
   trackItemById(index: number, item: any): number { // TrackBy chung
     return item.id;
   }
+
+  downloadInvoice(): void {
+    if (!this.order()) return;
+    const orderId = this.order()!.id;
+    const orderCode = this.order()!.orderCode;
+    this.isDownloadingInvoice.set(true);
+    this.orderService.downloadInvoice(orderId)
+      .pipe(finalize(() => this.isDownloadingInvoice.set(false)))
+      .subscribe({
+        next: (blob) => {
+          if (blob.size > 0) {
+            saveAs(blob, `hoa-don-${orderCode}.pdf`); // Dùng file-saver để tải
+          } else {
+            this.toastr.error('Không thể tạo hóa đơn hoặc hóa đơn trống.');
+          }
+        },
+        error: (err) => {
+          console.error("Error downloading invoice:", err);
+          this.toastr.error('Lỗi khi tải hóa đơn.');
+        }
+      });
+  }
+
 }
 
 // Cần inject AdminOrderingService nếu chưa có
 import { AdminOrderingService } from '../../../admin-dashboard/services/admin-ordering.service';
+import {saveAs} from 'file-saver';

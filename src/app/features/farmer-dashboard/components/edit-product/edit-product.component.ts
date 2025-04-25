@@ -55,7 +55,7 @@ export class EditProductComponent implements OnInit, OnDestroy {
   pricingTiersArray!: FormArray;
 
   // Lấy danh sách trạng thái Farmer có thể chọn
-  availableStatuses = [ProductStatus.DRAFT, ProductStatus.UNPUBLISHED];
+  availableStatuses = [ProductStatus.DRAFT, ProductStatus.UNPUBLISHED, ProductStatus.PENDING_APPROVAL];
 
   getStatusText = getProductStatusText;
 
@@ -101,7 +101,7 @@ export class EditProductComponent implements OnInit, OnDestroy {
       unit: ['', [Validators.required, Validators.maxLength(50)]],
       price: [null, [Validators.required, Validators.min(0)]], // Giá B2C
       stockQuantity: [0, [Validators.required, Validators.min(0)]],
-      status: [ProductStatus.DRAFT, Validators.required], // Mặc định DRAFT
+      status: [null, Validators.required], // Mặc định DRAFT
       isB2bAvailable: [false],
       b2bUnit: ['', Validators.maxLength(50)],
       minB2bQuantity: [1, Validators.min(1)],
@@ -311,6 +311,11 @@ export class EditProductComponent implements OnInit, OnDestroy {
   onSubmit(): void {
     if (this.productForm.invalid) {
       this.productForm.markAllAsTouched();
+      // Tìm control đầu tiên bị lỗi và focus (tùy chọn)
+      const firstErrorControl = document.querySelector('.ng-invalid[formControlName]');
+      if (firstErrorControl instanceof HTMLElement) {
+        firstErrorControl.focus();
+      }
       this.toastr.error('Vui lòng kiểm tra lại các trường dữ liệu.');
       return;
     }
@@ -330,8 +335,22 @@ export class EditProductComponent implements OnInit, OnDestroy {
 
     this.isLoading.set(true);
     this.errorMessage.set(null);
+    // Lấy dữ liệu thô từ form
+    const formValue = this.productForm.getRawValue();
+    // *** THÊM LOGIC Ở ĐÂY: Gán status mặc định khi thêm mới ***
+    let finalStatus = formValue.status;
+    if (!this.isEditMode() && finalStatus === null) {
+      finalStatus = ProductStatus.PENDING_APPROVAL; // Gán trạng thái chờ duyệt
+    }
 
-    const requestData: ProductRequest = this.productForm.getRawValue(); // Lấy cả giá trị disable
+   // const requestData: ProductRequest = this.productForm.getRawValue(); // Lấy cả giá trị disable
+
+
+    // Tạo request data với trạng thái đã được xử lý
+    const requestData: ProductRequest = {
+      ...formValue, // Spread các giá trị khác từ form
+      status: finalStatus // Sử dụng trạng thái đã được xử lý
+    };
 
     let apiCall: Observable<ApiResponse<ProductDetailResponse>>;
 
@@ -347,7 +366,7 @@ export class EditProductComponent implements OnInit, OnDestroy {
     ).subscribe({
       next: (res) => {
         if (res.success && res.data) {
-          const message = this.isEditMode() ? 'Cập nhật sản phẩm thành công!' : 'Thêm sản phẩm thành công!';
+          const message = this.isEditMode() ? 'Cập nhật sản phẩm thành công!' : 'Thêm sản phẩm thành công! Sản phẩm đang chờ duyệt.';
           this.toastr.success(message);
           // Điều hướng về trang quản lý sản phẩm sau khi lưu
           this.router.navigate(['/farmer/products']);

@@ -6,18 +6,18 @@ import { authGuard } from '../../core/guards/auth.guard';
 // Hoặc có layout riêng nếu cần.
 export const INTERACTION_ROUTES: Routes = [
   {
-    path: 'chat', // Ví dụ: /chat (cần được import vào app.routes.ts và đặt trong layout phù hợp)
+    path: '', // Ví dụ: /chat (cần được import vào app.routes.ts và đặt trong layout phù hợp)
     loadComponent: () => import('./components/chat/chat-layout/chat-layout.component').then(m => m.ChatLayoutComponent),
     canActivate: [authGuard], // Chat yêu cầu đăng nhập
     title: 'Tin nhắn'
   },
-  {
-    path: 'my-reviews', // Ví dụ: /user/my-reviews (cần import vào user profile routes)
-    loadComponent: () => import('./components/review-list/review-list.component').then(m => m.ReviewListComponent),
-    data: { mode: 'my' }, // Truyền dữ liệu để component biết cần load review của tôi
-    canActivate: [authGuard],
-    title: 'Đánh giá của tôi'
-  },
+  // {
+  //   path: 'my-reviews', // Ví dụ: /user/my-reviews (cần import vào user profile routes)
+  //   loadComponent: () => import('./components/review-list/review-list.component').then(m => m.ReviewListComponent),
+  //   data: { mode: 'my' }, // Truyền dữ liệu để component biết cần load review của tôi
+  //   canActivate: [authGuard],
+  //   title: 'Đánh giá của tôi'
+  // },
   // Route xem danh sách người theo dõi/đang theo dõi có thể đặt trong user-profile
   // Route xem danh sách yêu thích cũng có thể đặt trong user-profile
 ];

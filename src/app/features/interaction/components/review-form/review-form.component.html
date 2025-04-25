@@ -11,7 +11,8 @@
         <ng-container *ngFor="let i of [1, 2, 3, 4, 5]">
           <!-- Half star (không cần thiết nếu chỉ cho chọn sao chẵn) -->
           <!-- <input type="radio" name="rating-10" class="bg-orange-500 mask mask-star-2 mask-half-1" [value]="i - 0.5" (change)="setRating(i - 0.5)" (mouseenter)="setHoverRating(i - 0.5)" (mouseleave)="resetHoverRating()" [checked]="selectedRating() === i - 0.5"/> -->
-          <input type="radio" [name]="'rating-' + productId" class="mask mask-star-2"
+          <input type="radio"
+                 name="rating" class="mask mask-star-2"
                  [ngClass]="(hoverRating() >= i || selectedRating() >= i) ? 'bg-orange-400' : 'bg-orange-400/30'"
                  [value]="i"
                  (change)="setRating(i)"

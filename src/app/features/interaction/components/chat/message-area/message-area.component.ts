@@ -25,6 +25,7 @@ import { Observable, Subject } from 'rxjs';
 import { takeUntil, finalize, map } from 'rxjs/operators';
 import {MessageType} from '../../../domain/message-type.enum';
 import {AlertComponent} from '../../../../../shared/components/alert/alert.component';
+import {PagedApiResponse} from '../../../../../core/models/api-response.model';
 
 @Component({
   selector: 'app-message-area',
@@ -55,6 +56,7 @@ export class MessageAreaComponent implements OnChanges, AfterViewChecked {
   totalPages = 0;
   isLoadingMore = signal(false);
   hasMoreMessages = signal(true); // Còn tin nhắn cũ để load không
+  //messages$ = this.chatService.currentMessages$;
 
   messageForm = this.fb.group({
     content: ['', [Validators.required, Validators.maxLength(2000)]]
@@ -62,14 +64,42 @@ export class MessageAreaComponent implements OnChanges, AfterViewChecked {
 
   private shouldScrollToBottom = false; // Cờ để chỉ scroll khi có tin nhắn mới
 
+  // *** Thêm constructor hoặc ngOnInit để subscribe ***
+  constructor() {
+    // Lắng nghe cập nhật từ currentMessages$ của service
+    this.chatService.currentMessages$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(newMessages => {
+        console.log("MessageArea received messages from service:", newMessages); // Log để debug
+        // Chỉ cập nhật nếu danh sách mới khác danh sách cũ (tránh vòng lặp vô hạn nếu có)
+        // So sánh đơn giản bằng độ dài và ID cuối cùng (có thể cần cách so sánh sâu hơn)
+        const currentMsgArray = this.messages();
+        if (newMessages.length !== currentMsgArray.length ||
+          (newMessages.length > 0 && newMessages[newMessages.length - 1].id !== currentMsgArray[currentMsgArray.length - 1]?.id))
+        {
+          this.messages.set(newMessages); // Cập nhật signal của component
+          // Đặt cờ scroll khi có tin nhắn mới từ service (bao gồm cả tin nhắn mình gửi và người khác gửi)
+          this.shouldScrollToBottom = true;
+        }
+      });
+  }
+
+
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['selectedRoom'] && this.selectedRoom) {
-      this.resetChat(); // Reset khi chọn phòng mới
-      this.loadInitialMessages();
-    } else if (!this.selectedRoom) {
-      this.resetChat();
+    if (changes['selectedRoom']) { // Chỉ chạy khi selectedRoom thay đổi thực sự
+      if (this.selectedRoom) {
+        this.resetChat();
+        this.loadInitialMessages();
+        // *** Thông báo cho service biết phòng nào đang mở ***
+        this.chatService.setCurrentChatRoom(this.selectedRoom.id);
+      } else {
+        this.resetChat();
+        // *** Thông báo cho service không có phòng nào mở ***
+        this.chatService.setCurrentChatRoom(null);
+      }
     }
   }
+
 
   ngAfterViewChecked(): void {
     if (this.shouldScrollToBottom) {
@@ -81,16 +111,21 @@ export class MessageAreaComponent implements OnChanges, AfterViewChecked {
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
+    // Reset phòng đang mở khi component bị hủy
+    this.chatService.setCurrentChatRoom(null);
   }
 
 
   resetChat(): void {
-    this.messages.set([]);
+    // Không reset this.messages() ở đây nữa vì nó sẽ được cập nhật từ service
+    // this.messages.set([]);
     this.currentPage = 0;
     this.totalPages = 0;
     this.hasMoreMessages.set(true);
     this.errorMessage.set(null);
     this.messageForm.reset();
+    // Xóa tin nhắn cũ trong service khi đổi phòng
+    this.chatService.clearCurrentMessages(); // <-- Thêm hàm này vào ChatService
   }
 
   loadInitialMessages(): void {
@@ -109,7 +144,7 @@ export class MessageAreaComponent implements OnChanges, AfterViewChecked {
   }
 
 
-  private loadMessages(scrollToBottom: boolean): void {
+  private loadMessages(isInitialLoad: boolean): void {
     if (!this.selectedRoom) return;
     this.errorMessage.set(null);
 
@@ -119,19 +154,17 @@ export class MessageAreaComponent implements OnChanges, AfterViewChecked {
         finalize(() => this.isLoadingMore.set(false))
       )
       .subscribe({
-        next: (res) => {
+        // Chỉ cần xử lý thông tin phân trang và lỗi
+        next: (res: PagedApiResponse<ChatMessageResponse>) => {
           if (res.success && res.data) {
-            const newMessages = res.data.content;
-            // Thêm tin nhắn mới vào *đầu* danh sách hiện tại khi load more
-            this.messages.update(current => [...newMessages, ...current]);
             this.totalPages = res.data.totalPages;
-            this.hasMoreMessages.set(!res.data.last); // Nếu là trang cuối thì hết tin nhắn cũ
-            if (scrollToBottom) {
-              this.shouldScrollToBottom = true; // Đặt cờ để scroll sau khi view update
+            this.hasMoreMessages.set(!res.data.last);
+            if (isInitialLoad) {
+              this.shouldScrollToBottom = true;
             }
           } else {
             this.errorMessage.set(res.message || "Lỗi tải tin nhắn.");
-            this.hasMoreMessages.set(false); // Giả sử hết tin nhắn nếu lỗi
+            this.hasMoreMessages.set(false);
           }
         },
         error: (err) => {
@@ -140,6 +173,7 @@ export class MessageAreaComponent implements OnChanges, AfterViewChecked {
         }
       });
   }
+
 
 
   sendMessage(): void {
@@ -156,7 +190,7 @@ export class MessageAreaComponent implements OnChanges, AfterViewChecked {
     // Gọi service để gửi qua WebSocket
     this.chatService.sendMessageViaWebSocket(request);
     this.messageForm.reset(); // Xóa ô input sau khi gửi
-    this.shouldScrollToBottom = true; // Scroll xuống khi gửi tin nhắn mới
+    //this.shouldScrollToBottom = true; // Scroll xuống khi gửi tin nhắn mới
   }
 
   // Hàm scroll xuống cuối

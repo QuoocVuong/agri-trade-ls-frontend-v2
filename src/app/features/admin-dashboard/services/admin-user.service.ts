@@ -12,7 +12,7 @@ import { RoleType } from '../../../common/model/role-type.enum'; // Import RoleT
 })
 export class AdminUserService {
   private http = inject(HttpClient);
-  private adminUserApiUrl = `${environment.apiUrl}/admin/users`; // API quản lý user của Admin
+  private adminUserApiUrl = `${environment.apiUrl}/users`; // API quản lý user của Admin
 
   getAllUsers(page: number, size: number, sort?: string, role?: RoleType | string, keyword?: string): Observable<PagedApiResponse<UserResponse>> {
     let params = new HttpParams()

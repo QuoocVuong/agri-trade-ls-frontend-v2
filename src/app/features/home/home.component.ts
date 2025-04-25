@@ -9,7 +9,8 @@ import { ProductSummaryResponse } from '../catalog/dto/response/ProductSummaryRe
 // Import các component dùng chung
 import { LoadingSpinnerComponent } from '../../shared/components/loading-spinner/loading-spinner.component';
 import { AlertComponent } from '../../shared/components/alert/alert.component';
-import { ProductCardComponent } from '../catalog/components/product-card/product-card.component'; // Import ProductCard
+import { ProductCardComponent } from '../catalog/components/product-card/product-card.component';
+import {FarmerService} from '../user-profile/services/farmer.service'; // Import ProductCard
 
 @Component({
   selector: 'app-home',
@@ -27,22 +28,23 @@ import { ProductCardComponent } from '../catalog/components/product-card/product
 export class HomeComponent implements OnInit {
   private categoryService = inject(CategoryService);
   private productService = inject(ProductService);
+  private farmerService = inject(FarmerService);
 
   // Signals để lưu trữ dữ liệu
   featuredCategories = signal<CategoryResponse[]>([]);
   newestProducts = signal<ProductSummaryResponse[]>([]);
-  // featuredFarmers = signal<any[]>([]); // Cần DTO và Service riêng cho Farmer Info
+   featuredFarmers = signal<any[]>([]); // Cần DTO và Service riêng cho Farmer Info
 
   // Signals cho trạng thái loading/error
   isLoadingCategories = signal(true);
   isLoadingProducts = signal(true);
-  // isLoadingFarmers = signal(true);
+   isLoadingFarmers = signal(true);
   errorMessage = signal<string | null>(null);
 
   ngOnInit(): void {
     this.loadFeaturedCategories();
     this.loadNewestProducts();
-    // this.loadFeaturedFarmers();
+     this.loadFeaturedFarmers();
   }
 
   loadFeaturedCategories(): void {
@@ -85,12 +87,33 @@ export class HomeComponent implements OnInit {
     });
   }
 
-  // loadFeaturedFarmers(): void {
-  //   this.isLoadingFarmers.set(true);
-  //   // TODO: Gọi API lấy danh sách nông dân nổi bật (cần tạo API và Service)
-  //   // Ví dụ: this.farmerService.getFeaturedFarmers(4).subscribe(...)
-  //   setTimeout(() => this.isLoadingFarmers.set(false), 1000); // Giả lập loading
-  // }
+  loadFeaturedFarmers(): void {
+    this.isLoadingFarmers.set(true);
+    this.errorMessage.set(null); // Thêm reset lỗi
+    // TODO: Gọi API lấy danh sách nông dân nổi bật
+    // Ví dụ: Giả sử bạn có FarmerService và DTO FarmerSummaryResponse
+    this.farmerService.getFeaturedFarmers({ limit: 4 }).subscribe({
+      next: (res) => {
+        if (res.success && res.data) {
+          this.featuredFarmers.set(res.data); // Cần đúng kiểu dữ liệu
+        } else {  }
+      },
+      error: (err) => {  },
+      complete: () => this.isLoadingFarmers.set(false)
+    });
+
+    // Giữ lại setTimeout để giả lập nếu chưa có API
+    // setTimeout(() => {
+    //   // Giả lập dữ liệu (thay bằng dữ liệu thật từ API)
+    //   this.featuredFarmers.set([
+    //     { id: 1, farmName: 'Trang trại Rau Sạch A', avatarUrl: null, address: 'Huyện X, Lạng Sơn' },
+    //     { id: 2, farmName: 'Vườn trái cây B', avatarUrl: null, address: 'Huyện Y, Lạng Sơn' },
+    //     { id: 3, farmName: 'Nông sản Hữu Cơ C', avatarUrl: null, address: 'Huyện Z, Lạng Sơn' },
+    //     { id: 4, farmName: 'Trang trại Mật Ong D', avatarUrl: null, address: 'Huyện X, Lạng Sơn' }
+    //   ]);
+    //   this.isLoadingFarmers.set(false);
+    // }, 1500);
+  }
 
   // Hàm trackBy cho *ngFor
   trackProductById(index: number, item: ProductSummaryResponse): number {

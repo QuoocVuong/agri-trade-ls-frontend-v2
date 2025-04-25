@@ -47,19 +47,19 @@ export class UserProfileService {
   }
 
   addAddress(data: AddressRequest): Observable<ApiResponse<AddressResponse>> {
-    return this.http.post<ApiResponse<AddressResponse>>(`${this.addressApiUrl}`, data); // API thêm địa chỉ
+    return this.http.post<ApiResponse<AddressResponse>>(`${this.addressApiUrl}/my`, data); // API thêm địa chỉ
   }
 
   updateAddress(id: number, data: AddressRequest): Observable<ApiResponse<AddressResponse>> {
-    return this.http.put<ApiResponse<AddressResponse>>(`${this.addressApiUrl}/${id}`, data); // API sửa địa chỉ
+    return this.http.put<ApiResponse<AddressResponse>>(`${this.addressApiUrl}/my/${id}`, data); // API sửa địa chỉ
   }
 
   deleteAddress(id: number): Observable<ApiResponse<void>> {
-    return this.http.delete<ApiResponse<void>>(`${this.addressApiUrl}/${id}`); // API xóa địa chỉ
+    return this.http.delete<ApiResponse<void>>(`${this.addressApiUrl}/my/${id}`); // API xóa địa chỉ
   }
 
   setDefaultAddress(id: number): Observable<ApiResponse<void>> {
-    return this.http.put<ApiResponse<void>>(`${this.addressApiUrl}/${id}/set-default`, {}); // API đặt mặc định
+    return this.http.put<ApiResponse<void>>(`${this.addressApiUrl}/my/${id}/default`, {}); // API đặt mặc định
   }
 
   // --- Đăng ký/Cập nhật Profile Farmer/Business ---

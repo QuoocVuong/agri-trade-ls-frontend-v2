@@ -1,51 +1,60 @@
-<div class="container mx-auto px-4 py-8">
-
-  <!-- Loading / Error -->
-  <div *ngIf="isLoading()" class="text-center py-20"><app-loading-spinner size="lg"></app-loading-spinner></div>
-  <app-alert *ngIf="errorMessage() && !isLoading()" type="error" [message]="errorMessage()"></app-alert>
-  <app-alert *ngIf="successMessage()" type="success" [message]="successMessage()"></app-alert>
-
+<div class="container mx-auto px-4 py-6 md:py-8 lg:py-10 max-w-7xl">
+  <!-- Loading / Error / Success -->
+  <div *ngIf="isLoading()" class="flex justify-center py-20">
+    <app-loading-spinner size="lg"></app-loading-spinner>
+  </div>
+  <app-alert *ngIf="errorMessage() && !isLoading()" type="error" [message]="errorMessage()" class="mb-6 animate-fade-in"></app-alert>
+  <app-alert *ngIf="successMessage()" type="success" [message]="successMessage()" class="mb-6 animate-fade-in"></app-alert>
 
   <!-- Order Details -->
-  <div *ngIf="order() as o; else notFound">
-    <div class="flex flex-col sm:flex-row justify-between items-start mb-6 gap-4">
+  <div *ngIf="order() as o; else notFound" class="space-y-6">
+    <div class="flex flex-col sm:flex-row justify-between items-start gap-4 bg-base-100 p-6 rounded-lg shadow-md">
       <div>
-        <h1 class="text-2xl lg:text-3xl font-bold">Chi tiết Đơn hàng #{{ o.orderCode }}</h1>
-        <p class="text-sm text-base-content/70">Đặt lúc: {{ o.createdAt | date:'HH:mm dd/MM/yyyy' }}</p>
-        <div class="mt-2 flex items-center gap-2">
-          <span class="badge badge-lg" [ngClass]="getStatusClass(o.status)">{{ getStatusText(o.status) }}</span>
-          <span class="badge badge-lg" [ngClass]="getPaymentStatusClass(o.paymentStatus)">{{ getPaymentStatusText(o.paymentStatus) }}</span>
+        <h1 class="text-2xl md:text-3xl font-bold text-primary">Đơn hàng #{{ o.orderCode }}</h1>
+        <p class="text-sm text-base-content/70 mt-1">Đặt lúc: {{ o.createdAt | date:'HH:mm dd/MM/yyyy' }}</p>
+        <div class="mt-3 flex items-center gap-3">
+          <span class="badge badge-md font-medium" [ngClass]="getStatusClass(o.status)">{{ getStatusText(o.status) }}</span>
+          <span class="badge badge-md font-medium" [ngClass]="getPaymentStatusClass(o.paymentStatus)">{{ getPaymentStatusText(o.paymentStatus) }}</span>
         </div>
       </div>
       <!-- Action Buttons -->
       <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-        <!-- Nút hủy (cho Buyer hoặc Admin) -->
-        <button *ngIf="canBuyerCancel() || canAdminCancel()"
-                class="btn btn-sm btn-error btn-outline w-full sm:w-auto"
-                (click)="cancelOrder()"
-                [disabled]="isActionLoading()">
+        <button
+          *ngIf="canBuyerCancel() || canAdminCancel()"
+          class="btn btn-sm btn-error btn-outline w-full sm:w-auto hover:bg-error/20 transition-colors"
+          (click)="cancelOrder()"
+          [disabled]="isActionLoading()"
+          aria-label="Hủy đơn hàng">
           <span *ngIf="isActionLoading()" class="loading loading-spinner loading-xs"></span>
           {{ isActionLoading() ? 'Đang hủy...' : 'Hủy đơn hàng' }}
         </button>
-        <!-- Nút cập nhật trạng thái (cho Farmer hoặc Admin) -->
-        <button *ngIf="canUpdateStatus()"
-                class="btn btn-sm btn-info btn-outline w-full sm:w-auto"
-                (click)="openUpdateStatusModal()">
+        <button
+          *ngIf="canUpdateStatus()"
+          class="btn btn-sm btn-info btn-outline w-full sm:w-auto hover:bg-info/20 transition-colors"
+          (click)="openUpdateStatusModal()"
+          aria-label="Cập nhật trạng thái đơn hàng">
           Cập nhật trạng thái
+        </button>
+
+        <button class="btn btn-sm btn-outline btn-info"
+                (click)="downloadInvoice()"
+                [disabled]="isDownloadingInvoice()">
+          <span *ngIf="isDownloadingInvoice()" class="loading loading-spinner loading-xs"></span>
+          Tải hóa đơn (PDF)
         </button>
       </div>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <!-- Cột 1: Thông tin người mua & người bán -->
-      <div class="md:col-span-1 space-y-4">
-        <div class="card bg-base-100 shadow-sm">
-          <div class="card-body p-4">
+      <div class="lg:col-span-1 space-y-4">
+        <div class="card bg-base-100 shadow-md rounded-lg hover:shadow-lg transition-shadow">
+          <div class="card-body p-5">
             <h3 class="card-title text-base font-semibold">Người mua</h3>
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-3 mt-2">
               <div class="avatar">
-                <div class="w-8 rounded-full">
-                  <img [src]="o.buyer?.avatarUrl || 'assets/images/default-avatar.png'" [alt]="o.buyer?.fullName">
+                <div class="w-12 rounded-full ring ring-primary ring-offset-2">
+                  <img [src]="o.buyer?.avatarUrl || 'assets/images/default-avatar.png'" [alt]="o.buyer?.fullName" />
                 </div>
               </div>
               <div>
@@ -55,18 +64,18 @@
             </div>
           </div>
         </div>
-        <div class="card bg-base-100 shadow-sm">
-          <div class="card-body p-4">
+        <div class="card bg-base-100 shadow-md rounded-lg hover:shadow-lg transition-shadow">
+          <div class="card-body p-5">
             <h3 class="card-title text-base font-semibold">Người bán</h3>
-            <div class="flex items-center gap-2">
-              <a [routerLink]="['/farmer', o.farmer?.farmerId]" class="avatar"> <!-- Link tới trang public của farmer -->
-                <div class="w-8 rounded-full">
-                  <img [src]="o.farmer?.farmerAvatarUrl || 'assets/images/default-avatar.png'" [alt]="o.farmer?.farmName || 'Farmer'">
+            <div class="flex items-center gap-3 mt-2">
+              <a [routerLink]="['/farmer', o.farmer?.farmerId]" class="avatar">
+                <div class="w-12 rounded-full ring ring-secondary ring-offset-2">
+                  <img [src]="o.farmer?.farmerAvatarUrl || 'assets/images/default-avatar.png'" [alt]="o.farmer?.farmName || 'Farmer'" />
                 </div>
               </a>
               <div>
-                <a [routerLink]="['/farmer', o.farmer?.farmerId]" class="link link-hover text-sm font-medium">{{ o.farmer?.farmName }}</a>
-                <p class="text-xs text-base-content/70">{{ o.farmer?.provinceCode }}</p> <!-- Cần map code tỉnh -->
+                <a [routerLink]="['/farmer', o.farmer?.farmerId]" class="text-sm font-medium hover:text-primary transition-colors">{{ o.farmer?.farmName }}</a>
+                <p class="text-xs text-base-content/70">{{ o.farmer?.provinceCode }}</p>
               </div>
             </div>
           </div>
@@ -74,25 +83,39 @@
       </div>
 
       <!-- Cột 2: Địa chỉ & Thanh toán -->
-      <div class="md:col-span-1 space-y-4">
-        <div class="card bg-base-100 shadow-sm">
-          <div class="card-body p-4">
+      <div class="lg:col-span-1 space-y-4">
+        <div class="card bg-base-100 shadow-md rounded-lg hover:shadow-lg transition-shadow">
+          <div class="card-body p-5">
             <h3 class="card-title text-base font-semibold">Địa chỉ giao hàng</h3>
-            <p class="text-sm font-medium">{{ o.shippingFullName }}</p>
-            <p class="text-sm">{{ o.shippingPhoneNumber }}</p>
-            <p class="text-sm">{{ o.shippingAddressDetail }}</p>
-            <p class="text-sm">{{ o.shippingWardCode }}, {{ o.shippingDistrictCode }}, {{ o.shippingProvinceCode }}</p> <!-- Cần map code -->
+            <div class="mt-2 space-y-1 text-sm">
+              <p class="font-medium">{{ o.shippingFullName }}</p>
+              <p>{{ o.shippingPhoneNumber }}</p>
+              <p>{{ o.shippingAddressDetail }}</p>
+              <p>{{ o.shippingWardCode }}, {{ o.shippingDistrictCode }}, {{ o.shippingProvinceCode }}</p>
+            </div>
           </div>
         </div>
-        <div class="card bg-base-100 shadow-sm">
-          <div class="card-body p-4">
-            <h3 class="card-title text-base font-semibold">Chi tiết thanh toán</h3>
-            <div class="space-y-1 text-sm">
-              <div class="flex justify-between"><span>Phương thức:</span> <span class="font-medium">{{ getPaymentMethodText(o.paymentMethod) }}</span></div>
+        <div class="card bg-base-100 shadow-md rounded-lg hover:shadow-lg transition-shadow">
+          <div class="card-body p-5">
+            <h3 class="card-title text-base font-semibold mb-3">Chi tiết thanh toán</h3>
+            <div class="space-y-2 text-sm">
+              <div class="flex justify-between">
+                <span>Phương thức:</span>
+                <span class="font-medium">{{ getPaymentMethodText(o.paymentMethod) }}</span>
+              </div>
               <div class="divider my-1"></div>
-              <div class="flex justify-between"><span>Tạm tính:</span> <span>{{ o.subTotal | formatBigDecimal:'1.0-0' }} đ</span></div>
-              <div class="flex justify-between"><span>Phí vận chuyển:</span> <span>{{ o.shippingFee | formatBigDecimal:'1.0-0' }} đ</span></div>
-              <div class="flex justify-between"><span>Giảm giá:</span> <span>- {{ o.discountAmount | formatBigDecimal:'1.0-0' }} đ</span></div>
+              <div class="flex justify-between">
+                <span>Tạm tính:</span>
+                <span>{{ o.subTotal | formatBigDecimal:'1.0-0' }} đ</span>
+              </div>
+              <div class="flex justify-between">
+                <span>Phí vận chuyển:</span>
+                <span>{{ o.shippingFee | formatBigDecimal:'1.0-0' }} đ</span>
+              </div>
+              <div class="flex justify-between">
+                <span>Giảm giá:</span>
+                <span class="text-success">- {{ o.discountAmount | formatBigDecimal:'1.0-0' }} đ</span>
+              </div>
               <div class="divider my-1"></div>
               <div class="flex justify-between font-bold text-base">
                 <span>Tổng cộng:</span>
@@ -101,11 +124,14 @@
             </div>
             <!-- Lịch sử giao dịch -->
             <div *ngIf="o.payments && o.payments.length > 0" class="mt-4 border-t pt-3">
-              <h4 class="text-xs font-semibold uppercase text-base-content/60 mb-1">Lịch sử giao dịch</h4>
-              <ul class="text-xs space-y-1">
-                <li *ngFor="let p of o.payments; trackBy: trackItemById">
-                  {{ p.createdAt | date:'HH:mm dd/MM/yy' }} - {{ p.paymentGateway }} - {{ p.amount | formatBigDecimal:'1.0-0' }}đ - {{ p.status }}
-                  <span *ngIf="p.transactionCode" class="opacity-70"> ({{ p.transactionCode }})</span>
+              <h4 class="text-xs font-semibold uppercase text-base-content/60 mb-2">Lịch sử giao dịch</h4>
+              <ul class="text-xs space-y-2">
+                <li *ngFor="let p of o.payments; trackBy: trackItemById" class="flex justify-between">
+                  <span>
+                    {{ p.createdAt | date:'HH:mm dd/MM/yy' }} - {{ p.paymentGateway }} - {{ p.status }}
+                    <span *ngIf="p.transactionCode" class="opacity-70">({{ p.transactionCode }})</span>
+                  </span>
+                  <span>{{ p.amount | formatBigDecimal:'1.0-0' }} đ</span>
                 </li>
               </ul>
             </div>
@@ -114,16 +140,25 @@
       </div>
 
       <!-- Cột 3: Chi tiết sản phẩm -->
-      <div class="md:col-span-1">
-        <div class="card bg-base-100 shadow-sm">
-          <div class="card-body p-4">
-            <h3 class="card-title text-base font-semibold mb-3">Sản phẩm trong đơn ({{o.orderItems.length}})</h3>
-            <div class="space-y-3 max-h-[60vh] overflow-y-auto pr-2"> <!-- Scroll nếu nhiều sản phẩm -->
-              <div *ngFor="let item of o.orderItems; trackBy: trackItemById" class="flex gap-3 border-b border-base-200 pb-3 last:border-b-0 last:pb-0">
-                <img [src]="item.product?.thumbnailUrl || 'assets/images/placeholder-image.png'" [alt]="item.product?.name" class="w-14 h-14 object-cover rounded flex-shrink-0">
-                <div class="flex-grow text-sm">
-                  <a [routerLink]="['/products', item.product?.slug]" class="link link-hover line-clamp-2 font-medium">{{ item.product?.name }}</a>
-                  <p class="text-xs text-base-content/60">SL: {{ item.quantity }} x {{ item.pricePerUnit | formatBigDecimal:'1.0-0' }} đ / {{ item.unit }}</p>
+      <div class="lg:col-span-1">
+        <div class="card bg-base-100 shadow-md rounded-lg hover:shadow-lg transition-shadow">
+          <div class="card-body p-5">
+            <h3 class="card-title text-base font-semibold mb-4">Sản phẩm trong đơn ({{ o.orderItems.length }})</h3>
+            <div class="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
+              <div *ngFor="let item of o.orderItems; trackBy: trackItemById" class="flex gap-3 border-b border-base-200 pb-3 last:border-b-0 last:pb-0 animate-slide-in">
+                <img
+                  [src]="item.product?.thumbnailUrl || 'assets/images/placeholder-image.png'"
+                  [alt]="item.product?.name"
+                  class="w-16 h-16 object-cover rounded-md flex-shrink-0" />
+                <div class="flex-grow">
+                  <a
+                    [routerLink]="['/products', item.product?.slug]"
+                    class="text-sm font-medium line-clamp-2 hover:text-primary transition-colors">
+                    {{ item.product?.name }}
+                  </a>
+                  <p class="text-xs text-base-content/60 mt-1">
+                    SL: {{ item.quantity }} x {{ item.pricePerUnit | formatBigDecimal:'1.0-0' }} đ / {{ item.unit }}
+                  </p>
                 </div>
                 <div class="text-sm font-semibold flex-shrink-0">{{ item.totalPrice | formatBigDecimal:'1.0-0' }} đ</div>
               </div>
@@ -131,48 +166,86 @@
           </div>
         </div>
       </div>
-
     </div>
   </div>
 
   <!-- Template Not Found -->
   <ng-template #notFound>
-    <div *ngIf="!isLoading()" class="text-center py-20">
+    <div *ngIf="!isLoading()" class="text-center py-20 animate-fade-in">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        class="h-16 w-16 text-base-content/30 mx-auto mb-4"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+        stroke-width="1">
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+      </svg>
       <h2 class="text-2xl font-bold mb-4">Không tìm thấy đơn hàng</h2>
       <p class="text-lg text-base-content/70 mb-6">Đơn hàng bạn tìm kiếm không tồn tại hoặc bạn không có quyền xem.</p>
-      <a routerLink="/user/orders" class="btn btn-primary">Xem lịch sử đơn hàng</a>
+      <a routerLink="/user/orders" class="btn btn-primary" aria-label="Xem lịch sử đơn hàng">Xem lịch sử đơn hàng</a>
     </div>
   </ng-template>
 
   <!-- Modal Cập nhật Trạng thái -->
-  <app-modal title="Cập nhật trạng thái Đơn hàng" [isOpen]="showStatusModal()" (closed)="closeStatusModal()" [showActions]="true" [hideDefaultCancel]="true">
-    <div *ngIf="order() as o">
-      <p class="mb-4 text-sm">Đơn hàng: <strong>#{{ o.orderCode }}</strong></p>
-      <p class="mb-2 text-sm">Trạng thái hiện tại: <span class="badge badge-sm" [ngClass]="getStatusClass(o.status)">{{ getStatusText(o.status) }}</span></p>
+  <app-modal
+    title="Cập nhật trạng thái Đơn hàng"
+    [isOpen]="showStatusModal()"
+    (closed)="closeStatusModal()"
+    [showActions]="true"
+    [hideDefaultCancel]="true">
+    <div *ngIf="order() as o" class="space-y-4 animate-fade-in">
+      <p class="text-sm">Đơn hàng: <strong>#{{ o.orderCode }}</strong></p>
+      <p class="text-sm">Trạng thái hiện tại: <span class="badge badge-sm" [ngClass]="getStatusClass(o.status)">{{ getStatusText(o.status) }}</span></p>
       <div class="form-control w-full">
-        <label class="label"><span class="label-text">Chọn trạng thái mới <span class="text-error">*</span></span></label>
-        <select class="select select-bordered w-full select-sm" [formControl]="newStatusControl"
-                [ngClass]="{'select-error': newStatusControl.invalid && newStatusControl.touched}">
+        <label class="label">
+          <span class="label-text font-medium">Chọn trạng thái mới <span class="text-error">*</span></span>
+        </label>
+        <select
+          class="select select-sm select-bordered w-full"
+          [formControl]="newStatusControl"
+          [ngClass]="{'select-error': newStatusControl.invalid && newStatusControl.touched}">
           <option [ngValue]="null" disabled>Chọn trạng thái</option>
-          <option *ngFor="let status of availableNextStatuses()" [value]="status"> <!-- Lặp qua các trạng thái hợp lệ -->
+          <option *ngFor="let status of availableNextStatuses()" [value]="status">
             {{ getStatusText(status) }}
           </option>
         </select>
-        <label class="label py-0 h-4" *ngIf="newStatusControl.invalid && newStatusControl.touched">
+        <label *ngIf="newStatusControl.invalid && newStatusControl.touched" class="label py-1">
           <span class="label-text-alt text-error text-xs">Vui lòng chọn trạng thái mới.</span>
         </label>
       </div>
-      <!-- Có thể thêm ô nhập ghi chú nếu OrderStatusUpdateRequest có trường notes -->
-      <!-- <textarea class="textarea textarea-bordered mt-3 h-20 text-sm" placeholder="Ghi chú cập nhật (tùy chọn)"></textarea> -->
       <app-alert *ngIf="statusUpdateError()" type="error" [message]="statusUpdateError()" class="mt-3"></app-alert>
     </div>
-    <div modal-actions>
-      <button class="btn btn-sm btn-ghost" (click)="closeStatusModal()">Hủy</button>
-      <button class="btn btn-sm btn-primary" (click)="saveNewStatus()" [disabled]="isActionLoading() || newStatusControl.invalid || newStatusControl.value === order()?.status">
+    <div modal-actions class="flex gap-2">
+      <button class="btn btn-sm btn-ghost" (click)="closeStatusModal()" aria-label="Hủy cập nhật trạng thái">Hủy</button>
+      <button
+        class="btn btn-sm btn-primary"
+        (click)="saveNewStatus()"
+        [disabled]="isActionLoading() || newStatusControl.invalid || newStatusControl.value === order()?.status"
+        aria-label="Xác nhận cập nhật trạng thái">
         <span *ngIf="isActionLoading()" class="loading loading-spinner loading-xs"></span>
         Xác nhận
       </button>
     </div>
   </app-modal>
-
 </div>
+
+<style>
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes slide-in {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .animate-fade-in {
+    animation: fade-in 0.3s ease-out;
+  }
+  .animate-slide-in {
+    animation: slide-in 0.3s ease-out;
+  }
+</style>

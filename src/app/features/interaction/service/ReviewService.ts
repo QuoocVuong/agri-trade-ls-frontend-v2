@@ -28,7 +28,7 @@ export class ReviewService {
       params = params.set('sort', sort);
     }
     // API public nên có thể không cần /public/ prefix
-    return this.http.get<PagedApiResponse<ReviewResponse>>(`${environment.apiUrl}/public/reviews/product/${productId}`, { params });
+    return this.http.get<PagedApiResponse<ReviewResponse>>(`${environment.apiUrl}/reviews/product/${productId}`, { params });
     // Hoặc dùng API chung nếu không có API public riêng:
     // params = params.set('status', ReviewStatus.APPROVED);
     // return this.http.get<PagedApiResponse<ReviewResponse>>(`${this.apiUrl}/product/${productId}`, { params });

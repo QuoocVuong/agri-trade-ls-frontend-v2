@@ -1,4 +1,6 @@
 // src/app/features/usermanagement/dto/response/BusinessProfileResponse.ts
+import {BusinessProfileRequest} from '../request/BusinessProfileRequest';
+
 export interface BusinessProfileResponse {
   userId: number;
   businessName: string;
@@ -10,6 +12,10 @@ export interface BusinessProfileResponse {
   districtCode: string | null; // Đã sửa tên ở backend mapper
   wardCode: string | null;     // Đã sửa tên ở backend mapper
   contactPerson: string | null;
+  companyName: string | null;
+  address: BusinessProfileRequest | null;
+  status : string | null;
+
   createdAt: string;
   updatedAt: string;
 }

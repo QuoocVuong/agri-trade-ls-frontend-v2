@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal, computed } from '@angular/core';
+import {Component, OnInit, inject, signal, computed, OnDestroy} from '@angular/core';
 import { CommonModule, DecimalPipe, DatePipe } from '@angular/common'; // Import Pipes
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ProductService } from '../../services/product.service';
@@ -19,7 +19,15 @@ import {finalize, takeUntil} from 'rxjs/operators';
 import {FormatBigDecimalPipe} from '../../../../shared/pipes/format-big-decimal.pipe';
 import {SafeHtmlPipe} from '../../../../shared/pipes/safe-html.pipe';
 import {ReviewResponse} from '../../../interaction/dto/response/ReviewResponse';
-import {ProductSummaryResponse} from '../../dto/response/ProductSummaryResponse'; // Import Forms
+import {ProductSummaryResponse} from '../../dto/response/ProductSummaryResponse';
+import {LocationService} from '../../../../core/services/location.service'; // Import Forms
+import {
+  trigger,
+  transition,
+  style,
+  animate
+} from '@angular/animations';
+import {ChatService} from '../../../interaction/service/ChatService';
 
 @Component({
   selector: 'app-product-detail',
@@ -39,8 +47,20 @@ import {ProductSummaryResponse} from '../../dto/response/ProductSummaryResponse'
     // Component form review
   ],
   templateUrl: './product-detail.component.html',
+  animations: [
+    trigger('fadeInOut', [
+      transition(':enter', [
+        style({ opacity: 0 }),
+        animate('300ms ease-in-out', style({ opacity: 1 }))
+      ]),
+      transition(':leave', [
+        animate('300ms ease-in-out', style({ opacity: 0 }))
+      ])
+    ])
+  ]
 })
-export class ProductDetailComponent implements OnInit {
+
+export class ProductDetailComponent implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
   private router = inject(Router); // Inject Router
   private productService = inject(ProductService);
@@ -50,7 +70,8 @@ export class ProductDetailComponent implements OnInit {
   private fb = inject(FormBuilder);
   private toastr = inject(ToastrService);
   private destroy$ = new Subject<void>();
-
+  private locationService = inject(LocationService);
+  private chatService = inject(ChatService);
   product = signal<ProductDetailResponse | null>(null);
   isLoading = signal(true);
   errorMessage = signal<string | null>(null);
@@ -60,6 +81,15 @@ export class ProductDetailComponent implements OnInit {
   isAddingToCart = signal(false);
   isTogglingFavorite = signal(false);
   isFavorite = signal(false); // Trạng thái yêu thích hiện tại
+  farmerProvinceName = signal<string | null>(null);
+
+  // *** THÊM COMPUTED SIGNAL KIỂM TRA SẢN PHẨM CỦA MÌNH ***
+  isMyProduct = computed(() => {
+    const currentUserId = this.authService.currentUser()?.id;
+    const farmerId = this.product()?.farmer?.farmerId;
+    return this.isAuthenticated() && currentUserId != null && farmerId != null && currentUserId === farmerId;
+  });
+  // *******************************************************
 
   // Form để nhập số lượng
   quantityForm = this.fb.group({
@@ -93,13 +123,28 @@ export class ProductDetailComponent implements OnInit {
   loadProduct(slug: string): void {
     this.isLoading.set(true);
     this.errorMessage.set(null);
-    this.productService.getPublicProductBySlug(slug).subscribe({
+    this.farmerProvinceName.set(null); // Reset tên tỉnh
+    this.productService.getPublicProductBySlug(slug)
+      .pipe(takeUntil(this.destroy$)) // <-- Hủy subscription khi component destroy
+      .subscribe({
       next: (response) => {
         if (response.success && response.data) {
           this.product.set(response.data);
           // Set ảnh default hoặc ảnh đầu tiên làm ảnh hiển thị lớn ban đầu
           const defaultImg = response.data.images?.find(img => img.isDefault);
           this.selectedImage.set(defaultImg?.imageUrl || response.data.images?.[0]?.imageUrl || null);
+
+          // *** Lấy tên tỉnh cho farmer ***
+          const farmerProvinceCode =response.data.farmer?.provinceCode;
+          if (farmerProvinceCode) {
+            this.locationService.findProvinceName(farmerProvinceCode)
+              .pipe(takeUntil(this.destroy$)) // Hủy cả subscription này
+              .subscribe(name => this.farmerProvinceName.set(name || `Mã ${farmerProvinceCode}`));
+          } else {
+            this.farmerProvinceName.set('Không xác định');
+          }
+          // ******************************
+
           // Kiểm tra trạng thái yêu thích nếu user đã đăng nhập
           if(this.isAuthenticated() && response.data.id) {
             this.checkFavoriteStatus(response.data.id);
@@ -250,6 +295,14 @@ export class ProductDetailComponent implements OnInit {
       });
   }
 
+
+
+  // Hàm mới để lấy tên hiển thị của farmer
+  getFarmerDisplayName(farmer: ProductDetailResponse['farmer']): string {
+    if (!farmer) return 'Nông dân';
+    return farmer.farmName || 'Nông dân'; // Ưu tiên farmName, rồi đến fullName
+  }
+
   // Hàm xử lý khi review được gửi thành công từ ReviewFormComponent
   onReviewSubmitted(newReview: ReviewResponse): void {
     console.log('New review submitted:', newReview);
@@ -263,6 +316,47 @@ export class ProductDetailComponent implements OnInit {
     this.toastr.error(message);
     console.error(err);
   }
+
+  // *** THÊM HÀM BẮT ĐẦU CHAT ***
+  startChatWithFarmer(): void {
+    const farmerId = this.product()?.farmer?.farmerId;
+    if (!this.isAuthenticated()) {
+      this.toastr.info('Vui lòng đăng nhập để nhắn tin.');
+      this.router.navigate(['/auth/login'], { queryParams: { returnUrl: this.router.url } });
+      return;
+    }
+    if (!farmerId) {
+      this.toastr.error('Không tìm thấy thông tin người bán.');
+      return;
+    }
+    if (this.isMyProduct()) {
+      this.toastr.info('Bạn không thể nhắn tin cho chính mình.');
+      return;
+    }
+
+    // Gọi API để lấy hoặc tạo phòng chat
+    // API này nên trả về ID của phòng chat
+    this.chatService.getOrCreateChatRoom(farmerId).subscribe({
+      next: (res) => {
+        if (res.success && res.data?.id) {
+          const roomId = res.data.id;
+          // Điều hướng đến trang chat và truyền ID phòng chat
+          this.router.navigate(['/chat'], { queryParams: { roomId: roomId } });
+          // Hoặc nếu trang chat của bạn dùng route param:
+          // this.router.navigate(['/chat', roomId]);
+        } else {
+          this.toastr.error(res.message || 'Không thể bắt đầu cuộc trò chuyện.');
+        }
+      },
+      error: (err) => {
+        this.toastr.error(err.message || 'Lỗi khi bắt đầu cuộc trò chuyện.');
+        console.error(err);
+      }
+    });
+  }
+  // ****************************
+
+
 
   // Trong ProductDetailComponent.ts
   trackRelatedProductById(index: number, item: ProductSummaryResponse): number {

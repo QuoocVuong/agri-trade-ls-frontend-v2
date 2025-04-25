@@ -18,6 +18,7 @@ import {finalize, takeUntil} from 'rxjs/operators';
 import {log} from '@angular-devkit/build-angular/src/builders/ssr-dev-server';
 import {FormatBigDecimalPipe} from '../../../../shared/pipes/format-big-decimal.pipe';
 import {Subject} from 'rxjs';
+import {AuthService} from '../../../../core/services/auth.service';
 
 @Component({
   selector: 'app-checkout',
@@ -34,6 +35,7 @@ export class CheckoutComponent implements OnInit {
   private toastr = inject(ToastrService);
   private cdr = inject(ChangeDetectorRef);
   private destroy$ = new Subject<void>();
+  private authService = inject(AuthService);
 
   checkoutForm!: FormGroup;
   addresses = signal<Address[]>([]);
@@ -48,6 +50,9 @@ export class CheckoutComponent implements OnInit {
   // Lấy danh sách phương thức thanh toán hợp lệ (ví dụ lọc bỏ INVOICE)
   paymentMethods = Object.values(PaymentMethod).filter(m => m !== PaymentMethod.INVOICE);
   getPaymentMethodText = getPaymentMethodText;
+
+
+  isBusinessBuyer = this.authService.hasRoleSignal('ROLE_BUSINESS_BUYER');
 
   // Tính toán tạm thời (cần logic chính xác hơn)
   // TODO: Implement accurate shipping fee calculation
@@ -73,7 +78,8 @@ export class CheckoutComponent implements OnInit {
     this.checkoutForm = this.fb.group({
       shippingAddressId: [null, Validators.required],
       paymentMethod: [PaymentMethod.COD, Validators.required],
-      notes: ['', Validators.maxLength(500)]
+      notes: ['', Validators.maxLength(500)],
+      purchaseOrderNumber: ['', Validators.maxLength(50)]
     });
   }
 
@@ -158,10 +164,13 @@ export class CheckoutComponent implements OnInit {
     this.isLoadingCheckout.set(true);
     this.errorMessage.set(null);
 
+    const formValue = this.checkoutForm.value;
+
     const requestData: CheckoutRequest = {
-      shippingAddressId: this.checkoutForm.value.shippingAddressId,
-      paymentMethod: this.checkoutForm.value.paymentMethod,
-      notes: this.checkoutForm.value.notes || null
+      shippingAddressId: formValue.shippingAddressId,
+      paymentMethod: formValue.paymentMethod,
+      notes: formValue.notes || null,
+      purchaseOrderNumber: this.isBusinessBuyer() ? (formValue.purchaseOrderNumber || null) : null
     };
 
     this.orderService.checkout(requestData)

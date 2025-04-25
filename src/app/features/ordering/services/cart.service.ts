@@ -1,6 +1,6 @@
 import {Injectable, signal, inject, computed, effect} from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, Observable, tap, finalize } from 'rxjs';
+import {BehaviorSubject, Observable, tap, finalize, of} from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { ApiResponse } from '../../../core/models/api-response.model';
 import { CartResponse } from '../dto/response/CartResponse';
@@ -8,7 +8,8 @@ import { CartItemResponse } from '../dto/response/CartItemResponse';
 import { CartItemRequest } from '../dto/request/CartItemRequest';
 import { CartItemUpdateRequest } from '../dto/request/CartItemUpdateRequest';
 import { AuthService } from '../../../core/services/auth.service';
-import BigDecimal from 'js-big-decimal'; // Import AuthService
+import BigDecimal from 'js-big-decimal';
+import {catchError} from 'rxjs/operators'; // Import AuthService
 
 @Injectable({
   providedIn: 'root' // Cung cấp ở root để dễ dàng truy cập từ header/các nơi khác
@@ -22,6 +23,13 @@ export class CartService {
   // Khởi tạo với giá trị null hoặc một trạng thái mặc định
   private cartSubject = new BehaviorSubject<CartResponse | null>(null);
   public cart$ = this.cartSubject.asObservable(); // Observable cho các component theo dõi
+
+  // Signal chứa thông tin giỏ hàng đầy đủ
+  private cartState = signal<CartResponse | null>(null);
+  // Signal chỉ chứa số lượng item (để header dùng)
+  public readonly totalItems = computed(() => this.cartState()?.totalItems ?? 0); // Tính toán từ cartState
+  // Public readonly signal cho giỏ hàng đầy đủ
+  public readonly currentCart = this.cartState.asReadonly();
 
   // Signal cho trạng thái loading của các thao tác giỏ hàng
   public isLoading = signal(false);
@@ -46,7 +54,7 @@ export class CartService {
   }
 
   // Signal tính toán tổng số lượng item trong giỏ
-  public totalItems = computed(() => this.cartSubject.value?.totalItems ?? 0);
+  //public totalItems = computed(() => this.cartSubject.value?.totalItems ?? 0);
 
   // Tải giỏ hàng từ API
   loadCart(): Observable<ApiResponse<CartResponse>> {
@@ -55,13 +63,19 @@ export class CartService {
       tap(response => {
         if (response.success && response.data) {
           this.cartSubject.next(response.data); // Cập nhật state
+          this.cartState.set(response.data);
         } else {
           this.cartSubject.next(null); // Xóa state nếu lỗi hoặc không có data
           console.error("Failed to load cart:", response.message);
+          this.cartState.set({ items: [], subTotal: 0, totalItems: 0 }); // Set giỏ hàng rỗng nếu lỗi hoặc không có data
         }
       }),
+      catchError(err => {
+        console.error("Error loading cart:", err);
+        this.cartState.set({ items: [], subTotal: 0, totalItems: 0 }); // Set giỏ hàng rỗng khi lỗi
+        return of(err); // Trả về lỗi để component khác có thể xử lý nếu cần
+      }),
       finalize(() => this.isLoading.set(false))
-      // Không cần catchError ở đây, để component hoặc interceptor xử lý
     );
   }
 
@@ -111,7 +125,10 @@ export class CartService {
       tap(response => {
         if (response.success) {
           this.cartSubject.next({ items: [], subTotal: new BigDecimal("0"), totalItems: 0 }); // Cập nhật state ngay lập tức
+          this.cartState.set({ items: [], subTotal: 0, totalItems: 0 }); // Cập nhật state ngay lập tức
         }
+
+
       }),
       finalize(() => this.isLoading.set(false))
     );

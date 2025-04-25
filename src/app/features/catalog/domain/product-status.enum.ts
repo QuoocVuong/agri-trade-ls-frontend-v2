@@ -11,7 +11,7 @@ export enum ProductStatus {
 export function getProductStatusText(status: ProductStatus | string | undefined | null): string {
   switch (status) {
     case ProductStatus.DRAFT: return 'Bản nháp';
-    case ProductStatus.PENDING_APPROVAL: return 'Chờ duyệt';
+    case ProductStatus.PENDING_APPROVAL: return 'Gửi duyệt';
     case ProductStatus.PUBLISHED: return 'Đang bán';
     case ProductStatus.UNPUBLISHED: return 'Tạm ẩn';
     case ProductStatus.REJECTED: return 'Bị từ chối';

@@ -1,185 +1,288 @@
-<div class="container mx-auto px-4 py-8 max-w-4xl"> <!-- Tăng max width -->
-  <h1 class="text-3xl font-bold mb-6">{{ isEditMode() ? 'Chỉnh sửa Sản phẩm' : 'Thêm Sản phẩm mới' }}</h1>
+<div class="container mx-auto px-4 py-6 md:py-8 lg:py-10 max-w-5xl">
+  <!-- Header -->
+  <h1 class="text-2xl md:text-3xl font-bold mb-6">
+    {{ isEditMode() ? 'Chỉnh sửa Sản phẩm' : 'Thêm Sản phẩm mới' }}
+  </h1>
 
   <!-- Loading Data -->
-  <div *ngIf="isFetchingData()" class="text-center py-10"><app-loading-spinner></app-loading-spinner></div>
+  <div *ngIf="isFetchingData()" class="flex justify-center py-12">
+    <app-loading-spinner size="lg"></app-loading-spinner>
+  </div>
   <!-- Error Loading Data -->
-  <app-alert *ngIf="errorMessage() && isFetchingData()" type="error" [message]="errorMessage()"></app-alert>
+  <app-alert *ngIf="errorMessage() && isFetchingData()" type="error" [message]="errorMessage()" class="mb-6"></app-alert>
 
-  <form *ngIf="!isFetchingData()" [formGroup]="productForm" (ngSubmit)="onSubmit()">
-    <div class="card bg-base-100 shadow-xl">
-      <div class="card-body space-y-4">
-        <!-- Error Message khi submit -->
-        <app-alert *ngIf="errorMessage() && !isLoading()" type="error" [message]="errorMessage()"></app-alert>
+  <form *ngIf="!isFetchingData()" [formGroup]="productForm" (ngSubmit)="onSubmit()" class="card bg-base-100 shadow-xl">
+    <div class="card-body space-y-6">
+      <!-- Error Message khi submit -->
+      <app-alert *ngIf="errorMessage() && !isLoading()" type="error" [message]="errorMessage()" class="mb-4"></app-alert>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <!-- Product Name -->
-          <div class="form-control w-full">
-            <label class="label"><span class="label-text">Tên sản phẩm <span class="text-error">*</span></span></label>
-            <input type="text" placeholder="Nhập tên sản phẩm" class="input input-bordered w-full" formControlName="name" />
-            <!-- Validation -->
-          </div>
-          <!-- Category -->
-          <div class="form-control w-full">
-            <label class="label"><span class="label-text">Danh mục <span class="text-error">*</span></span></label>
-            <select class="select select-bordered w-full" formControlName="categoryId">
-              <option [ngValue]="null" disabled>Chọn danh mục</option>
-              <option *ngFor="let cat of categories()" [value]="cat.id">{{ cat.name }}</option>
-            </select>
-            <!-- Validation -->
-          </div>
+      <!-- Product Name & Category -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="form-control">
+          <label class="label">
+            <span class="label-text font-medium">Tên sản phẩm <span class="text-error">*</span></span>
+          </label>
+          <input
+            type="text"
+            placeholder="Nhập tên sản phẩm"
+            class="input input-bordered w-full"
+            formControlName="name"
+            [ngClass]="{'input-error': productForm.controls['name'].invalid && productForm.controls['name'].touched}" />
+          <label *ngIf="productForm.controls['name'].invalid && productForm.controls['name'].touched" class="label py-1">
+            <span class="label-text-alt text-error text-xs">Vui lòng nhập tên sản phẩm.</span>
+          </label>
         </div>
-
-        <!-- Description -->
-        <div class="form-control w-full">
-          <label class="label"><span class="label-text">Mô tả chi tiết</span></label>
-          <textarea class="textarea textarea-bordered h-32" placeholder="Mô tả nguồn gốc, đặc điểm, cách sử dụng..." formControlName="description"></textarea>
-          <!-- TODO: Tích hợp Rich Text Editor nếu cần -->
-        </div>
-
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <!-- Unit (B2C) -->
-          <div class="form-control w-full">
-            <label class="label"><span class="label-text">Đơn vị bán lẻ <span class="text-error">*</span></span></label>
-            <input type="text" placeholder="Ví dụ: kg, bó, quả, túi 500g" class="input input-bordered w-full" formControlName="unit" />
-            <!-- Validation -->
-          </div>
-          <!-- Price (B2C) -->
-          <div class="form-control w-full">
-            <label class="label"><span class="label-text">Giá bán lẻ (VNĐ) <span class="text-error">*</span></span></label>
-            <input type="number" placeholder="Nhập giá" class="input input-bordered w-full" formControlName="price" min="0"/>
-            <!-- Validation -->
-          </div>
-          <!-- Stock Quantity -->
-          <div class="form-control w-full">
-            <label class="label"><span class="label-text">Số lượng tồn kho <span class="text-error">*</span></span></label>
-            <input type="number" placeholder="Nhập số lượng" class="input input-bordered w-full" formControlName="stockQuantity" min="0"/>
-            <!-- Validation -->
-          </div>
-        </div>
-
-        <!-- Status (Chỉ cho phép chọn Draft/Unpublished) -->
-        <div class="form-control w-full max-w-xs">
-          <label class="label"><span class="label-text">Trạng thái</span></label>
-          <select class="select select-bordered w-full" formControlName="status">
-            <option *ngFor="let status of availableStatuses" [value]="status">{{ getStatusText(status) }}</option>
-            <!-- Hiển thị trạng thái hiện tại nếu là Published/Pending/Rejected nhưng không cho chọn -->
-            <option *ngIf="productForm.value.status && !availableStatuses.includes(productForm.value.status)" [value]="productForm.value.status" disabled>
-              {{ getStatusText(productForm.value.status) }} (Không thể thay đổi)
-            </option>
+        <div class="form-control">
+          <label class="label">
+            <span class="label-text font-medium">Danh mục <span class="text-error">*</span></span>
+          </label>
+          <select
+            class="select select-bordered w-full"
+            formControlName="categoryId"
+            [ngClass]="{'select-error': productForm.controls['categoryId'].invalid && productForm.controls['categoryId'].touched}">
+            <option [ngValue]="null" disabled>Chọn danh mục</option>
+            <option *ngFor="let cat of categories()" [value]="cat.id">{{ cat.name }}</option>
           </select>
+          <label *ngIf="productForm.controls['categoryId'].invalid && productForm.controls['categoryId'].touched" class="label py-1">
+            <span class="label-text-alt text-error text-xs">Vui lòng chọn danh mục.</span>
+          </label>
         </div>
-
-
-        <!-- B2B Options -->
-        <div class="mt-4 pt-4 border-t border-base-300">
-          <div class="form-control w-fit"> <!-- w-fit để checkbox không chiếm full width -->
-            <label class="label cursor-pointer justify-start gap-2 p-0">
-              <input type="checkbox" class="checkbox checkbox-primary" formControlName="isB2bAvailable" />
-              <span class="label-text font-medium">Cho phép bán cho doanh nghiệp (B2B)</span>
-            </label>
-          </div>
-
-          <div *ngIf="productForm.controls['isB2bAvailable'].value" class="mt-4 space-y-4 pl-6 border-l-2 border-primary/50">
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div class="form-control w-full">
-                <label class="label"><span class="label-text">Đơn vị B2B</span></label>
-                <input type="text" placeholder="Ví dụ: Thùng, Tạ, Kg" class="input input-bordered w-full" formControlName="b2bUnit" />
-                <!-- Validation (required nếu isB2bAvailable=true) -->
-              </div>
-              <div class="form-control w-full">
-                <label class="label"><span class="label-text">SL B2B tối thiểu</span></label>
-                <input type="number" placeholder="Nhập số lượng" class="input input-bordered w-full" formControlName="minB2bQuantity" min="1"/>
-                <!-- Validation (required nếu isB2bAvailable=true) -->
-              </div>
-              <div class="form-control w-full">
-                <label class="label"><span class="label-text">Giá B2B cơ bản (VNĐ)</span></label>
-                <input type="number" placeholder="Giá cho 1 đơn vị B2B" class="input input-bordered w-full" formControlName="b2bBasePrice" min="0"/>
-                <!-- Validation -->
-              </div>
-            </div>
-            <!-- Pricing Tiers -->
-            <div>
-              <h4 class="text-sm font-semibold mb-2">Bậc giá B2B (Tùy chọn)</h4>
-              <div formArrayName="pricingTiers" class="space-y-2">
-                <div *ngFor="let tier of pricingTiersArray.controls; let i=index" [formGroupName]="i" class="flex items-center gap-2 p-2 border rounded-md bg-base-200">
-                  <div class="form-control flex-grow">
-                    <label class="label py-0"><span class="label-text text-xs">Số lượng từ</span></label>
-                    <input type="number" class="input input-xs input-bordered w-full" formControlName="minQuantity" min="1"/>
-                  </div>
-                  <div class="form-control flex-grow">
-                    <label class="label py-0"><span class="label-text text-xs">Đơn giá (VNĐ)</span></label>
-                    <input type="number" class="input input-xs input-bordered w-full" formControlName="pricePerUnit" min="0"/>
-                  </div>
-                  <button type="button" class="btn btn-xs btn-ghost text-error mt-4" (click)="removePricingTierControl(i)">✕</button>
-                </div>
-              </div>
-              <button type="button" class="btn btn-xs btn-outline btn-secondary mt-2" (click)="addPricingTierControl()">+ Thêm bậc giá</button>
-            </div>
-          </div>
-        </div>
-
-
-        <!-- Image Management -->
-        <div class="mt-4 pt-4 border-t border-base-300">
-          <h3 class="text-lg font-semibold mb-2">Hình ảnh sản phẩm <span class="text-error">*</span></h3>
-          <div class="mb-4">
-            <app-file-uploader (fileUploaded)="onImageUploaded($event)"></app-file-uploader>
-            <p class="text-xs text-base-content/60 mt-1">Thêm ảnh cho sản phẩm (kéo thả để sắp xếp).</p>
-          </div>
-
-          <!-- Image List with Drag & Drop -->
-          <div cdkDropList class="space-y-3 image-list" formArrayName="images" (cdkDropListDropped)="dropImage($event)">
-            <!-- Sử dụng trackImageByIndex -->
-            <div *ngFor="let imgCtrl of imagesArray.controls; let i=index; trackBy: trackImageByIndex"
-                 [formGroupName]="i" cdkDrag
-                 class="flex flex-col sm:flex-row items-start sm:items-center gap-3 p-3 border rounded-md bg-base-200 cursor-move shadow-sm">
-
-              <div cdkDragHandle class="text-base-content/50 cursor-grab hidden sm:block self-center px-1"> <!-- Drag Handle -->
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" /></svg>
-              </div>
-
-              <img [src]="imgCtrl.get('imageUrl')?.value || 'assets/images/placeholder-image.png'" alt="Preview" class="w-16 h-16 object-cover rounded flex-shrink-0">
-
-              <div class="flex-grow space-y-2">
-                <!-- Input URL có thể ẩn hoặc readonly nếu chỉ dùng upload -->
-                <input type="text" placeholder="URL hình ảnh" class="input input-xs input-bordered w-full" formControlName="imageUrl" readonly title="{{imgCtrl.get('imageUrl')?.value}}" />
-                <div class="flex items-center gap-4 flex-wrap">
-                  <div class="form-control">
-                    <label class="label cursor-pointer justify-start gap-1 p-0">
-                      <!-- Sử dụng name động để radio button hoạt động đúng trong *ngFor -->
-                      <input type="radio" [name]="'isDefaultImageRadio-' + productId()" class="radio radio-primary radio-xs"
-                             [checked]="imgCtrl.get('isDefault')?.value"
-                             (change)="setDefaultImage(i)" />
-                      <span class="label-text text-xs">Ảnh mặc định</span>
-                    </label>
-                  </div>
-                  <!-- Input thứ tự ẩn đi -->
-                  <input type="hidden" formControlName="displayOrder"/>
-                  <span class="text-xs text-base-content/50">(Thứ tự: {{ imgCtrl.get('displayOrder')?.value }})</span>
-                </div>
-              </div>
-              <button type="button" class="btn btn-xs btn-ghost text-error" (click)="removeImageControl(i)" title="Xóa ảnh này">✕</button>
-            </div>
-            <div *ngIf="imagesArray.length === 0" class="text-center text-sm text-warning p-4 border border-dashed rounded-md">
-              Vui lòng thêm ít nhất một hình ảnh cho sản phẩm.
-            </div>
-          </div>
-          <!-- Nút thêm URL ảnh thủ công (nếu không có upload) -->
-          <button type="button" class="btn btn-xs btn-outline btn-secondary mt-2" (click)="addImageControl()">+ Thêm URL ảnh</button>
-        </div>
-
-
-      </div> <!-- End Card Body -->
-
-      <div class="card-actions justify-end p-4 border-t border-base-300">
-        <a routerLink="/farmer/products" class="btn btn-ghost">Hủy</a>
-        <button type="submit" class="btn btn-primary" [disabled]="isLoading() || productForm.invalid">
-          <span *ngIf="isLoading()" class="loading loading-spinner loading-xs"></span>
-          {{ isLoading() ? 'Đang lưu...' : (isEditMode() ? 'Lưu thay đổi' : 'Thêm sản phẩm') }}
-        </button>
       </div>
 
-    </div> <!-- End Card -->
+      <!-- Description -->
+      <div class="form-control">
+        <label class="label">
+          <span class="label-text font-medium">Mô tả chi tiết</span>
+        </label>
+        <textarea
+          class="textarea textarea-bordered h-32"
+          placeholder="Mô tả nguồn gốc, đặc điểm, cách sử dụng..."
+          formControlName="description"></textarea>
+      </div>
+
+      <!-- Unit, Price, Stock -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div class="form-control">
+          <label class="label">
+            <span class="label-text font-medium">Đơn vị bán lẻ <span class="text-error">*</span></span>
+          </label>
+          <input
+            type="text"
+            placeholder="Ví dụ: kg, bó, quả, túi 500g"
+            class="input input-bordered w-full"
+            formControlName="unit"
+            [ngClass]="{'input-error': productForm.controls['unit'].invalid && productForm.controls['unit'].touched}" />
+          <label *ngIf="productForm.controls['unit'].invalid && productForm.controls['unit'].touched" class="label py-1">
+            <span class="label-text-alt text-error text-xs">Vui lòng nhập đơn vị bán lẻ.</span>
+          </label>
+        </div>
+        <div class="form-control">
+          <label class="label">
+            <span class="label-text font-medium">Giá bán lẻ (VNĐ) <span class="text-error">*</span></span>
+          </label>
+          <input
+            type="number"
+            placeholder="Nhập giá"
+            class="input input-bordered w-full"
+            formControlName="price"
+            min="0"
+            [ngClass]="{'input-error': productForm.controls['price'].invalid && productForm.controls['price'].touched}" />
+          <label *ngIf="productForm.controls['price'].invalid && productForm.controls['price'].touched" class="label py-1">
+            <span class="label-text-alt text-error text-xs">Vui lòng nhập giá hợp lệ.</span>
+          </label>
+        </div>
+        <div class="form-control">
+          <label class="label">
+            <span class="label-text font-medium">Số lượng tồn kho <span class="text-error">*</span></span>
+          </label>
+          <input
+            type="number"
+            placeholder="Nhập số lượng"
+            class="input input-bordered w-full"
+            formControlName="stockQuantity"
+            min="0"
+            [ngClass]="{'input-error': productForm.controls['stockQuantity'].invalid && productForm.controls['stockQuantity'].touched}" />
+          <label *ngIf="productForm.controls['stockQuantity'].invalid && productForm.controls['stockQuantity'].touched" class="label py-1">
+            <span class="label-text-alt text-error text-xs">Vui lòng nhập số lượng tồn kho.</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Status -->
+      <div class="form-control w-full max-w-xs">
+        <label class="label">
+          <span class="label-text font-medium">Trạng thái <span class="text-error" *ngIf="!isEditMode()">*</span></span>
+        </label>
+        <select
+          class="select select-bordered w-full"
+          formControlName="status"
+          [ngClass]="{'select-error': productForm.controls['status'].invalid && productForm.controls['status'].touched}">
+          <option [ngValue]="null" disabled selected>Chọn trạng thái</option>
+          <option *ngFor="let status of availableStatuses" [value]="status">{{ getStatusText(status) }}</option>
+          <option
+            *ngIf="isEditMode() && productForm.value.status && !availableStatuses.includes(productForm.value.status)"
+            [value]="productForm.value.status"
+            disabled>
+            {{ getStatusText(productForm.value.status) }} (Không thể thay đổi)
+          </option>
+        </select>
+        <label *ngIf="productForm.controls['status'].invalid && productForm.controls['status'].touched" class="label py-1">
+          <span class="label-text-alt text-error text-xs">Vui lòng chọn trạng thái.</span>
+        </label>
+      </div>
+
+      <!-- B2B Options -->
+      <div class="pt-4 border-t border-base-300">
+        <div class="form-control w-fit">
+          <label class="label cursor-pointer justify-start gap-2 p-0">
+            <input type="checkbox" class="checkbox checkbox-primary" formControlName="isB2bAvailable" />
+            <span class="label-text font-medium">Cho phép bán cho doanh nghiệp (B2B)</span>
+          </label>
+        </div>
+        <div *ngIf="productForm.controls['isB2bAvailable'].value" class="mt-4 space-y-4 pl-6 border-l-2 border-base-300">
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div class="form-control">
+              <label class="label">
+                <span class="label-text font-medium">Đơn vị B2B <span class="text-error">*</span></span>
+              </label>
+              <input
+                type="text"
+                placeholder="Ví dụ: Thùng, Tạ, Kg"
+                class="input input-bordered w-full"
+                formControlName="b2bUnit"
+                [ngClass]="{'input-error': productForm.controls['b2bUnit'].invalid && productForm.controls['b2bUnit'].touched}" />
+              <label *ngIf="productForm.controls['b2bUnit'].invalid && productForm.controls['b2bUnit'].touched" class="label py-1">
+                <span class="label-text-alt text-error text-xs">Vui lòng nhập đơn vị B2B.</span>
+              </label>
+            </div>
+            <div class="form-control">
+              <label class="label">
+                <span class="label-text font-medium">SL B2B tối thiểu <span class="text-error">*</span></span>
+              </label>
+              <input
+                type="number"
+                placeholder="Nhập số lượng"
+                class="input input-bordered w-full"
+                formControlName="minB2bQuantity"
+                min="1"
+                [ngClass]="{'input-error': productForm.controls['minB2bQuantity'].invalid && productForm.controls['minB2bQuantity'].touched}" />
+              <label *ngIf="productForm.controls['minB2bQuantity'].invalid && productForm.controls['minB2bQuantity'].touched" class="label py-1">
+                <span class="label-text-alt text-error text-xs">Vui lòng nhập số lượng tối thiểu.</span>
+              </label>
+            </div>
+            <div class="form-control">
+              <label class="label">
+                <span class="label-text font-medium">Giá B2B cơ bản (VNĐ) <span class="text-error">*</span></span>
+              </label>
+              <input
+                type="number"
+                placeholder="Giá cho 1 đơn vị B2B"
+                class="input input-bordered w-full"
+                formControlName="b2bBasePrice"
+                min="0"
+                [ngClass]="{'input-error': productForm.controls['b2bBasePrice'].invalid && productForm.controls['b2bBasePrice'].touched}" />
+              <label *ngIf="productForm.controls['b2bBasePrice'].invalid && productForm.controls['b2bBasePrice'].touched" class="label py-1">
+                <span class="label-text-alt text-error text-xs">Vui lòng nhập giá B2B.</span>
+              </label>
+            </div>
+          </div>
+          <!-- Pricing Tiers -->
+          <div>
+            <h4 class="text-sm font-semibold mb-2">Bậc giá B2B (Tùy chọn)</h4>
+            <div formArrayName="pricingTiers" class="space-y-2">
+              <div *ngFor="let tier of pricingTiersArray.controls; let i=index" [formGroupName]="i" class="flex items-center gap-2 p-2 border rounded-md bg-base-200">
+                <div class="form-control flex-grow">
+                  <label class="label py-0"><span class="label-text text-xs">Số lượng từ</span></label>
+                  <input
+                    type="number"
+                    class="input input-sm input-bordered w-full"
+                    formControlName="minQuantity"
+                    min="1"
+                    [ngClass]="{'input-error': tier.get('minQuantity')?.invalid && tier.get('minQuantity')?.touched}" />
+                </div>
+                <div class="form-control flex-grow">
+                  <label class="label py-0"><span class="label-text text-xs">Đơn giá (VNĐ)</span></label>
+                  <input
+                    type="number"
+                    class="input input-sm input-bordered w-full"
+                    formControlName="pricePerUnit"
+                    min="0"
+                    [ngClass]="{'input-error': tier.get('pricePerUnit')?.invalid && tier.get('pricePerUnit')?.touched}" />
+                </div>
+                <button type="button" class="btn btn-sm btn-ghost text-error mt-4" (click)="removePricingTierControl(i)">✕</button>
+              </div>
+            </div>
+            <button type="button" class="btn btn-sm btn-outline btn-secondary mt-2" (click)="addPricingTierControl()">+ Thêm bậc giá</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Image Management -->
+      <div class="pt-4 border-t border-base-300">
+        <h3 class="text-lg font-semibold mb-2">Hình ảnh sản phẩm <span class="text-error">*</span></h3>
+        <div class="mb-4">
+          <app-file-uploader (fileUploaded)="onImageUploaded($event)"></app-file-uploader>
+          <p class="text-xs text-base-content/60 mt-1">Thêm ảnh cho sản phẩm (kéo thả để sắp xếp).</p>
+        </div>
+        <div cdkDropList class="space-y-3" formArrayName="images" (cdkDropListDropped)="dropImage($event)">
+          <div
+            *ngFor="let imgCtrl of imagesArray.controls; let i=index; trackBy: trackImageByIndex"
+            [formGroupName]="i"
+            cdkDrag
+            class="flex items-center gap-3 p-3 border rounded-md bg-base-200 cursor-move shadow-sm hover:shadow-md transition-shadow">
+            <div cdkDragHandle class="text-base-content/50 cursor-grab px-1 hidden sm:block">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+              </svg>
+            </div>
+            <img
+              [src]="imgCtrl.get('imageUrl')?.value || 'assets/images/placeholder-image.png'"
+              alt="Preview"
+              class="w-16 h-16 object-cover rounded flex-shrink-0" />
+            <div class="flex-grow space-y-2">
+              <input
+                type="text"
+                placeholder="URL hình ảnh"
+                class="input input-sm input-bordered w-full"
+                formControlName="imageUrl"
+                readonly
+                title="{{imgCtrl.get('imageUrl')?.value}}" />
+              <div class="flex items-center gap-4 flex-wrap">
+                <div class="form-control">
+                  <label class="label cursor-pointer justify-start gap-1 p-0">
+                    <input
+                      type="radio"
+                      [name]="'isDefaultImageRadio-' + productId()"
+                      class="radio radio-primary radio-xs"
+                      [checked]="imgCtrl.get('isDefault')?.value"
+                      (change)="setDefaultImage(i)" />
+                    <span class="label-text text-xs">Ảnh mặc định</span>
+                  </label>
+                </div>
+                <input type="hidden" formControlName="displayOrder" />
+                <span class="text-xs text-base-content/50">(Thứ tự: {{ imgCtrl.get('displayOrder')?.value }})</span>
+              </div>
+            </div>
+            <button type="button" class="btn btn-sm btn-ghost text-error" (click)="removeImageControl(i)" title="Xóa ảnh này">✕</button>
+          </div>
+          <div *ngIf="imagesArray.length === 0" class="text-center text-sm text-warning p-4 border border-dashed rounded-md">
+            Vui lòng thêm ít nhất một hình ảnh cho sản phẩm.
+          </div>
+        </div>
+        <button type="button" class="btn btn-sm btn-outline btn-secondary mt-2" (click)="addImageControl()">+ Thêm URL ảnh</button>
+      </div>
+    </div>
+
+    <!-- Form Actions -->
+    <div class="card-actions justify-end p-4 border-t border-base-300">
+      <a routerLink="/farmer/products" class="btn btn-ghost">Hủy</a>
+      <button
+        type="submit"
+        class="btn btn-primary"
+        [disabled]="isLoading() || productForm.invalid">
+        <span *ngIf="isLoading()" class="loading loading-spinner loading-xs"></span>
+        {{ isLoading() ? 'Đang lưu...' : (isEditMode() ? 'Lưu thay đổi' : 'Thêm sản phẩm') }}
+      </button>
+    </div>
   </form>
 </div>
