@@ -49,27 +49,28 @@
                    [alt]="getFarmerDisplayName(p.farmer)"
                    loading="lazy">
             </div>
-            <button *ngIf="isAuthenticated() && !isMyProduct()"
-                    class="btn btn-sm btn-secondary btn-outline ml-auto"
-                    (click)="startChatWithFarmer()">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
-              Nhắn tin
-            </button>
-            <!-- ****************************** -->
           </div>
-          <div>
+          <div class="flex-1">
             <a *ngIf="p.farmer?.farmerId"
                [routerLink]="['/farmer', p.farmer?.farmerId]"
-               class="font-semibold text-lg hover:text-primary transition-colors block">
+               class="font-semibold text-lg  hover:text-primary transition-colors block">
               {{ getFarmerDisplayName(p.farmer) }}
             </a>
             <span *ngIf="!p.farmer?.farmerId" class="font-semibold text-lg block">
               {{ getFarmerDisplayName(p.farmer) }}
             </span>
-            <span class="text-sm text-base-content/70">
+            <span class="text-sm ">
               Tại {{ farmerProvinceName() || 'Đang tải...' }}
             </span>
           </div>
+          <button *ngIf="isAuthenticated() && !isMyProduct()"
+                  class="btn btn-sm btn-secondary btn-outline ml-auto rounded-full"
+                  (click)="startChatWithFarmer()">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+            </svg>
+            Nhắn tin
+          </button>
         </div>
 
         <!-- Product Name -->
@@ -95,8 +96,33 @@
 
         <!-- Price -->
         <div class="mb-4">
-          <span class="text-3xl font-bold text-primary">{{ p.price | formatBigDecimal:'1.0-0' }} ₫</span>
-          <span class="text-base-content/70 text-sm"> / {{ p.unit }}</span>
+          <!-- Hiển thị giá B2C (luôn hiển thị hoặc chỉ hiện khi không phải B2B xem) -->
+          <div *ngIf="!isBusinessBuyer() || !p.isB2bAvailable"> <!-- Hoặc chỉ !isBusinessBuyer() nếu muốn B2B chỉ thấy giá B2B -->
+            <span class="text-3xl font-bold text-primary">{{ p.price | formatBigDecimal:'1.0-0' }} ₫</span>
+            <span class="text-base-content/70 text-sm"> / {{ p.unit }}</span>
+          </div>
+
+          <!-- Hiển thị giá B2B (chỉ khi là Business Buyer VÀ sản phẩm hỗ trợ B2B) -->
+          <div *ngIf="isBusinessBuyer() && p.isB2bAvailable">
+            <p class="text-sm font-medium text-secondary mb-1">Giá doanh nghiệp:</p>
+            <!-- Hiển thị giá bậc thang nếu có -->
+            <div *ngIf="p.pricingTiers && p.pricingTiers.length > 0" class="space-y-1 text-sm">
+              <span class="text-xl font-bold text-secondary">{{ p.b2bBasePrice | formatBigDecimal:'1.0-0' }} ₫</span>
+              <span class="text-base-content/70 text-xs"> / {{ p.b2bUnit }} (Giá cơ bản)</span>
+              <p class="text-xs text-info">Giá ưu đãi theo số lượng:</p>
+              <ul class="list-disc list-inside text-xs ml-2">
+                <li *ngFor="let tier of p.pricingTiers">
+                  Từ {{ tier.minQuantity }} {{ p.b2bUnit }}: {{ tier.pricePerUnit | formatBigDecimal:'1.0-0' }} ₫/{{ p.b2bUnit }}
+                </li>
+              </ul>
+            </div>
+            <!-- Hiển thị giá B2B cơ bản nếu không có bậc thang -->
+            <div *ngIf="!p.pricingTiers || p.pricingTiers.length === 0">
+              <span class="text-3xl font-bold text-secondary">{{ p.b2bBasePrice | formatBigDecimal:'1.0-0' }} ₫</span>
+              <span class="text-base-content/70 text-sm"> / {{ p.b2bUnit }}</span>
+            </div>
+            <p *ngIf="p.minB2bQuantity != null && p.minB2bQuantity > 1" class="text-xs text-warning mt-1">Số lượng tối thiểu: {{ p.minB2bQuantity }} {{ p.b2bUnit }}</p>
+          </div>
         </div>
 
         <!-- Stock Status -->
@@ -109,6 +135,8 @@
         <form [formGroup]="quantityForm" (ngSubmit)="addToCart()" class="mb-6">
           <div class="flex items-center gap-4 mb-4">
             <label for="quantity" class="font-medium text-sm">Số lượng:</label>
+            <!-- Hiển thị đơn vị phù hợp -->
+            <span class="text-xs text-base-content/70">({{ (isBusinessBuyer() && p.isB2bAvailable) ? p.b2bUnit : p.unit }})</span>
             <div class="join">
               <button type="button"
                       class="btn btn-sm join-item rounded-l-full"
@@ -121,7 +149,7 @@
                      id="quantity"
                      formControlName="quantity"
                      class="input input-sm input-bordered w-16 text-center join-item"
-                     min="1"
+                     [min]="(isBusinessBuyer() && p.isB2bAvailable) ? (p.minB2bQuantity || 1) : 1"
                      [max]="p.stockQuantity"
                      aria-label="Số lượng sản phẩm">
               <button type="button"

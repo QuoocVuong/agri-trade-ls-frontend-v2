@@ -28,8 +28,13 @@
           <div *ngIf="addr.isDefault" class="badge badge-accent badge-outline badge-sm mt-1">Mặc định</div>
         </div>
         <p class="text-sm text-base-content/90">
-          {{ addr.addressDetail }}, {{ addr.wardCode }}, {{ addr.districtCode }}, {{ addr.provinceCode }}
-          <!-- TODO: Hiển thị tên Tỉnh/Huyện/Xã đầy đủ nếu cần (dùng LocationService) -->
+          {{ addr.addressDetail }}<span *ngIf="addr.addressDetail">, </span>
+          <!-- Sử dụng async pipe để hiển thị tên từ Observable -->
+          <ng-container *ngIf="getLocationName('ward', addr.wardCode) | async as wardName">{{ wardName }}, </ng-container>
+          <ng-container *ngIf="getLocationName('district', addr.districtCode) | async as districtName">{{ districtName }}, </ng-container>
+          <ng-container *ngIf="getLocationName('province', addr.provinceCode) | async as provinceName">{{ provinceName }}</ng-container>
+          <!-- Hiển thị mã code nếu không tìm thấy tên (tùy chọn) -->
+          <!-- <span *ngIf="!(getLocationName('ward', addr.wardCode) | async) && addr.wardCode && addr.wardCode !== 'undefined'"> (Mã: {{addr.wardCode}}),</span> -->
         </p>
         <p class="text-xs text-base-content/60 uppercase mt-1">{{ addr.type }}</p> <!-- Hiển thị loại địa chỉ -->
 

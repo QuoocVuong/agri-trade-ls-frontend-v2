@@ -137,6 +137,11 @@ export const routes: Routes = [
         loadComponent: () => import('./features/user-profile/components/farmer-public-profile/farmer-public-profile.component').then(m => m.FarmerPublicProfileComponent), // Component bạn cần tạo
         title: 'Thông tin Nhà bán hàng' // Hoặc đặt title động trong component
       },
+      {
+        path: 'farmers', // Đường dẫn khớp với routerLink
+        loadComponent: () => import('./features/user-profile/components/farmer-list/farmer-list.component').then(m => m.FarmerListComponent), // Component mới tạo
+        title: 'Danh sách Nhà bán'
+      },
 
 
       {

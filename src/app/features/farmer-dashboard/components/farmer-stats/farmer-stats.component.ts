@@ -79,6 +79,11 @@ export class FarmerStatsComponent implements OnInit, OnDestroy {
     return val;
   }; // Format trục Y tiền tệ VNĐ
 
+  xAxisTickFormatting = (value: string) => {
+    return value.split('-').slice(1).join('-'); // Chỉ hiển thị MM-DD
+  };
+
+
 
   ngOnInit(): void {
     this.loadAllData();
@@ -165,67 +170,82 @@ export class FarmerStatsComponent implements OnInit, OnDestroy {
 
   loadChartData(): void {
     this.isLoadingChart.set(true);
-    const endDate = LocalDate.now(); // Ngày hiện tại
-    const startDate = endDate.minusDays(29); // Lấy dữ liệu 30 ngày gần nhất
+    const endDate = LocalDate.now();
+    const startDate = endDate.minusDays(29);
 
-    // Gọi API đúng cho Farmer
     forkJoin({
       revenue: this.dashboardService.getDailyRevenueForFarmerChart(startDate.toString(), endDate.toString()),
       count: this.dashboardService.getDailyOrderCountForFarmerChart(startDate.toString(), endDate.toString())
     })
-    .pipe(takeUntil(this.destroy$), finalize(() => this.isLoadingChart.set(false)))
-    .subscribe({
+      .pipe(
+        takeUntil(this.destroy$),
+        finalize(() => this.isLoadingChart.set(false))
+      )
+      .subscribe({
         next: ({ revenue, count }) => {
-            if (revenue.success && revenue.data) {
-              // *** Gọi hàm format riêng cho revenue ***
-              this.revenueChartData.set([{ name: "Doanh thu", series: this.formatRevenueChartData(revenue.data) }]);
-            }
-             if (count.success && count.data) {
-               // *** Gọi hàm format riêng cho count ***
-               this.orderCountChartData.set([{ name: "Số đơn hàng", series: this.formatOrderCountChartData(count.data) }]);
-            }
+          // Xử lý dữ liệu doanh thu
+          if (revenue.success && revenue.data && Array.isArray(revenue.data)) {
+            const formattedRevenue = this.formatRevenueChartData(revenue.data);
+            this.revenueChartData.set(formattedRevenue.length > 0 ? [{ name: "Doanh thu", series: formattedRevenue }] : []);
+          } else {
+            this.revenueChartData.set([]);
+            this.toastr.warning('Không có dữ liệu doanh thu từ API.');
+          }
+
+          // Xử lý dữ liệu số đơn hàng
+          if (count.success && count.data && Array.isArray(count.data)) {
+            const formattedCount = this.formatOrderCountChartData(count.data);
+            this.orderCountChartData.set(formattedCount.length > 0 ? [{ name: "Số đơn hàng", series: formattedCount }] : []);
+          } else {
+            this.orderCountChartData.set([]);
+            this.toastr.warning('Không có dữ liệu số đơn hàng từ API.');
+          }
         },
-        error: (err) => this.handleError(err, 'Lỗi tải dữ liệu biểu đồ')
-    });
-
-
-    // *** Tạm thời dùng dữ liệu giả ***
-    // setTimeout(() => {
-    //   this.revenueChartData.set([{ name: "Doanh thu", series: this.generateFakeChartData(startDate, endDate, 10000, 500000) }]);
-    //   this.orderCountChartData.set([{ name: "Số đơn hàng", series: this.generateFakeChartData(startDate, endDate, 0, 10) }]);
-    //   this.isLoadingChart.set(false);
-    // }, 1500);
+        error: (err) => {
+          this.revenueChartData.set([]);
+          this.orderCountChartData.set([]);
+          this.handleError(err, 'Lỗi tải dữ liệu biểu đồ');
+        }
+      });
   }
   // *** Hàm format riêng cho dữ liệu doanh thu (T có thể là number | string | BigDecimal) ***
   private formatRevenueChartData(data: TimeSeriesDataPoint<BigDecimal | number | string>[]): { name: string, value: number }[] {
-    return data.map(point => {
-      let numericValue: number;
-      if (point.value instanceof BigDecimal) {
-        numericValue = Number(point.value.toString());
-      } else if (typeof point.value === 'string') {
-        numericValue = parseFloat(point.value) || 0; // Parse string thành số
-      } else {
-        numericValue = point.value || 0; // Giữ nguyên nếu là number
-      }
-      return {
-        name: point.date.toString(),
-        value: numericValue
-      };
-    }).filter(item => !isNaN(item.value)); // Lọc bỏ giá trị không hợp lệ
+    return data
+      .filter(point => point.label != null) // Lọc bỏ các điểm có date là null/undefined
+      .map(point => {
+        let numericValue: number;
+        if (point.value instanceof BigDecimal) {
+          numericValue = Number(point.value.toString());
+        } else if (typeof point.value === 'string') {
+          numericValue = parseFloat(point.value) || 0;
+        } else {
+          numericValue = point.value || 0;
+        }
+        return {
+          name: point.label,
+          value: numericValue
+        };
+      })
+      .filter(item => !isNaN(item.value));
   }
 
 
   // *** Hàm format riêng cho dữ liệu số lượng (T là number) ***
   private formatOrderCountChartData(data: TimeSeriesDataPoint<number>[]): { name: string, value: number }[] {
-    return data.map(point => ({
-      name: point.date.toString(),
-      value: point.value ?? 0 // Đảm bảo value là number
-    }));
+    return data
+      .filter(point => point.label != null) // Kiểm tra label không null/undefined
+      .map(point => ({
+        name: point.label, // Sử dụng label thay vì date
+        value: point.value ?? 0
+      }));
   }
+
 
 
 
 
   trackOrderById(index: number, item: OrderSummaryResponse): number { return item.id; }
   trackProductById(index: number, item: TopProductResponse): number { return item.productId; }
+
+  protected readonly getOrderStatusCssClass = getOrderStatusCssClass;
 }

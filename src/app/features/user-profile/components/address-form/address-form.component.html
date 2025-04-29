@@ -95,7 +95,7 @@
     <button type="button" class="btn btn-sm btn-ghost" (click)="onCancel()">Hủy</button>
     <button type="submit" class="btn btn-sm btn-primary" [disabled]="isLoading() || addressForm.invalid">
       <span *ngIf="isLoading()" class="loading loading-spinner loading-xs"></span>
-      {{ isLoading() ? 'Đang lưu...' : (addressToEdit ? 'Cập nhật' : 'Thêm mới') }}
+      {{ isLoading() ? 'Đang lưu...' : (initialAddress ? 'Cập nhật' : 'Thêm mới') }}
     </button>
   </div>
 </form>

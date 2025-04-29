@@ -1,4 +1,4 @@
-import { Component, Input, inject, signal } from '@angular/core';
+import {Component, Input, inject, signal, EventEmitter, Output} from '@angular/core';
 import { CommonModule, DecimalPipe } from '@angular/common'; // Import DecimalPipe
 import {Router, RouterLink} from '@angular/router';
 import { ProductSummaryResponse } from '../../dto/response/ProductSummaryResponse';
@@ -20,6 +20,7 @@ import {FormatBigDecimalPipe} from '../../../../shared/pipes/format-big-decimal.
 })
 export class ProductCardComponent {
   @Input({ required: true }) product!: ProductSummaryResponse; // Nhận product từ component cha
+  @Output() unfavorited = new EventEmitter<number>();
 
   private cartService = inject(CartService);
   private favoriteService = inject(FavoriteService);
@@ -121,7 +122,10 @@ export class ProductCardComponent {
           this.isFavorite.set(!currentIsFavorite); // Đảo trạng thái thành công
           const message = currentIsFavorite ? 'Đã xóa khỏi yêu thích' : 'Đã thêm vào yêu thích';
           this.toastr.success(message);
-          // TODO: Cập nhật favorite count trên product nếu cần (có thể cần load lại product)
+          // Nếu bỏ thích, phát sự kiện unfavorited
+          if (currentIsFavorite) {
+            this.unfavorited.emit(this.product.id);
+          }
         },
         error: (err: ApiResponse<any> | any) => {
           const message = err?.message || 'Thao tác thất bại.';

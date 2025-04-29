@@ -51,7 +51,7 @@
           <svg *ngIf="!isTogglingFavorite()"
                xmlns="http://www.w3.org/2000/svg"
                class="h-5 w-5"
-               [ngClass]="{'fill-red-500 text-red-500': product.isFavorite, 'text-base-content/70': !product.isFavorite}"
+               [ngClass]="{'fill-red-500 text-red-500': isFavorite(), 'text-base-content/70': !product.isFavorite}"
                fill="none"
                viewBox="0 0 24 24"
                stroke="currentColor">

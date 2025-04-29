@@ -4,22 +4,28 @@ import { UserProfileService } from '../../services/user-profile.service';
 import { Address } from '../../domain/address.model';
 import { ApiResponse } from '../../../../core/models/api-response.model';
 import { AddressFormComponent } from '../address-form/address-form.component';
-import {AlertComponent} from '../../../../shared/components/alert/alert.component'; // Import form component
+import {AlertComponent} from '../../../../shared/components/alert/alert.component';
+import {LoadingSpinnerComponent} from '../../../../shared/components/loading-spinner/loading-spinner.component';
+import {LocationService} from '../../../../core/services/location.service';
+import {Observable, of, shareReplay} from 'rxjs'; // Import form component
 
 @Component({
   selector: 'app-address-list',
   standalone: true,
-  imports: [CommonModule, AddressFormComponent, AlertComponent,], // Import AddressForm
+  imports: [CommonModule, AddressFormComponent, AlertComponent,LoadingSpinnerComponent], // Import AddressForm
   templateUrl: './address-list.component.html',
 })
 export class AddressListComponent implements OnInit {
   private userProfileService = inject(UserProfileService);
+  private locationService = inject(LocationService);
 
   addresses: WritableSignal<Address[]> = signal([]);
   isLoading = signal(true);
   errorMessage = signal<string | null>(null);
   showAddressModal = signal(false); // Signal điều khiển modal
   selectedAddress = signal<Address | null>(null); // Địa chỉ đang được sửa (null nếu thêm mới)
+
+  private locationNameCache = new Map<string, Observable<string | null>>();
 
   ngOnInit(): void {
     this.loadAddresses();
@@ -101,4 +107,36 @@ export class AddressListComponent implements OnInit {
       }
     });
   }
-}
+
+
+  getLocationName(type: 'province' | 'district' | 'ward', code: string | null | undefined): Observable<string | null> {
+    if (!code || code === 'undefined') { // Xử lý cả chuỗi "undefined"
+      return of(null); // Trả về null nếu code không hợp lệ
+    }
+
+    const cacheKey = `${type}_${code}`;
+    if (this.locationNameCache.has(cacheKey)) {
+      return this.locationNameCache.get(cacheKey)!;
+    }
+
+    let name$: Observable<string | null>;
+    switch (type) {
+      case 'province':
+        name$ = this.locationService.findProvinceName(code);
+        break;
+      case 'district':
+        name$ = this.locationService.findDistrictName(code);
+        break;
+      case 'ward':
+        name$ = this.locationService.findWardName(code);
+        break;
+      default:
+        name$ = of(null);
+      }
+      // Cache kết quả observable để tránh gọi lại API/tìm kiếm nhiều lần
+      const cachedName$ = name$.pipe(shareReplay(1));
+      this.locationNameCache.set(cacheKey, cachedName$);
+      return cachedName$;
+    }
+
+  }

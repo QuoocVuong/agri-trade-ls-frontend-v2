@@ -59,9 +59,9 @@ export class FarmerService {
     if (params.keyword) httpParams = httpParams.set('keyword', params.keyword);
 
     // Backend cần API hỗ trợ các tham số này và trả về dạng Page
-    // return this.http.get<ApiResponse<Page<FarmerSummaryResponse>>>(this.publicFarmerApiUrl, { params: httpParams });
+     return this.http.get<ApiResponse<Page<FarmerSummaryResponse>>>(this.publicFarmerApiUrl, { params: httpParams });
     // Tạm thời trả về lỗi vì chưa chắc có API này
-    throw new Error('searchPublicFarmers API endpoint not implemented in backend yet.');
+    //throw new Error('searchPublicFarmers API endpoint not implemented in backend yet.');
   }
 
   // Các phương thức khác liên quan đến farmer (public) có thể thêm vào đây...

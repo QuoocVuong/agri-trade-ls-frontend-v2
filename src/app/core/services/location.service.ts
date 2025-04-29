@@ -14,6 +14,13 @@ export interface District {
   idDistrict: string; // Đổi thành idDistrict
   name: string;
 }
+
+interface WardFromJson {
+  idDistrict: string;
+  idCommune: string; // <-- Tên gốc trong JSON
+  name: string;
+}
+
 export interface Ward {
   idDistrict: string;
   idWard: string; // Đổi thành idWard (giả sử file wards.json có cấu trúc tương tự)
@@ -27,7 +34,7 @@ export class LocationService {
   private http = inject(HttpClient);
   private provinces$: Observable<Province[]> | null = null;
   private districts$: Observable<District[]> | null = null;
-  private wards$: Observable<Ward[]> | null = null;
+  private mappedWards$: Observable<Ward[]> | null = null;
   private dataPath = 'assets/data/';
 
   getProvinces(): Observable<Province[]> {
@@ -64,18 +71,26 @@ export class LocationService {
 
   getWards(districtCode: string | null): Observable<Ward[]> {
     if (!districtCode) return of([]);
-    if (!this.wards$) {
-      this.wards$ = this.http.get<Ward[]>(`${this.dataPath}wards.json`).pipe(
+    if (!this.mappedWards$) {
+      this.mappedWards$ = this.http.get<WardFromJson[]>(`${this.dataPath}wards.json`).pipe(
+        map(wardsFromJson => {
+          // *** Đổi tên trường idCommune thành wardCode ***
+          return wardsFromJson.map(w => ({
+            idDistrict: w.idDistrict,
+            idWard: w.idCommune, // <-- Mapping ở đây
+            name: w.name
+          }));
+        }),
         shareReplay(1),
         catchError(err => {
           console.error("Error loading wards.json", err);
-          this.wards$ = null;
+          this.mappedWards$ = null;
           return of([]);
         })
       );
     }
     // *** Lọc theo idDistrict ***
-    return this.wards$.pipe(
+    return this.mappedWards$.pipe(
       map(wards => wards.filter(w => w.idDistrict === districtCode))
     );
   }
@@ -100,10 +115,10 @@ export class LocationService {
   }
   findWardName(code: string | null): Observable<string | null> {
     if (!code) return of(null);
-    if (!this.wards$) return this.getWards('any').pipe( // Tải lần đầu nếu chưa có
+    if (!this.mappedWards$) return this.getWards('any').pipe( // Tải lần đầu nếu chưa có
       switchMap(() => this.findWardName(code))
     );
-    return this.wards$.pipe(
+    return this.mappedWards$.pipe(
       map(wards => wards.find(w => w.idWard === code)?.name ?? null)
     );
   }

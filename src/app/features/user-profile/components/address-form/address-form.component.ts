@@ -18,8 +18,8 @@ import {AddressResponse} from '../../dto/response/AddressResponse'; // Import To
   templateUrl: './address-form.component.html',
 })
 export class AddressFormComponent implements OnInit, OnChanges {
-  @Input() addressToEdit: Address | null = null;
-  @Output() addressSaved = new EventEmitter<Address>();
+ // @Input() addressToEdit: Address | null = null;
+  @Output() addressSaved = new EventEmitter<AddressResponse>();
   @Output() cancelled = new EventEmitter<void>();
   // *** KHAI BÁO INPUT ***
   @Input() initialAddress: Address | null = null; // Input để nhận địa chỉ cần sửa
@@ -188,7 +188,7 @@ export class AddressFormComponent implements OnInit, OnChanges {
           // *** SỬA KIỂU DỮ LIỆU EMIT: Cần map AddressResponse sang Address nếu cần ***
           // Hoặc thay đổi kiểu của EventEmitter thành AddressResponse
           // Tạm thời giả sử Address và AddressResponse giống nhau:
-          this.addressSaved.emit(response.data as any); // <-- Ép kiểu tạm thời, cần xem xét lại
+          this.addressSaved.emit(response.data); // <-- Ép kiểu tạm thời, cần xem xét lại
         } else {
           this.errorMessage.set(response.message || 'Lưu địa chỉ thất bại.');
           this.toastr.error(response.message || 'Lưu địa chỉ thất bại.');

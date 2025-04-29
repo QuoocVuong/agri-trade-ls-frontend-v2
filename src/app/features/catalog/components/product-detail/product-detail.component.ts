@@ -99,6 +99,8 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
   // Lấy trạng thái đăng nhập
   isAuthenticated = this.authService.isAuthenticated;
 
+  isBusinessBuyer = this.authService.hasRoleSignal('ROLE_BUSINESS_BUYER');
+
   // Lấy slug từ route
   productSlug = computed(() => this.route.snapshot.paramMap.get('slug'));
 

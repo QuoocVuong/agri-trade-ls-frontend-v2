@@ -75,16 +75,22 @@ export class FavoriteListComponent implements OnInit {
   }
 
   // Hàm xử lý khi người dùng unfavorite trực tiếp từ card (nếu ProductCard có Output event)
-  // handleUnfavorited(productId: number): void {
-  //   // Cập nhật lại danh sách hoặc xóa item khỏi signal
-  //   this.favoritesPage.update(page => {
-  //       if (!page) return null;
-  //       return {
-  //           ...page,
-  //           content: page.content.filter(p => p.id !== productId),
-  //           totalElements: page.totalElements - 1
-  //           // Cần tính toán lại totalPages nếu cần
-  //       };
-  //   });
-  // }
+  handleUnfavorited(productId: number): void {
+    this.favoritesPage.update(page => {
+      if (!page) return null;
+      const updatedContent = page.content.filter(p => p.id !== productId);
+      const updatedPage = {
+        ...page,
+        content: updatedContent,
+        totalElements: page.totalElements - 1,
+      };
+      // Nếu trang hiện tại không còn sản phẩm, chuyển về trang trước hoặc reload
+      if (updatedContent.length === 0 && page.number > 0) {
+        this.currentPage.set(page.number - 1);
+        this.loadFavorites();
+        return page; // Trả về page hiện tại, loadFavorites sẽ cập nhật
+      }
+      return updatedPage;
+    });
+  }
 }

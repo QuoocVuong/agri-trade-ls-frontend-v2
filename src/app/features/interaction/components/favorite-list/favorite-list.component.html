@@ -15,9 +15,8 @@
     <!-- Sử dụng ProductCardComponent để hiển thị -->
     <app-product-card
       *ngFor="let product of favoritesPage()?.content; trackBy: trackProductById"
-      [product]="product">
-      <!-- Có thể thêm nút unfavorite nhanh ở đây hoặc để user vào chi tiết SP -->
-      <!-- (unfavorited)="handleUnfavorited($event)" -->
+      [product]="product"
+      (unfavorited)="handleUnfavorited($event)">
     </app-product-card>
   </div>
 

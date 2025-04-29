@@ -86,8 +86,8 @@ export class DashboardService { // Không implements interface nào
   }
 
   /** Lấy số lượng các mục chờ duyệt */
-  getPendingApprovalCounts(): Observable<ApiResponse<Map<string, number>>> {
+  getPendingApprovalCounts(): Observable<ApiResponse<{[key: string]: number}>> {
     // Backend API cần trả về Map hoặc một cấu trúc tương đương
-    return this.http.get<ApiResponse<Map<string, number>>>(`${this.adminApiUrl}/pending-approvals`);
+    return this.http.get<ApiResponse<{[key: string]: number}>>(`${this.adminApiUrl}/pending-approvals`);
   }
 }

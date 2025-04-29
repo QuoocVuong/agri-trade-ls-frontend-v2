@@ -135,6 +135,12 @@
           <h5 class="text-xs font-semibold mt-1">Bậc giá:</h5>
           <ul><li *ngFor="let tier of p.pricingTiers" class="text-xs ml-2">Từ {{tier.minQuantity}}: {{tier.pricePerUnit | formatBigDecimal:'1.0-0'}} đ</li></ul>
         </div>
+        <p *ngIf="!selectedProduct()?.pricingTiers || selectedProduct()!.pricingTiers!.length === 0" class="text-sm italic text-base-content/70 mt-1">
+          Không có bậc giá B2B nào được cấu hình.
+        </p>
+      </div>
+      <div *ngIf="!selectedProduct()?.isB2bAvailable" class="mt-4 pt-4 border-t">
+        <p class="text-sm italic text-base-content/70">Sản phẩm này không được cấu hình bán B2B.</p>
       </div>
 
       <!-- Images -->

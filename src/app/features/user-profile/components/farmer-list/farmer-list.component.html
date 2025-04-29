@@ -1,0 +1,94 @@
+<!-- src/app/features/farmer-profile/pages/farmer-list/farmer-list.component.html -->
+<div class="container mx-auto px-4 py-8">
+  <h1 class="text-3xl font-bold mb-6">Danh sách Nhà bán / Nông trại</h1>
+
+  <!-- Filter Section -->
+  <form [formGroup]="filterForm" class="mb-8 p-4 bg-base-200 rounded-lg shadow">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <!-- Keyword Search -->
+      <div class="form-control">
+        <label class="label pb-1"><span class="label-text">Tìm kiếm</span></label>
+        <input type="text" placeholder="Tên nông trại, tên nông dân..."
+               class="input input-bordered w-full"
+               formControlName="keyword">
+      </div>
+      <!-- Province Filter -->
+      <div class="form-control">
+        <label class="label pb-1"><span class="label-text">Lọc theo Tỉnh/Thành</span></label>
+        <select class="select select-bordered w-full" formControlName="provinceCode">
+          <option value="">Tất cả Tỉnh/Thành</option>
+          <option *ngFor="let province of provinces()" [value]="province.idProvince">
+            {{ province.name }}
+          </option>
+        </select>
+      </div>
+      <!-- Sort (Optional) -->
+      <div class="form-control">
+        <label class="label pb-1"><span class="label-text">Sắp xếp</span></label>
+        <select class="select select-bordered w-full" formControlName="sort">
+          <option value="farmName,asc">Tên trang trại (A-Z)</option>
+          <option value="createdAt,desc">Mới nhất</option>
+          <!-- Thêm các tùy chọn sort khác nếu backend hỗ trợ -->
+          <!-- <option value="rating,desc">Đánh giá cao nhất</option> -->
+          <!-- <option value="followerCount,desc">Nhiều người theo dõi</option> -->
+        </select>
+      </div>
+    </div>
+  </form>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading()" class="text-center py-20">
+    <app-loading-spinner size="lg"></app-loading-spinner>
+  </div>
+
+  <!-- Error State -->
+  <app-alert *ngIf="errorMessage() && !isLoading()" type="error" [message]="errorMessage()"></app-alert>
+
+  <!-- Farmer List Grid -->
+  <div *ngIf="!isLoading() && (farmersPage()?.content?.length ?? 0) > 0" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+    <div *ngFor="let farmer of farmersPage()?.content; trackBy: trackFarmerById"
+         class="card bg-base-100 shadow-lg hover:shadow-xl transition-all duration-300 rounded-lg overflow-hidden group">
+      <!-- Link bao ngoài card -->
+      <a [routerLink]="['/farmer', farmer.userId]" class="block">
+        <figure class="aspect-[4/3] overflow-hidden"> <!-- Tỷ lệ ảnh -->
+          <img [src]="farmer.avatarUrl || 'assets/images/default-avatar.png'"
+               [alt]="getFarmerDisplayName(farmer)"
+               loading="lazy"
+               class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+        </figure>
+        <div class="card-body p-4">
+          <h2 class="card-title text-base font-semibold leading-tight truncate mb-1 group-hover:text-primary transition-colors">
+            {{ getFarmerDisplayName(farmer) }}
+          </h2>
+          <p class="text-sm text-base-content/70 flex items-center gap-1">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 opacity-70" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+            <!-- Hiển thị tên tỉnh -->
+<!--            <span *ngIf="getLocationName(farmer.provinceCode) | async as name; else provinceCodeOnly">-->
+<!--              {{ name }}-->
+<!--            </span>-->
+            <ng-template #provinceCodeOnly>{{ farmer.provinceCode }}</ng-template>
+          </p>
+          <!-- Có thể thêm số lượng follower nếu có -->
+          <!-- <p class="text-xs text-base-content/60 mt-1">{{ farmer.followerCount }} người theo dõi</p> -->
+        </div>
+      </a>
+    </div>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="!isLoading() && (farmersPage()?.content?.length ?? 0) === 0 && !errorMessage()"
+       class="text-center py-20 px-4 border border-dashed rounded-lg bg-base-200">
+    <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-16 w-16 text-base-content/20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+    <p class="mt-4 text-xl font-medium text-base-content/70">Không tìm thấy nhà bán nào phù hợp.</p>
+  </div>
+
+  <!-- Pagination -->
+  <div *ngIf="farmersPage() && farmersPage()!.totalPages > 1" class="mt-8 flex justify-center">
+    <app-paginator
+      [currentPage]="farmersPage()!.number"
+      [totalPages]="farmersPage()!.totalPages"
+      (pageChange)="onPageChange($event)">
+    </app-paginator>
+  </div>
+
+</div>

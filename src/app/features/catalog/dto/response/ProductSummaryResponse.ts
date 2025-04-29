@@ -18,6 +18,7 @@ export interface ProductSummaryResponse {
   isB2bAvailable: boolean;
   category: CategoryInfoResponse | null;
   stockQuantity: number;
+  description: string | null;
   createdAt: Date | null;
   updatedAt: Date | null;
   isFavorite: boolean;

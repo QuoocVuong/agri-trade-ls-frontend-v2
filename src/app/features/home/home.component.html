@@ -67,7 +67,7 @@
         <h3 class="card-title text-lg font-semibold">{{ farmer.farmName }}</h3>
         <p class="text-sm text-base-content/70">{{ farmer.address }}</p>
         <div class="card-actions mt-4">
-          <a [routerLink]="['/farmer', farmer.id]" class="btn btn-sm btn-outline btn-primary rounded-full hover:bg-primary hover:text-white">Xem sản phẩm</a>
+          <a [routerLink]="['/farmer', farmer.userId]" class="btn btn-sm btn-outline btn-primary rounded-full hover:bg-primary hover:text-white">Xem sản phẩm</a>
         </div>
       </div>
     </div>
@@ -75,14 +75,17 @@
 </section>
 
 <!-- Introduction/Commitment Section -->
-<section class="py-16 bg-gradient-to-r from-green-100 via-emerald-100 to-teal-100 rounded-2xl mb-12">
-  <div class="container mx-auto px-4 text-center max-w-4xl">
-    <h2 class="text-4xl font-extrabold mb-6 text-primary animate-fade-in">Nguồn Gốc Rõ Ràng - Chất Lượng Đảm Bảo</h2>
-    <p class="mb-8 text-xl text-base-content/80 leading-relaxed">
-      AgriTradeLS kết nối bạn với những người nông dân tâm huyết tại Lạng Sơn, mang đến nông sản tươi ngon, an toàn,
-      được canh tác theo quy trình bền vững. Chúng tôi cam kết chất lượng và minh bạch nguồn gốc.
+<section class="py-20 px-6 bg-gradient-to-br from-primary/10 via-emerald-50 to-teal-50 rounded-3xl mb-12 text-center shadow-inner">
+  <div class="container mx-auto max-w-4xl">
+    <h2 class="text-4xl md:text-5xl font-extrabold mb-6 text-primary animate-fade-in" style="text-shadow: 1px 1px 2px rgba(0, 128, 0, 0.1);">
+      Nguồn Gốc Rõ Ràng - Chất Lượng Đảm Bảo
+    </h2>
+    <p class="mb-10 text-lg md:text-xl text-gray-700 leading-relaxed max-w-3xl mx-auto">
+      AgriTrade tự hào kết nối bạn trực tiếp với những người nông dân tâm huyết. Chúng tôi mang đến nông sản tươi ngon, an toàn, được canh tác theo quy trình bền vững, minh bạch nguồn gốc.
     </p>
-    <a routerLink="/about-us" class="btn btn-outline btn-primary btn-lg rounded-full shadow-lg hover:bg-primary hover:text-white transition-all">Tìm hiểu thêm</a>
+    <a routerLink="/about-us" class="btn btn-primary btn-lg rounded-full shadow-lg px-8 py-3 text-lg font-semibold btn-hover-effect">
+      Tìm Hiểu Thêm Về Chúng Tôi
+    </a>
   </div>
 </section>
 

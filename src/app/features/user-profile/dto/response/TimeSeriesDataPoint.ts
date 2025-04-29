@@ -1,5 +1,5 @@
 // src/app/features/user-profile/dto/response/TimeSeriesDataPoint.ts
-import  BigDecimal  from 'js-big-decimal'; // Import nếu dùng
+//import  BigDecimal  from 'js-big-decimal'; // Import nếu dùng
 import { LocalDate } from '@js-joda/core'; // Import nếu dùng
 
 /**
@@ -9,6 +9,7 @@ import { LocalDate } from '@js-joda/core'; // Import nếu dùng
 export interface TimeSeriesDataPoint<T> {
   /** Ngày hoặc khoảng thời gian (ví dụ: '2024-04-17') */
   date: string | LocalDate; // Sử dụng string là phổ biến nhất khi truyền qua API
+  label: string;
 
   /** Giá trị tại điểm thời gian đó */
   value: T;
