@@ -1,6 +1,17 @@
-import {Injectable, inject, signal, effect} from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
-import {Observable, BehaviorSubject, tap, finalize, shareReplay, firstValueFrom, map, of, Subject} from 'rxjs'; // Import thêm
+import {Injectable, inject, signal, effect, WritableSignal} from '@angular/core';
+import {HttpClient, HttpErrorResponse, HttpParams} from '@angular/common/http';
+import {
+  Observable,
+  BehaviorSubject,
+  tap,
+  finalize,
+  shareReplay,
+  firstValueFrom,
+  map,
+  of,
+  Subject,
+  throwError
+} from 'rxjs'; // Import thêm
 import { environment } from '../../../../environments/environment';
 import { ApiResponse, PagedApiResponse } from '../../../core/models/api-response.model';
 import { ChatRoomResponse } from '../dto/response/ChatRoomResponse';
@@ -11,8 +22,11 @@ import { AuthService } from '../../../core/services/auth.service';
 import { RxStomp, RxStompConfig } from '@stomp/rx-stomp'; // Dùng RxStomp cho tích hợp RxJS
 import { IMessage } from '@stomp/stompjs';
 import {log} from '@angular-devkit/build-angular/src/builders/ssr-dev-server';
-import {takeUntil} from 'rxjs/operators';
-import {ToastrService} from 'ngx-toastr'; // Import IMessage
+import {catchError, takeUntil} from 'rxjs/operators';
+import {ToastrService} from 'ngx-toastr';
+import {WebSocketErrorEvent} from '../dto/event/WebSocketErrorEvent';
+import {MessageReadEvent} from '../dto/event/MessageReadEvent';
+import {PresenceEvent} from '../dto/event/PresenceEvent'; // Import IMessage
 
 @Injectable({
   providedIn: 'root'
@@ -41,6 +55,12 @@ export class ChatService {
   // WebSocket Client với RxStomp
   private rxStomp: RxStomp;
 
+
+  // ****** SỬA STATE ONLINE ******
+  private onlineUsersMap: WritableSignal<ReadonlyMap<number, boolean>> = signal(new Map());
+  public onlineUsers = this.onlineUsersMap.asReadonly(); // Signal readonly cho component
+  // ******************************
+
   constructor(
     private toastr: ToastrService,) {
 
@@ -50,12 +70,14 @@ export class ChatService {
     // Lắng nghe thay đổi trạng thái đăng nhập để connect/disconnect WS
     effect(() => {
       if (this.authService.isAuthenticated()) {
-        this.connectWebSocket();
+        this.connectWebSocketAndSubscribe();
         this.loadMyChatRooms().subscribe(); // Tải danh sách phòng khi login
       } else {
         this.disconnectWebSocket();
-        this.chatRoomsSubject.next([]); // Xóa danh sách phòng khi logout
+        this.chatRoomsSubject.next([]);
         this.currentMessagesSubject.next([]);
+        this.currentRoomIdSignal.set(null);
+        this.onlineUsersMap.set(new Map()); // Reset map online
         this.currentRoomId = null;
       }
 
@@ -63,6 +85,28 @@ export class ChatService {
 
 
   }
+
+  // ****** TÁCH LOGIC CONNECT VÀ SUBSCRIBE ******
+  private connectWebSocketAndSubscribe(): void {
+    if (this.rxStomp.active) { // Dùng active thay vì connected để kiểm tra trạng thái mong muốn
+      console.log("WS connection process already active or connected.");
+      // Đảm bảo các subscription vẫn tồn tại (RxStomp thường tự xử lý)
+      // Nếu cần chắc chắn, có thể kiểm tra và gọi lại các hàm subscribe ở đây
+      return;
+    }
+    console.log("Activating WS connection and subscribing...");
+    // Cập nhật lại header trước khi activate (mặc dù đã dùng getter)
+    // this.rxStomp.configure({ connectHeaders: { Authorization: `Bearer ${this.authService.getToken() || ''}` } });
+    this.rxStomp.activate();
+
+    // Subscribe vào các kênh cần thiết
+    this.subscribeToPresence();
+    this.subscribeToMessages();
+    this.subscribeToReadReceipts();
+    this.subscribeToErrors();
+  }
+
+  // ******************************************
 
   // --- WebSocket Logic ---
 
@@ -256,6 +300,121 @@ export class ChatService {
   }
 
 
+  // ****** THÊM HÀM SUBSCRIBE VÀO PRESENCE TOPIC ******
+  private subscribeToPresence(): void {
+    console.log("Attempting to subscribe to /topic/presence");
+    this.rxStomp.watch('/topic/presence')
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (message: IMessage) => {
+          try {
+            const presenceUpdate: PresenceEvent = JSON.parse(message.body);
+            console.log("Received presence update:", presenceUpdate);
+            if (presenceUpdate && typeof presenceUpdate.userId === 'number' && typeof presenceUpdate.online === 'boolean') {
+              this.onlineUsersMap.update(currentMap => {
+                const newMap = new Map(currentMap);
+                newMap.set(presenceUpdate.userId, presenceUpdate.online);
+                console.log('Updated onlineUsersMap via WS:', newMap);
+                return newMap;
+              });
+            } else {
+              console.warn("Received invalid presence message:", message.body);
+            }
+          } catch (e) {
+            console.error("Error parsing presence update:", e);
+          }
+        },
+        error: (err) => console.error("Error in presence subscription:", err),
+        complete: () => console.log("Presence subscription completed.") // Thường không xảy ra trừ khi disconnect
+      });
+  }
+  // **************************************************
+
+  // ****** THÊM HÀM KIỂM TRA ONLINE ******
+// Trả về boolean trực tiếp từ signal để dùng trong template không cần async pipe
+  isUserOnline(userId: number | null | undefined): boolean {
+    if (userId == null) return false;
+    const isOnline = this.onlineUsers().get(userId);
+    // console.log(`Checking online status for ${userId}: ${isOnline}`); // Bỏ log này để tránh spam console
+    return isOnline ?? false; // Trả về false nếu không tìm thấy trong map
+  }
+  // *************************************
+
+  // ****** THÊM ĐỊNH NGHĨA CÁC HÀM SUBSCRIBE ******
+  private subscribeToMessages(): void {
+    console.log("Attempting to subscribe to /user/queue/messages");
+    this.rxStomp.watch(`/user/queue/messages`)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (message: IMessage) => { /* ... xử lý handleIncomingMessage ... */
+          try {
+            const chatMessage: ChatMessageResponse = JSON.parse(message.body);
+            this.handleIncomingMessage(chatMessage);
+          } catch (e) { console.error("Error parsing incoming WS message:", e); }
+        },
+        error: (err) => console.error("Error in messages subscription:", err)
+      });
+  }
+
+  private subscribeToReadReceipts(): void {
+    console.log("Attempting to subscribe to /user/queue/read");
+    this.rxStomp.watch(`/user/queue/read`)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next:(message: IMessage) => { /* ... xử lý handleReadReceipt ... */
+          try {
+            const readEvent: MessageReadEvent = JSON.parse(message.body);
+            this.handleReadReceipt(readEvent);
+          } catch (e) { console.error("Error parsing read notification:", e); }
+        },
+        error: (err) => console.error("Error in read receipts subscription:", err)
+      });
+  }
+
+  private subscribeToErrors(): void {
+    console.log("Attempting to subscribe to /user/queue/errors");
+    this.rxStomp.watch(`/user/queue/errors`)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (message: IMessage) => { /* ... xử lý lỗi từ WS ... */
+          try {
+            const errorEvent: WebSocketErrorEvent = JSON.parse(message.body);
+            console.error("Received error via WS:", errorEvent);
+            this.toastr.error(`Lỗi chat: ${errorEvent.message || 'Lỗi không xác định'}`);
+          } catch (e) { console.error("Error parsing error event:", e); }
+        },
+        error: (err) => console.error("Error in errors subscription:", err)
+      });
+  }
+
+  // **********************************************
+
+  // ****** THÊM HÀM XỬ LÝ READ RECEIPT ******
+  private handleReadReceipt(readEvent: MessageReadEvent): void {
+    const currentMessages = this.currentMessagesSubject.value;
+    // Chỉ cập nhật nếu phòng đang mở là phòng có tin nhắn được đọc
+    if (readEvent.roomId === this.currentRoomIdSignal()) {
+      let messagesUpdated = false;
+      const updatedMessages = currentMessages.map(msg => {
+        // Chỉ cập nhật tin nhắn của MÌNH đã gửi đi và chưa được đọc
+        if (msg.sender?.id === this.authService.currentUser()?.id && !msg.isRead) {
+          messagesUpdated = true;
+          // Giả sử server chỉ báo là đã đọc, không gửi thời gian đọc cụ thể qua WS
+          return { ...msg, isRead: true, readAt: new Date().toISOString() };
+        }
+        return msg;
+      });
+
+      if (messagesUpdated) {
+        this.currentMessagesSubject.next(updatedMessages);
+        console.log(`Updated read status for sent messages in room ${readEvent.roomId}`);
+      }
+    }
+  }
+  // ****************************************
+
+
+
 
   // --- API Calls ---
 
@@ -265,11 +424,39 @@ export class ChatService {
       tap(response => {
         if (response.success && response.data) {
           this.chatRoomsSubject.next(response.data);
+          // Cập nhật trạng thái online ban đầu từ API
+          this.onlineUsersMap.update(currentMap => {
+            const newMap = new Map(currentMap);
+            response.data?.forEach(room => {
+              // Sử dụng otherUser đã được tính toán sẵn (nếu có)
+              const userToCheck = room.otherUser; // Giả định otherUser đã có isOnline
+              if (userToCheck && typeof userToCheck.Online === 'boolean') {
+                // Chỉ cập nhật nếu chưa có hoặc trạng thái khác
+                if (!newMap.has(userToCheck.id) || newMap.get(userToCheck.id) !== userToCheck.Online) {
+                  newMap.set(userToCheck.id, userToCheck.Online);
+                }
+              }
+              // Hoặc cập nhật từ user1/user2 nếu cần
+              if (room.user1 && typeof room.user1.Online === 'boolean' && (!newMap.has(room.user1.id) || newMap.get(room.user1.id) !== room.user1.Online)) {
+                 newMap.set(room.user1.id, room.user1.Online);
+              }
+              if (room.user2 && typeof room.user2.Online === 'boolean' && (!newMap.has(room.user2.id) || newMap.get(room.user2.id) !== room.user2.Online)) {
+                  newMap.set(room.user2.id, room.user2.Online);
+              }
+            });
+            console.log('Initial/Updated online statuses from API:', newMap);
+            return newMap;
+          });
         } else {
           this.chatRoomsSubject.next([]);
         }
       }),
-      finalize(() => this.isLoadingRooms.set(false))
+      finalize(() => this.isLoadingRooms.set(false)),
+      catchError(err => {
+        console.error("Error loading chat rooms", err);
+        this.chatRoomsSubject.next([]); // Đặt về rỗng khi lỗi
+        return of(err.error as ApiResponse<ChatRoomResponse[]>);
+      })
     );
   }
 
@@ -394,4 +581,12 @@ export class ChatService {
     this.currentMessagesSubject.next([]);
   }
   // ********************
+
+  private handleError(error: HttpErrorResponse): Observable<never> {
+    console.error('API Error:', error);
+    // Có thể thêm logic xử lý lỗi chung ở đây nếu muốn
+    return throwError(() => error); // Ném lại lỗi để component xử lý
+  }
+
+
 }

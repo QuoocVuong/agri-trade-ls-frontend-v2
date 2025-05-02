@@ -1,4 +1,14 @@
-import {Component, OnInit, inject, signal, Output, EventEmitter, OnDestroy, computed} from '@angular/core';
+import {
+  Component,
+  OnInit,
+  inject,
+  signal,
+  Output,
+  EventEmitter,
+  OnDestroy,
+  computed,
+  ChangeDetectorRef, ChangeDetectionStrategy
+} from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { ChatService } from '../../../service/ChatService';
 import { ChatRoomResponse } from '../../../dto/response/ChatRoomResponse';
@@ -12,12 +22,14 @@ import {AuthService} from '../../../../../core/services/auth.service';
   standalone: true,
   imports: [CommonModule, LoadingSpinnerComponent, DatePipe],
   templateUrl: './chat-list.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ChatListComponent implements OnInit, OnDestroy {
   @Output() roomSelected = new EventEmitter<ChatRoomResponse>();
-  private chatService = inject(ChatService);
+  public chatService = inject(ChatService);
   private destroy$ = new Subject<void>();
   private authService = inject(AuthService);
+  private cdr = inject(ChangeDetectorRef);
 
   chatRooms = signal<ChatRoomResponse[]>([]);
   isLoading = this.chatService.isLoadingRooms; // Lấy signal loading từ service
@@ -31,10 +43,22 @@ export class ChatListComponent implements OnInit, OnDestroy {
     this.chatService.chatRooms$
       .pipe(takeUntil(this.destroy$))
       .subscribe(rooms => {
+        console.log("ChatListComponent received rooms update:", rooms); // Log để debug
         this.chatRooms.set(rooms || []);
+        this.cdr.markForCheck(); // Thông báo cho Angular kiểm tra khi rooms thay đổi (do dùng OnPush)
       });
-    // Có thể gọi loadMyChatRooms ở đây nếu service không tự load khi login
-    // this.chatService.loadMyChatRooms().subscribe();
+
+    // Lắng nghe thay đổi trạng thái online để cập nhật lại view
+    // Mặc dù template gọi hàm trực tiếp, nhưng nếu muốn chắc chắn hơn,
+    // bạn có thể subscribe vào onlineUsers signal và gọi markForCheck
+    // this.chatService.onlineUsers
+    //   .pipe(takeUntil(this.destroy$))
+    //   .subscribe(() => {
+    //     console.log("ChatListComponent detected online status change, marking for check.");
+    //     this.cdr.markForCheck(); // Trigger kiểm tra lại view khi trạng thái online thay đổi
+    //   });
+
+    // Không cần gọi loadMyChatRooms ở đây nếu service đã tự load khi login
   }
 
   ngOnDestroy(): void {

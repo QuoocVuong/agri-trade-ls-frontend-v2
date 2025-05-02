@@ -5,7 +5,8 @@ import { provideAnimationsAsync } from '@angular/platform-browser/animations/asy
 
 import { routes } from './app.routes';
 import { authInterceptor } from './core/interceptors/auth.interceptor';
-import {provideToastr} from 'ngx-toastr'; // Sẽ tạo interceptor
+import {provideToastr} from 'ngx-toastr';
+import {provideCharts, withDefaultRegisterables} from 'ng2-charts'; // Sẽ tạo interceptor
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -25,5 +26,6 @@ export const appConfig: ApplicationConfig = {
       // Các tùy chọn khác: https://github.com/scttcper/ngx-toastr#options
     }),
     // Thêm các providers khác ở đây nếu cần
+    provideCharts(withDefaultRegisterables()),
   ]
 };

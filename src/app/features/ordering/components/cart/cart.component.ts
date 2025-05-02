@@ -12,6 +12,7 @@ import { takeUntil, finalize } from 'rxjs/operators'; // Import takeUntil, final
 import { NgxSpinnerService } from 'ngx-spinner'; // Ví dụ dùng thư viện spinner khác
 import { ToastrService } from 'ngx-toastr'; // Ví dụ dùng thư viện toastr
 import { FormatBigDecimalPipe } from '../../../../shared/pipes/format-big-decimal.pipe';
+import {ApiResponse} from '../../../../core/models/api-response.model';
 
 @Component({
   selector: 'app-cart',
@@ -45,20 +46,41 @@ export class CartComponent {
     this.destroy$.complete();
   }
 
-  updateQuantity(item: CartItemResponse, newQuantity: number): void {
-    // Bỏ kiểm tra newQuantity < 1 vì input number đã có min="1"
-    if (!item.product || this.isItemLoading(item.id)) return;
+  updateQuantity(item: CartItemResponse, newQuantityInput: number | string): void {
+    // Chuyển đổi và kiểm tra giá trị nhập
+    let newQuantity = typeof newQuantityInput === 'string' ? parseInt(newQuantityInput, 10) : newQuantityInput;
 
-    // *** Bỏ qua kiểm tra tồn kho ở đây ***
-    // const maxQuantity = item.product.stockQuantity ?? 0; // Bỏ dòng này
-    // if (newQuantity > maxQuantity) { ... } // Bỏ khối if này
-
-    // Chỉ kiểm tra số lượng tối thiểu
-    if (newQuantity < 1) {
-      newQuantity = 1; // Set lại là 1 nếu user nhập số âm/0
-      // Có thể cập nhật lại giá trị input nếu cần
+    if (isNaN(newQuantity) || !item.product || this.isItemLoading(item.id)) {
+      // Nếu giá trị nhập không phải số, hoặc không có product, hoặc đang loading thì không làm gì
+      // Hoặc reset về giá trị cũ nếu muốn
+      const inputElement = document.getElementById(`quantity-input-${item.id}`) as HTMLInputElement | null;
+      if(inputElement) inputElement.value = item.quantity.toString();
+      return;
     }
 
+    // Đảm bảo số lượng không nhỏ hơn 1
+    if (newQuantity < 1) {
+      newQuantity = 1;
+    }
+
+    const availableStock = item.product.stockQuantity ?? 0;
+    const oldQuantity = item.quantity;
+
+    // ****** THÊM KIỂM TRA TỒN KHO CLIENT-SIDE ******
+    if (newQuantity > availableStock) {
+      this.toastr.error(`Chỉ còn ${availableStock} ${item.product.name} trong kho.`);
+      // Set lại giá trị input về mức tối đa
+      const inputElement = document.getElementById(`quantity-input-${item.id}`) as HTMLInputElement | null;
+      if(inputElement) inputElement.value = availableStock.toString();
+      // Không gọi API nếu số lượng yêu cầu đã vượt quá tồn kho
+      return;
+    }
+    // **********************************************
+
+    // Nếu số lượng không thay đổi thì không cần gọi API
+    if (newQuantity === oldQuantity) {
+      return;
+    }
 
     this.setItemLoading(item.id, true);
     this.errorMessage.set(null);
@@ -66,12 +88,12 @@ export class CartComponent {
 
     this.cartService.updateItemQuantity(item.id, request)
       .pipe(
-        takeUntil(this.destroy$), // Tự động unsubscribe khi component destroy
-        finalize(() => this.setItemLoading(item.id, false)) // Luôn tắt loading
+        takeUntil(this.destroy$),
+        finalize(() => this.setItemLoading(item.id, false))
       )
       .subscribe({
-        // next: service đã tự load lại cart
-        error: (err) => this.handleError(err, 'Lỗi cập nhật số lượng.')
+        // next: thành công, CartService sẽ tự cập nhật cart$
+        error: (err) => this.handleError(err, 'Lỗi cập nhật số lượng.', item.id, oldQuantity) // Truyền thêm oldQuantity
       });
   }
 
@@ -130,13 +152,55 @@ export class CartComponent {
   }
 
   // Helper xử lý lỗi chung
-  private handleError(err: any, defaultMessage: string): void {
-    const message = err?.message || defaultMessage;
-    this.errorMessage.set(message);
-    this.toastr.error(message); // Hiển thị toast lỗi
-    console.error(err);
+  private handleError(err: any, defaultMessage: string, itemId?: number, oldQuantity?: number, productName?: string): void {
+    const apiResponseError = err.error as ApiResponse<null>; // Lấy lỗi từ body response
+    let message = defaultMessage; // Mặc định
+    const displayProductName = productName ?? 'sản phẩm'; // Lấy tên SP hoặc dùng mặc định
+
+    if (apiResponseError?.details?.['errorCode'] === 'ERR_OUT_OF_STOCK') {
+      // Xử lý lỗi hết hàng cụ thể
+      const serverAvailableStock = apiResponseError.details['availableStock'] as number | undefined;
+
+      if (serverAvailableStock != null && serverAvailableStock >= 0 && itemId) { // Cần itemId để reset
+        message = `Cập nhật thất bại. Chỉ còn ${serverAvailableStock} ${displayProductName} trong kho.`;
+        // Reset lại UI và state về số lượng đúng
+        const inputElement = document.getElementById(`quantity-input-${itemId}`) as HTMLInputElement | null;
+        if(inputElement) {
+          inputElement.value = serverAvailableStock.toString();
+        }
+        // Yêu cầu CartService cập nhật lại state (quan trọng)
+        this.cartService.forceCartItemQuantityUpdate(itemId, serverAvailableStock);
+      } else {
+        // Nếu không có availableStock hoặc itemId, hiển thị lỗi chung hơn
+        message = `Cập nhật thất bại. Số lượng ${displayProductName} không đủ.`;
+        // Nếu có oldQuantity, thử reset về giá trị cũ
+        if (itemId && oldQuantity !== undefined) {
+          const inputElement = document.getElementById(`quantity-input-${itemId}`) as HTMLInputElement | null;
+          if(inputElement) inputElement.value = oldQuantity.toString();
+          this.cartService.forceCartItemQuantityUpdate(itemId, oldQuantity);
+        }
+      }
+
+    } else if (apiResponseError?.message) {
+      // Lấy message từ ApiResponse nếu có cho các lỗi khác
+      message = apiResponseError.message;
+      // Nếu là lỗi khác khi cập nhật số lượng, reset về số cũ
+      if(itemId && oldQuantity !== undefined) {
+        const inputElement = document.getElementById(`quantity-input-${itemId}`) as HTMLInputElement | null;
+        if(inputElement) inputElement.value = oldQuantity.toString();
+        this.cartService.forceCartItemQuantityUpdate(itemId, oldQuantity);
+      }
+    } else if (err?.message) {
+      // Lấy message từ lỗi chung nếu không có ApiResponse
+      message = err.message;
+    }
+
+    // this.errorMessage.set(message); // Chỉ hiển thị lỗi chung nếu thực sự cần thiết
+    this.toastr.error(message); // Hiển thị toast lỗi cụ thể
+    console.error('API Error:', err);
     this.cdr.markForCheck(); // Thông báo thay đổi
   }
+  // ******************************
 
   // Hàm trackBy cho *ngFor
   trackCartItemById(index: number, item: CartItemResponse): number {

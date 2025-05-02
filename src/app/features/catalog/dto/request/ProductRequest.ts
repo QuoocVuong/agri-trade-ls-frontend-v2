@@ -12,7 +12,7 @@ export interface ProductRequest {
   price: number | string | BigDecimal; // B2C price, dùng number hoặc string để dễ nhập liệu
   stockQuantity: number;
   status?: ProductStatus; // Farmer chỉ nên gửi DRAFT/UNPUBLISHED
-  isB2bAvailable?: boolean;
+  b2bEnabled ?: boolean;
   b2bUnit?: string | null;
   minB2bQuantity?: number | null;
   b2bBasePrice?: number | string | BigDecimal | null;

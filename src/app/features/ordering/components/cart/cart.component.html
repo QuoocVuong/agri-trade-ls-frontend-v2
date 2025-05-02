@@ -45,14 +45,21 @@
               <div class="card-actions justify-start items-center mt-2">
                 <span class="text-sm mr-2">Số lượng:</span>
                 <div class="join">
-                  <button class="btn btn-xs join-item" (click)="updateQuantity(item, item.quantity - 1)" [disabled]="item.quantity <= 1 || isItemLoading(item.id)">-</button>
+                  <button class="btn btn-xs join-item"
+                          (click)="updateQuantity(item, item.quantity - 1)"
+                          [disabled]="item.quantity <= 1 || isItemLoading(item.id)">-</button>
                   <input type="number" class="input input-xs input-bordered w-12 text-center join-item"
-                         [value]="item.quantity" min="1" #qtyInput
-                         (input)="updateQuantity(item, qtyInput.valueAsNumber)"> <!-- Bỏ max -->
-                  <button class="btn btn-xs join-item" (click)="updateQuantity(item, item.quantity + 1)" [disabled]="isItemLoading(item.id)">+</button> <!-- Bỏ kiểm tra max -->
+                         [value]="item.quantity" min="1"
+                         [max]="item.product?.stockQuantity"
+                  #qtyInput
+                  (change)="updateQuantity(item, qtyInput.valueAsNumber)"
+                  [id]="'quantity-input-' + item.id"> <!-- Thêm ID để dễ truy cập từ TS -->
+                  <button class="btn btn-xs join-item"
+                          (click)="updateQuantity(item, item.quantity + 1)"
+                          [disabled]="item.quantity >= (item.product?.stockQuantity ?? 0) || isItemLoading(item.id)">+</button> <!-- ****** THÊM KIỂM TRA STOCK ****** -->
                 </div>
-                <!-- Bỏ dòng hiển thị lỗi tối đa -->
-                <!-- <span *ngIf="item.quantity >= (item.product?.stockQuantity ?? 0)" class="text-error text-xs ml-2">(Tối đa)</span> -->
+                <!-- (Tùy chọn) Hiển thị số lượng tồn kho -->
+                <span class="text-xs text-base-content/60 ml-2">(Còn: {{ item.product?.stockQuantity ?? 0 }})</span>
               </div>
               <!-- Item Total -->
               <p class="text-right font-semibold mt-2 text-sm">Thành tiền: {{ item.itemTotal | formatBigDecimal:'1.0-0' }} đ</p>

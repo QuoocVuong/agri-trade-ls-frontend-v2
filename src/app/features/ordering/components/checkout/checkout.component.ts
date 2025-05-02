@@ -17,8 +17,9 @@ import { OrderResponse } from '../../dto/response/OrderResponse';
 import {finalize, takeUntil} from 'rxjs/operators';
 import {log} from '@angular-devkit/build-angular/src/builders/ssr-dev-server';
 import {FormatBigDecimalPipe} from '../../../../shared/pipes/format-big-decimal.pipe';
-import {Subject} from 'rxjs';
+import {Observable, of, shareReplay, Subject} from 'rxjs';
 import {AuthService} from '../../../../core/services/auth.service';
+import {LocationService} from '../../../../core/services/location.service';
 
 @Component({
   selector: 'app-checkout',
@@ -36,6 +37,7 @@ export class CheckoutComponent implements OnInit {
   private cdr = inject(ChangeDetectorRef);
   private destroy$ = new Subject<void>();
   private authService = inject(AuthService);
+  private locationService = inject(LocationService);
 
   checkoutForm!: FormGroup;
   addresses = signal<Address[]>([]);
@@ -43,6 +45,10 @@ export class CheckoutComponent implements OnInit {
   isLoadingCheckout = signal(false);
   errorMessage = signal<string | null>(null);
   showNewAddressForm = signal(false);
+
+  // ****** THÊM CACHE CHO TÊN ĐỊA DANH ******
+  private locationNameCache = new Map<string, Observable<string | null>>();
+  // *****************************************
 
   // Lấy giỏ hàng hiện tại
   cart = computed(() => this.cartService.getCurrentCart());
@@ -74,6 +80,13 @@ export class CheckoutComponent implements OnInit {
     this.initForm();
   }
 
+  // ****** THÊM ngOnDestroy ******
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+  // ****************************
+
   initForm(): void {
     this.checkoutForm = this.fb.group({
       shippingAddressId: [null, Validators.required],
@@ -85,7 +98,7 @@ export class CheckoutComponent implements OnInit {
 
   loadAddresses(): void {
     this.isLoadingAddresses.set(true);
-    this.userProfileService.getMyAddresses().subscribe({
+    this.userProfileService.getMyAddresses().pipe(takeUntil(this.destroy$)).subscribe({
       next: (res) => {
         if (res.success && res.data) {
           this.addresses.set(res.data);
@@ -199,6 +212,37 @@ export class CheckoutComponent implements OnInit {
         error: (err) => this.handleError(err, 'Đã xảy ra lỗi khi đặt hàng.')
       });
   }
+
+  // ****** THÊM HÀM getLocationName ******
+  getLocationName(type: 'province' | 'district' | 'ward', code: string | null | undefined): Observable<string | null> {
+    if (!code || code === 'undefined') {
+      return of(null);
+    }
+
+    const cacheKey = `${type}_${code}`;
+    if (this.locationNameCache.has(cacheKey)) {
+      return this.locationNameCache.get(cacheKey)!;
+    }
+
+    let name$: Observable<string | null>;
+    switch (type) {
+      case 'province':
+        name$ = this.locationService.findProvinceName(code);
+        break;
+      case 'district':
+        name$ = this.locationService.findDistrictName(code);
+        break;
+      case 'ward':
+        name$ = this.locationService.findWardName(code);
+        break;
+      default:
+        name$ = of(null);
+    }
+    const cachedName$ = name$.pipe(shareReplay(1));
+    this.locationNameCache.set(cacheKey, cachedName$);
+    return cachedName$;
+  }
+  // ************************************
 
   // Helper xử lý lỗi
   private handleError(err: any, defaultMessage: string): void {

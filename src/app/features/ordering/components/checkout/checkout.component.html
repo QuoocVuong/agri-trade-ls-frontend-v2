@@ -43,9 +43,16 @@
                 class="select select-bordered w-full"
                 formControlName="shippingAddressId"
                 [ngClass]="{'select-error': checkoutForm.controls['shippingAddressId'].invalid && checkoutForm.controls['shippingAddressId'].touched}">
+                <!-- ****** SỬA NỘI DUNG OPTION Ở ĐÂY ****** -->
                 <option *ngFor="let addr of addresses()" [value]="addr.id">
-                  {{ addr.fullName }} - {{ addr.phoneNumber }} - {{ addr.addressDetail }}, {{ addr.wardCode }}, {{ addr.districtCode }}, {{ addr.provinceCode }} {{ addr.isDefault ? '(Mặc định)' : '' }}
+                  {{ addr.fullName }} - {{ addr.phoneNumber }} - {{ addr.addressDetail }}<span *ngIf="addr.addressDetail">, </span>
+                  <!-- Sử dụng async pipe để hiển thị tên địa danh -->
+                  <ng-container *ngIf="getLocationName('ward', addr.wardCode) | async as name; else wardCodeOnly">{{ name || '...' }}<span *ngIf="name">, </span></ng-container><ng-template #wardCodeOnly><span *ngIf="addr.wardCode">{{addr.wardCode}}, </span></ng-template>
+                  <ng-container *ngIf="getLocationName('district', addr.districtCode) | async as name; else districtCodeOnly">{{ name || '...' }}<span *ngIf="name">, </span></ng-container><ng-template #districtCodeOnly><span *ngIf="addr.districtCode">{{addr.districtCode}}, </span></ng-template>
+                  <ng-container *ngIf="getLocationName('province', addr.provinceCode) | async as name; else provinceCodeOnly">{{ name || '...' }}</ng-container><ng-template #provinceCodeOnly><span *ngIf="addr.provinceCode">{{addr.provinceCode}}</span></ng-template>
+                  {{ addr.isDefault ? ' (Mặc định)' : '' }}
                 </option>
+                <!-- ***************************************** -->
               </select>
               <label *ngIf="checkoutForm.controls['shippingAddressId'].invalid && checkoutForm.controls['shippingAddressId'].touched" class="label py-1">
                 <span class="label-text-alt text-error text-xs">Vui lòng chọn địa chỉ.</span>

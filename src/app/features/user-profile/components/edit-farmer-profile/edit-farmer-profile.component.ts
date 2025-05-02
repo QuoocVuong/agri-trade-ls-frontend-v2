@@ -97,8 +97,8 @@ export class EditFarmerProfileComponent implements OnInit {
       minB2bOrderValue: [null, [Validators.min(0)]]
     });
 
-    // Lắng nghe isB2bAvailable để enable/disable các trường liên quan
-    this.profileForm.get('isB2bAvailable')?.valueChanges
+    // Lắng nghe b2bEnabled để enable/disable các trường liên quan
+    this.profileForm.get('b2bEnabled')?.valueChanges
       .pipe(takeUntil(this.destroy$))
       .subscribe(isAvailable => { /* ... (logic như cũ) ... */ });
   }
@@ -140,7 +140,7 @@ export class EditFarmerProfileComponent implements OnInit {
   //         }
   //       }
   //       // Trigger B2B enable/disable check
-  //       this.profileForm.get('isB2bAvailable')?.updateValueAndValidity();
+  //       this.profileForm.get('b2bEnabled')?.updateValueAndValidity();
   //       this.profileForm.markAsPristine(); // Đánh dấu chưa sửa đổi
   //
   //     } else if (response.success && !response.data?.farmerProfile) {
@@ -195,7 +195,7 @@ export class EditFarmerProfileComponent implements OnInit {
             }
           }
         }
-        this.profileForm.get('isB2bAvailable')?.updateValueAndValidity();
+        this.profileForm.get('b2bEnabled')?.updateValueAndValidity();
         this.profileForm.markAsPristine();
 
       } else if (response.success && !response.data?.farmerProfile) {
@@ -329,8 +329,8 @@ export class EditFarmerProfileComponent implements OnInit {
       });
 
 
-    // Lắng nghe isB2bAvailable (chuyển từ initForm ra đây)
-    this.profileForm.get('isB2bAvailable')?.valueChanges
+    // Lắng nghe b2bEnabled (chuyển từ initForm ra đây)
+    this.profileForm.get('b2bEnabled')?.valueChanges
       .pipe(takeUntil(this.destroy$))
       .subscribe(isAvailable => { /* ... (logic enable/disable trường B2B như cũ) ... */ });
   }

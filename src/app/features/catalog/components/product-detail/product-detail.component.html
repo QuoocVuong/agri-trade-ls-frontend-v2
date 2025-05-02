@@ -97,13 +97,13 @@
         <!-- Price -->
         <div class="mb-4">
           <!-- Hiển thị giá B2C (luôn hiển thị hoặc chỉ hiện khi không phải B2B xem) -->
-          <div *ngIf="!isBusinessBuyer() || !p.isB2bAvailable"> <!-- Hoặc chỉ !isBusinessBuyer() nếu muốn B2B chỉ thấy giá B2B -->
+          <div *ngIf="!isBusinessBuyer() || !p.b2bEnabled"> <!-- Hoặc chỉ !isBusinessBuyer() nếu muốn B2B chỉ thấy giá B2B -->
             <span class="text-3xl font-bold text-primary">{{ p.price | formatBigDecimal:'1.0-0' }} ₫</span>
             <span class="text-base-content/70 text-sm"> / {{ p.unit }}</span>
           </div>
 
           <!-- Hiển thị giá B2B (chỉ khi là Business Buyer VÀ sản phẩm hỗ trợ B2B) -->
-          <div *ngIf="isBusinessBuyer() && p.isB2bAvailable">
+          <div *ngIf="isBusinessBuyer() && p.b2bEnabled">
             <p class="text-sm font-medium text-secondary mb-1">Giá doanh nghiệp:</p>
             <!-- Hiển thị giá bậc thang nếu có -->
             <div *ngIf="p.pricingTiers && p.pricingTiers.length > 0" class="space-y-1 text-sm">
@@ -136,7 +136,7 @@
           <div class="flex items-center gap-4 mb-4">
             <label for="quantity" class="font-medium text-sm">Số lượng:</label>
             <!-- Hiển thị đơn vị phù hợp -->
-            <span class="text-xs text-base-content/70">({{ (isBusinessBuyer() && p.isB2bAvailable) ? p.b2bUnit : p.unit }})</span>
+            <span class="text-xs text-base-content/70">({{ (isBusinessBuyer() && p.b2bEnabled) ? p.b2bUnit : p.unit }})</span>
             <div class="join">
               <button type="button"
                       class="btn btn-sm join-item rounded-l-full"
@@ -149,7 +149,7 @@
                      id="quantity"
                      formControlName="quantity"
                      class="input input-sm input-bordered w-16 text-center join-item"
-                     [min]="(isBusinessBuyer() && p.isB2bAvailable) ? (p.minB2bQuantity || 1) : 1"
+                     [min]="(isBusinessBuyer() && p.b2bEnabled) ? (p.minB2bQuantity || 1) : 1"
                      [max]="p.stockQuantity"
                      aria-label="Số lượng sản phẩm">
               <button type="button"
@@ -162,9 +162,10 @@
             </div>
           </div>
           <div class="flex items-center gap-4">
+            <!-- product-detail.component.html -->
             <button type="submit"
                     class="btn btn-primary flex-grow rounded-full hover:bg-primary-dark transition-colors"
-                    [disabled]="isAddingToCart() || quantityForm.invalid || p.stockQuantity <= 0"
+                    [disabled]="isAddingToCart() || quantityForm.invalid || (quantityForm.value.quantity ?? 1) > (product()?.stockQuantity ?? 0) || (product()?.stockQuantity ?? 0) <= 0"
                     aria-label="Thêm vào giỏ hàng">
               <span *ngIf="isAddingToCart()" class="loading loading-spinner loading-xs"></span>
               {{ isAddingToCart() ? 'Đang thêm...' : 'Thêm vào giỏ hàng' }}

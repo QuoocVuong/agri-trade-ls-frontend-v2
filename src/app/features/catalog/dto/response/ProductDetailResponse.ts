@@ -31,7 +31,7 @@ export interface ProductDetailResponse {
   // recentReviews?: ReviewResponse[];
 
   // Thông tin B2B
-  isB2bAvailable: boolean;
+  b2bEnabled : boolean;
   b2bUnit: string | null;
   minB2bQuantity: number | null;
   b2bBasePrice: number | string | BigDecimal | null;

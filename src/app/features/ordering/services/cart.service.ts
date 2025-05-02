@@ -1,6 +1,6 @@
 import {Injectable, signal, inject, computed, effect} from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import {BehaviorSubject, Observable, tap, finalize, of} from 'rxjs';
+import {HttpClient, HttpErrorResponse} from '@angular/common/http';
+import {BehaviorSubject, Observable, tap, finalize, of, throwError} from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { ApiResponse } from '../../../core/models/api-response.model';
 import { CartResponse } from '../dto/response/CartResponse';
@@ -132,5 +132,58 @@ export class CartService {
       }),
       finalize(() => this.isLoading.set(false))
     );
+  }
+
+  // ****** THÊM HÀM NÀY ******
+  // Hàm để component gọi khi cần cập nhật số lượng item trong state mà không gọi API
+  forceCartItemQuantityUpdate(itemId: number, newQuantity: number): void {
+    const currentCart = this.getCurrentCart();
+    if (currentCart) {
+      const updatedItems = currentCart.items.map(item => {
+        if (item.id === itemId) {
+          // Cập nhật số lượng và tính lại itemTotal
+          const updatedItem = { ...item, quantity: newQuantity };
+          if (updatedItem.product?.price) {
+            // Cẩn thận với kiểu dữ liệu price (string, number, BigDecimal?)
+            // Giả sử price là string hoặc number có thể chuyển đổi
+            const price = new BigDecimal(updatedItem.product.price.toString());
+            updatedItem.itemTotal = price.multiply(new BigDecimal(newQuantity));
+          } else {
+            updatedItem.itemTotal = new BigDecimal(0);
+          }
+          return updatedItem;
+        }
+        return item;
+      });
+
+      // Tính lại subTotal và totalItems
+      const newSubTotal = updatedItems.reduce((sum, item) => {
+        const itemTotal = item.itemTotal instanceof BigDecimal ? item.itemTotal : new BigDecimal(item.itemTotal?.toString() ?? '0');
+        return sum.add(itemTotal);
+      }, new BigDecimal(0));
+      const newTotalItems = updatedItems.reduce((sum, item) => sum + item.quantity, 0);
+
+      // Cập nhật BehaviorSubject
+      this.cartSubject.next({
+        items: updatedItems,
+        subTotal: newSubTotal, // Trả về BigDecimal hoặc string tùy bạn muốn
+        totalItems: newTotalItems
+      });
+    }
+  }
+  // ****************************
+
+  // Thông báo cập nhật (nếu cần cho các component khác lắng nghe)
+  notifyCartUpdated(): void {
+    const currentCart = this.getCurrentCart();
+    if(currentCart) {
+      this.cartSubject.next({...currentCart}); // Phát ra giá trị mới (bản sao)
+    }
+  }
+
+
+  private handleError(error: HttpErrorResponse): Observable<never> {
+    // Trả về lỗi để component có thể xử lý
+    return throwError(() => error);
   }
 }

@@ -11,7 +11,7 @@ import { OrderStatus, getOrderStatusText, getOrderStatusCssClass } from '../../d
 import { PaymentStatus, getPaymentStatusText, getPaymentStatusCssClass } from '../../domain/payment-status.enum';
 import { PaymentMethod, getPaymentMethodText } from '../../domain/payment-method.enum';
 import { ToastrService } from 'ngx-toastr'; // Import ToastrService
-import { Subject } from 'rxjs';
+import {Observable, of, shareReplay, Subject} from 'rxjs';
 import { takeUntil, finalize } from 'rxjs/operators';
 import { FormatBigDecimalPipe } from '../../../../shared/pipes/format-big-decimal.pipe'; // Import Pipe
 import { OrderStatusUpdateRequest } from '../../dto/request/OrderStatusUpdateRequest'; // Import DTO update status
@@ -42,6 +42,7 @@ export class OrderDetailComponent implements OnInit, OnDestroy {
   private toastr = inject(ToastrService);
   private destroy$ = new Subject<void>();
   private adminOrderingService = inject(AdminOrderingService);
+  private locationService = inject(LocationService);
 
   order = signal<OrderResponse | null>(null);
   isLoading = signal(true);
@@ -51,6 +52,10 @@ export class OrderDetailComponent implements OnInit, OnDestroy {
 
 
   isDownloadingInvoice = signal(false);
+
+  // ****** THÊM CACHE CHO TÊN ĐỊA DANH ******
+  private locationNameCache = new Map<string, Observable<string | null>>();
+  // *****************************************
 
   // Xác định vai trò và quyền
   currentUser = this.authService.currentUser;
@@ -276,6 +281,37 @@ export class OrderDetailComponent implements OnInit, OnDestroy {
     }
   }
 
+  // ****** THÊM HÀM getLocationName ******
+  getLocationName(type: 'province' | 'district' | 'ward', code: string | null | undefined): Observable<string | null> {
+    if (!code || code === 'undefined') {
+      return of(null);
+    }
+
+    const cacheKey = `${type}_${code}`;
+    if (this.locationNameCache.has(cacheKey)) {
+      return this.locationNameCache.get(cacheKey)!;
+    }
+
+    let name$: Observable<string | null>;
+    switch (type) {
+      case 'province':
+        name$ = this.locationService.findProvinceName(code);
+        break;
+      case 'district':
+        name$ = this.locationService.findDistrictName(code);
+        break;
+      case 'ward':
+        name$ = this.locationService.findWardName(code);
+        break;
+      default:
+        name$ = of(null);
+    }
+    const cachedName$ = name$.pipe(shareReplay(1));
+    this.locationNameCache.set(cacheKey, cachedName$);
+    return cachedName$;
+  }
+  // ************************************
+
 
   // Helper xử lý lỗi và điều hướng
   private handleErrorAndRedirect(message: string): void {
@@ -326,3 +362,4 @@ export class OrderDetailComponent implements OnInit, OnDestroy {
 // Cần inject AdminOrderingService nếu chưa có
 import { AdminOrderingService } from '../../../admin-dashboard/services/admin-ordering.service';
 import {saveAs} from 'file-saver';
+import {LocationService} from '../../../../core/services/location.service';

@@ -1,4 +1,4 @@
-import {Component, OnInit, inject, signal, computed, OnDestroy} from '@angular/core';
+import {Component, OnInit, inject, signal, computed, OnDestroy, ChangeDetectorRef} from '@angular/core';
 import { CommonModule, DecimalPipe, DatePipe } from '@angular/common'; // Import Pipes
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ProductService } from '../../services/product.service';
@@ -12,22 +12,22 @@ import { AuthService } from '../../../../core/services/auth.service'; // Import 
 import { CartService } from '../../../ordering/services/cart.service'; // Import CartService
 import { FavoriteService } from '../../../interaction/service/FavoriteService'; // Import FavoriteService
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
-import {CartItemRequest} from '../../../ordering/dto/request/CartItemRequest';
-import {Subject} from 'rxjs';
-import {ToastrService} from 'ngx-toastr';
-import {finalize, takeUntil} from 'rxjs/operators';
-import {FormatBigDecimalPipe} from '../../../../shared/pipes/format-big-decimal.pipe';
-import {SafeHtmlPipe} from '../../../../shared/pipes/safe-html.pipe';
-import {ReviewResponse} from '../../../interaction/dto/response/ReviewResponse';
-import {ProductSummaryResponse} from '../../dto/response/ProductSummaryResponse';
-import {LocationService} from '../../../../core/services/location.service'; // Import Forms
+import { CartItemRequest } from '../../../ordering/dto/request/CartItemRequest';
+import { Subject } from 'rxjs';
+import { ToastrService } from 'ngx-toastr';
+import { finalize, takeUntil } from 'rxjs/operators';
+import { FormatBigDecimalPipe } from '../../../../shared/pipes/format-big-decimal.pipe';
+import { SafeHtmlPipe } from '../../../../shared/pipes/safe-html.pipe';
+import { ReviewResponse } from '../../../interaction/dto/response/ReviewResponse';
+import { ProductSummaryResponse } from '../../dto/response/ProductSummaryResponse';
+import { LocationService } from '../../../../core/services/location.service'; // Import Forms
 import {
   trigger,
   transition,
   style,
   animate
 } from '@angular/animations';
-import {ChatService} from '../../../interaction/service/ChatService';
+import { ChatService } from '../../../interaction/service/ChatService';
 
 @Component({
   selector: 'app-product-detail',
@@ -72,6 +72,8 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
   private locationService = inject(LocationService);
   private chatService = inject(ChatService);
+  private cdr = inject(ChangeDetectorRef);
+
   product = signal<ProductDetailResponse | null>(null);
   isLoading = signal(true);
   errorMessage = signal<string | null>(null);
@@ -112,7 +114,7 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
       this.errorMessage.set('Không tìm thấy mã sản phẩm.');
       this.isLoading.set(false);
       // Có thể redirect về trang sản phẩm
-       this.router.navigate(['/products']);
+      this.router.navigate(['/products']);
     }
 
   }
@@ -129,56 +131,56 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
     this.productService.getPublicProductBySlug(slug)
       .pipe(takeUntil(this.destroy$)) // <-- Hủy subscription khi component destroy
       .subscribe({
-      next: (response) => {
-        if (response.success && response.data) {
-          this.product.set(response.data);
-          // Set ảnh default hoặc ảnh đầu tiên làm ảnh hiển thị lớn ban đầu
-          const defaultImg = response.data.images?.find(img => img.isDefault);
-          this.selectedImage.set(defaultImg?.imageUrl || response.data.images?.[0]?.imageUrl || null);
+        next: (response) => {
+          if (response.success && response.data) {
+            this.product.set(response.data);
+            // Set ảnh default hoặc ảnh đầu tiên làm ảnh hiển thị lớn ban đầu
+            const defaultImg = response.data.images?.find(img => img.isDefault);
+            this.selectedImage.set(defaultImg?.imageUrl || response.data.images?.[0]?.imageUrl || null);
 
-          // *** Lấy tên tỉnh cho farmer ***
-          const farmerProvinceCode =response.data.farmer?.provinceCode;
-          if (farmerProvinceCode) {
-            this.locationService.findProvinceName(farmerProvinceCode)
-              .pipe(takeUntil(this.destroy$)) // Hủy cả subscription này
-              .subscribe(name => this.farmerProvinceName.set(name || `Mã ${farmerProvinceCode}`));
+            // *** Lấy tên tỉnh cho farmer ***
+            const farmerProvinceCode = response.data.farmer?.provinceCode;
+            if (farmerProvinceCode) {
+              this.locationService.findProvinceName(farmerProvinceCode)
+                .pipe(takeUntil(this.destroy$)) // Hủy cả subscription này
+                .subscribe(name => this.farmerProvinceName.set(name || `Mã ${farmerProvinceCode}`));
+            } else {
+              this.farmerProvinceName.set('Không xác định');
+            }
+            // ******************************
+
+            // Kiểm tra trạng thái yêu thích nếu user đã đăng nhập
+            if (this.isAuthenticated() && response.data.id) {
+              this.checkFavoriteStatus(response.data.id);
+            }
+            // Cập nhật validator cho số lượng dựa trên tồn kho
+            if (response.data.stockQuantity > 0) {
+              this.quantityForm.controls.quantity.setValidators([
+                Validators.required,
+                Validators.min(1),
+                Validators.max(response.data.stockQuantity) // Giới hạn max là tồn kho
+              ]);
+            } else {
+              this.quantityForm.controls.quantity.setValidators([Validators.required, Validators.min(0), Validators.max(0)]); // Không cho nhập nếu hết hàng
+              this.quantityForm.controls.quantity.setValue(0);
+            }
+            this.quantityForm.controls.quantity.updateValueAndValidity();
+
+
           } else {
-            this.farmerProvinceName.set('Không xác định');
+            this.errorMessage.set(response.message || 'Không tìm thấy sản phẩm.');
           }
-          // ******************************
-
-          // Kiểm tra trạng thái yêu thích nếu user đã đăng nhập
-          if(this.isAuthenticated() && response.data.id) {
-            this.checkFavoriteStatus(response.data.id);
+          this.isLoading.set(false);
+        },
+        error: (err: ApiResponse<null>) => {
+          this.errorMessage.set(err.message || 'Đã xảy ra lỗi khi tải sản phẩm.');
+          this.isLoading.set(false);
+          if (err.status === 404) {
+            // Redirect về trang not found hoặc products
+            this.router.navigate(['/not-found']);
           }
-          // Cập nhật validator cho số lượng dựa trên tồn kho
-          if (response.data.stockQuantity > 0) {
-            this.quantityForm.controls.quantity.setValidators([
-              Validators.required,
-              Validators.min(1),
-              Validators.max(response.data.stockQuantity) // Giới hạn max là tồn kho
-            ]);
-          } else {
-            this.quantityForm.controls.quantity.setValidators([Validators.required, Validators.min(0), Validators.max(0)]); // Không cho nhập nếu hết hàng
-            this.quantityForm.controls.quantity.setValue(0);
-          }
-          this.quantityForm.controls.quantity.updateValueAndValidity();
-
-
-        } else {
-          this.errorMessage.set(response.message || 'Không tìm thấy sản phẩm.');
         }
-        this.isLoading.set(false);
-      },
-      error: (err: ApiResponse<null>) => {
-        this.errorMessage.set(err.message || 'Đã xảy ra lỗi khi tải sản phẩm.');
-        this.isLoading.set(false);
-        if (err.status === 404) {
-          // Redirect về trang not found hoặc products
-          this.router.navigate(['/not-found']);
-        }
-      }
-    });
+      });
   }
 
   updateQuantityValidators(stock: number): void {
@@ -204,12 +206,6 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
     quantityControl.updateValueAndValidity();
   }
 
-  // checkFavoriteStatus(productId: number): void {
-  //   this.favoriteService.isFavorite(this.authService.currentUserSignal(), productId).subscribe({
-  //     next: (isFav) => this.isFavorite.set(isFav),
-  //     error: (err) => console.error("Error checking favorite status", err) // Không cần báo lỗi lớn
-  //   });
-  // }
   checkFavoriteStatus(productId: number): void {
     this.favoriteService.isFavorite(productId) // Gọi service đã sửa
       .pipe(takeUntil(this.destroy$))
@@ -238,6 +234,8 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
   addToCart(): void {
     if (this.quantityForm.invalid || !this.product()) {
       this.quantityForm.markAllAsTouched();
+      // Thêm toastr warning nếu muốn
+      // this.toastr.warning('Vui lòng nhập số lượng hợp lệ.');
       return;
     }
     if (!this.isAuthenticated()) {
@@ -246,29 +244,157 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
       return;
     }
 
+    // Kiểm tra tồn kho client-side trước khi gọi API (tăng UX)
+    const requestedQuantity = this.quantityForm.value.quantity ?? 1;
+    const availableStock = this.product()?.stockQuantity ?? 0;
+    const productName = this.product()?.name ?? 'Sản phẩm';
+
+    // if (requestedQuantity > availableStock) {
+    //   this.toastr.error(`Chỉ còn ${availableStock} ${this.product()?.name ?? 'sản phẩm'} trong kho.`);
+    //   this.quantityForm.controls.quantity.setValue(availableStock); // Set về max
+    //   return; // Không gọi API
+    // }
+    if (availableStock <= 0) {
+      this.toastr.error(`${this.product()?.name ?? 'Sản phẩm'} đã hết hàng.`);
+      return; // Không gọi API
+    }
+
+    // // ****** THÊM KIỂM TRA CLIENT-SIDE ******
+    // const currentCart = this.cartService.getCurrentCart();
+    // const itemInCart = currentCart?.items.find(item => item.product?.id === this.product()?.id);
+    // const quantityInCart = itemInCart?.quantity ?? 0;
+    //
+    // if ((quantityInCart + requestedQuantity) > availableStock) {
+    //   const canAdd = availableStock - quantityInCart;
+    //   if (canAdd > 0) {
+    //     this.toastr.error(`Chỉ có thể thêm tối đa ${canAdd} "${productName}" nữa (hiện có ${quantityInCart} trong giỏ).`);
+    //     // Set lại giá trị input về mức tối đa có thể thêm (nếu muốn)
+    //     // this.quantityForm.controls.quantity.setValue(canAdd);
+    //   } else {
+    //     this.toastr.error(`Số lượng "${productName}" trong giỏ đã đạt mức tối đa (${availableStock}).`);
+    //   }
+    //   return; // Không gọi API
+    // }
+    // // ************************************
+    // Lấy số lượng trong giỏ TRƯỚC KHI THÊM
+    const currentCart = this.cartService.getCurrentCart();
+    const itemInCart = currentCart?.items.find(item => item.product?.id === this.product()?.id);
+    const quantityInCartBeforeAdd = itemInCart?.quantity ?? 0; // Lưu lại số lượng cũ
+
+    // Kiểm tra client-side trước khi gọi API
+    if ((quantityInCartBeforeAdd + requestedQuantity) > availableStock) {
+      const canAdd = availableStock - quantityInCartBeforeAdd;
+      if (canAdd > 0) {
+        this.toastr.error(`Chỉ có thể thêm tối đa ${canAdd} "${productName}" nữa (hiện có ${quantityInCartBeforeAdd} trong giỏ).`);
+      } else {
+        this.toastr.error(`Số lượng "${productName}" trong giỏ đã đạt mức tối đa (${availableStock}).`);
+      }
+      this.cdr.markForCheck();
+      return; // Không gọi API
+    }
+
+
+
     this.isAddingToCart.set(true);
     const request: CartItemRequest = {
-      productId: this.product()!.id, // Dùng ! vì đã kiểm tra product() ở trên
-      quantity: this.quantityForm.value.quantity ?? 1
+      productId: this.product()!.id,
+      quantity: requestedQuantity
     };
 
-    this.cartService.addItem(request) // Gọi service đã sửa
+    this.cartService.addItem(request)
       .pipe(
         takeUntil(this.destroy$),
-        finalize(() => this.isAddingToCart.set(false))
+        finalize(() => {
+          this.isAddingToCart.set(false);
+          this.cdr.markForCheck();
+        })
       )
       .subscribe({
         next: () => {
-          this.toastr.success(`Đã thêm ${request.quantity} "${this.product()?.name}" vào giỏ hàng!`);
+          this.toastr.success(`Đã thêm ${request.quantity} "${productName}" vào giỏ hàng!`);
+          // // ****** THÊM KIỂM TRA SAU KHI THÊM THÀNH CÔNG ******
+          // const updatedCart = this.cartService.getCurrentCart();
+          // const addedItem = updatedCart?.items.find(item => item.product?.id === this.product()?.id);
+          // const newQuantityInCart = addedItem?.quantity ?? 0;
+          // const stock = this.product()?.stockQuantity ?? 0; // Lấy stock từ product detail
+          // // ****** THÊM CONSOLE LOG ******
+          // console.log(`--- After Add Success (Product ID: ${this.product()?.id}) ---`); // Hoặc this.product()?.id
+          // console.log(`Stock: ${stock}`);
+          // console.log(`Quantity in Cart (from getCurrentCart): ${newQuantityInCart}`);
+          // console.log(`Is newQuantityInCart === stock? : ${newQuantityInCart === stock}`);
+          // console.log('Current Cart State:', updatedCart); // Xem toàn bộ giỏ hàng
+          // // ******************************
+          //
+          // if (newQuantityInCart > 0 && stock > 0 && newQuantityInCart === stock) {
+          //   console.log('>>> Condition MET! Showing info toastr.'); // Thêm log này
+          //   setTimeout(() => {
+          //     this.toastr.info(`Đã đạt số lượng tối đa (${stock}) cho "${productName}" trong giỏ hàng.`);
+          //     this.cdr.markForCheck();
+          //   }, 100);
+          // } else {
+          //   console.log('>>> Condition NOT MET.'); // Thêm log này
+          // }
+          // // ****************************************************
+          // ****** KIỂM TRA DỰA TRÊN SỐ LƯỢNG CŨ VÀ SỐ LƯỢNG VỪA THÊM ******
+          const expectedNewQuantityInCart = quantityInCartBeforeAdd + requestedQuantity;
+          const stock = this.product()?.stockQuantity ?? 0; // Lấy lại stock
+
+          console.log(`--- After Add Success (Product ID: ${this.product()?.id}) ---`);
+          console.log(`Stock: ${stock}`);
+          console.log(`Quantity Before Add: ${quantityInCartBeforeAdd}`);
+          console.log(`Quantity Added: ${requestedQuantity}`);
+          console.log(`Expected New Quantity: ${expectedNewQuantityInCart}`);
+          console.log(`Is Expected New Quantity === Stock? : ${expectedNewQuantityInCart === stock}`);
+
+
+          // Kiểm tra nếu số lượng mới bằng tồn kho
+          if (expectedNewQuantityInCart > 0 && stock > 0 && expectedNewQuantityInCart === stock) {
+            console.log('>>> Condition MET! Showing info toastr.');
+            setTimeout(() => {
+              this.toastr.info(`Đã đạt số lượng tối đa (${stock}) cho "${productName}" trong giỏ hàng.`);
+              this.cdr.markForCheck();
+            }, 100); // Delay nhỏ để tránh toast chồng nhau
+          } else {
+            console.log('>>> Condition NOT MET.');
+          }
+          // ******************************************************************
         },
-        error: (err: ApiResponse<any> | any) => this.handleError(err, 'Lỗi thêm vào giỏ hàng.')
+        error: (err: any) => { // Dùng any hoặc HttpErrorResponse
+          console.error('Error adding to cart:', err);
+          // ****** SỬA LOGIC XỬ LÝ LỖI ******
+          const apiResponseError = err.error as ApiResponse<null>; // Ép kiểu lỗi từ backend
+
+          if (apiResponseError?.details?.['errorCode'] === 'ERR_OUT_OF_STOCK') {
+            const serverAvailableStock = apiResponseError.details['availableStock'] as number | undefined;
+           // const productName = this.product()?.name ?? 'sản phẩm';
+            if (serverAvailableStock != null && serverAvailableStock > 0) {
+              this.toastr.error(`Thêm thất bại. Chỉ còn ${serverAvailableStock} ${productName} trong kho.`);
+              // Cập nhật ô số lượng về mức tối đa có thể
+              this.quantityForm.controls.quantity.setValue(serverAvailableStock);
+              // Cập nhật validator nếu stock về 0
+              if (serverAvailableStock === 0) {
+                this.updateQuantityValidators(0);
+              }
+            } else {
+              // Trường hợp không có availableStock từ server (ít xảy ra)
+              this.toastr.error(`Thêm thất bại. Số lượng ${productName} không đủ.`);
+            }
+          } else {
+            // Lỗi khác, hiển thị message từ ApiResponse
+            const message = apiResponseError?.message || err?.message || 'Lỗi thêm vào giỏ hàng.';
+            this.toastr.error(message);
+          }
+          this.cdr.markForCheck();
+          // **********************************
+        }
       });
   }
+
 
   toggleFavorite(): void {
     if (!this.isAuthenticated() || !this.product()) {
       this.toastr.info('Vui lòng đăng nhập để yêu thích sản phẩm.');
-      this.router.navigate(['/auth/login'], {queryParams: {returnUrl: this.router.url}});
+      this.router.navigate(['/auth/login'], { queryParams: { returnUrl: this.router.url } });
       return;
     }
 
@@ -293,7 +419,7 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
           const message = this.isFavorite() ? 'Đã thêm vào yêu thích' : 'Đã xóa khỏi yêu thích';
           this.toastr.success(message);
         },
-        error: (err: ApiResponse<any> | any) => this.handleError(err, 'Thao tác thất bại.')
+        error: (err: ApiResponse<any> | any) => this.handleError(err, 'toggle_favorite')
       });
   }
 
@@ -312,8 +438,38 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
     // TODO: Cập nhật danh sách review nếu cần (ví dụ: thêm vào đầu list với trạng thái PENDING)
   }
   // Helper xử lý lỗi
-  private handleError(err: any, defaultMessage: string): void {
-    const message = err?.message || defaultMessage;
+  private handleError(err: any, errorType: string): void {
+    let message = 'Có lỗi xảy ra, vui lòng thử lại sau.'; // Thông báo mặc định
+    const status = err?.status;
+    if (errorType === 'add_to_cart') {
+      if (status === 400) {
+        // Check more detail in the backend error message
+        if (err.message.includes('Quantity')) {
+          message = "Số lượng bạn chọn không hợp lệ.";
+        } else if (err.message.includes('Product not found')) {
+          message = 'Sản phẩm không tồn tại.';
+        } else {
+          message = "Dữ liệu không hợp lệ.";
+        }
+      } else if (status === 404) {
+        message = "Sản phẩm không tồn tại.";
+      } else if (status === 401) {
+        message = 'Vui lòng đăng nhập để thực hiện thao tác.';
+      } else if (status === 403) {
+        message = "Bạn không có quyền thực hiện thao tác này.";
+      } else {
+        message = 'Có lỗi xảy ra khi thêm sản phẩm vào giỏ hàng, vui lòng thử lại sau.';
+      }
+    } else if (errorType === 'toggle_favorite') {
+      if (status === 401) {
+        message = 'Vui lòng đăng nhập để thực hiện thao tác.';
+      } else {
+        message = 'Có lỗi xảy ra khi thao tác yêu thích, vui lòng thử lại sau.';
+      }
+    } else if (errorType === 'start_chat'){
+      message = "Không thể bắt đầu cuộc trò chuyện.";
+    }
+
     this.errorMessage.set(message);
     this.toastr.error(message);
     console.error(err);
@@ -351,8 +507,9 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
         }
       },
       error: (err) => {
-        this.toastr.error(err.message || 'Lỗi khi bắt đầu cuộc trò chuyện.');
-        console.error(err);
+        // Print out the error to check
+        console.error('Error starting chat:', err);
+        this.handleError(err, 'start_chat');
       }
     });
   }
@@ -365,5 +522,3 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
     return item.id;
   }
 }
-
-

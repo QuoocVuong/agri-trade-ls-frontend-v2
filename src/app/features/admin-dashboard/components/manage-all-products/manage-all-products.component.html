@@ -45,6 +45,7 @@
         <th>Nông dân</th>
         <th>Danh mục</th>
         <th class="text-right">Giá (B2C)</th>
+        <th class="text-right">Giá (B2B)</th>
         <th class="text-right">Tồn kho</th>
         <th>Trạng thái</th>
         <th>Ngày tạo</th>
@@ -64,6 +65,9 @@
             <div>
               <a [routerLink]="['/products', product.slug]" target="_blank" class="font-bold text-xs link link-hover link-primary line-clamp-1" title="{{ product.name }}">{{ product.name }}</a>
               <p class="text-xs opacity-70">{{ product.slug }}</p>
+              <!-- ****** (TÙY CHỌN) THÊM BADGE B2B ****** -->
+              <span *ngIf="product.b2bEnabled" class="badge badge-xs badge-secondary mt-1">B2B</span>
+              <!-- ************************************ -->
             </div>
           </div>
         </td>
@@ -73,7 +77,18 @@
           </a>
         </td>
         <td class="text-xs">{{ product.category?.name || 'N/A' }}</td> <!-- Giả sử summary có category name -->
-        <td class="text-right text-xs font-medium">{{ product.price | formatBigDecimal:'1.0-0' }} đ</td>
+        <td class="text-right text-xs font-medium">{{ product.price | formatBigDecimal:'1.0-0' }} đ
+          <span class="opacity-70">/ {{ product.unit }}</span>
+        </td>
+        <!-- ****** THÊM CỘT DỮ LIỆU GIÁ B2B ****** -->
+        <td class="text-right text-xs font-medium">
+          <span *ngIf="product.b2bEnabled && product.b2bBasePrice"> <!-- Kiểm tra cả b2bEnabled và giá -->
+            {{ product.b2bBasePrice | formatBigDecimal:'1.0-0' }} đ
+            <span class="opacity-70">/ {{ product.b2bUnit }}</span>
+          </span>
+          <span *ngIf="!product.b2bEnabled">N/A</span> <!-- Hiển thị N/A nếu không bật B2B -->
+        </td>
+        <!-- *********************************** -->
         <td class="text-right text-xs">{{ product.stockQuantity }}</td>
         <td>
             <span class="badge badge-sm" [ngClass]="getStatusClass(product.status)">
@@ -126,7 +141,7 @@
       <div class="mt-2"><strong>Mô tả:</strong> <div class="prose prose-sm max-w-none" [innerHTML]="p.description | safeHtml"></div></div>
 
       <!-- B2B Info -->
-      <div *ngIf="p.isB2bAvailable" class="mt-4 pt-4 border-t">
+      <div *ngIf="p.b2bEnabled" class="mt-4 pt-4 border-t">
         <h4 class="font-semibold">Thông tin B2B:</h4>
         <p>Đơn vị B2B: {{ p.b2bUnit || 'N/A' }}</p>
         <p>SL tối thiểu: {{ p.minB2bQuantity }}</p>
@@ -139,7 +154,7 @@
           Không có bậc giá B2B nào được cấu hình.
         </p>
       </div>
-      <div *ngIf="!selectedProduct()?.isB2bAvailable" class="mt-4 pt-4 border-t">
+      <div *ngIf="!selectedProduct()?.b2bEnabled" class="mt-4 pt-4 border-t">
         <p class="text-sm italic text-base-content/70">Sản phẩm này không được cấu hình bán B2B.</p>
       </div>
 

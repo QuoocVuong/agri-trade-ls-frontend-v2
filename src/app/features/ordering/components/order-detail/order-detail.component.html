@@ -74,8 +74,21 @@
                 </div>
               </a>
               <div>
-                <a [routerLink]="['/farmer', o.farmer?.farmerId]" class="text-sm font-medium hover:text-primary transition-colors">{{ o.farmer?.farmName }}</a>
-                <p class="text-xs text-base-content/70">{{ o.farmer?.provinceCode }}</p>
+                <!-- ****** SỬA HIỂN THỊ TÊN NGƯỜI BÁN ****** -->
+                <a [routerLink]="['/farmer', o.farmer?.farmerId]" class="text-sm font-medium hover:text-primary transition-colors">
+                  {{ o.farmer?.farmName || 'Nông trại ẩn danh' }} <!-- Chỉ hiển thị farmName, fallback nếu null -->
+                </a>
+                <!-- ****** SỬA HIỂN THỊ TỈNH NGƯỜI BÁN ****** -->
+                <p class="text-xs text-base-content/70 flex items-center gap-1">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 opacity-70" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                  <ng-container *ngIf="getLocationName('province', o.farmer?.provinceCode) | async as name; else farmerProvinceCodeOnly">
+                    {{ name || '...' }}
+                  </ng-container>
+                  <ng-template #farmerProvinceCodeOnly>
+                    <span *ngIf="o.farmer?.provinceCode">{{ o.farmer?.provinceCode }}</span>
+                  </ng-template>
+                </p>
+                <!-- ************************************** -->
               </div>
             </div>
           </div>
@@ -88,10 +101,16 @@
           <div class="card-body p-5">
             <h3 class="card-title text-base font-semibold">Địa chỉ giao hàng</h3>
             <div class="mt-2 space-y-1 text-sm">
-              <p class="font-medium">{{ o.shippingFullName }}</p>
-              <p>{{ o.shippingPhoneNumber }}</p>
-              <p>{{ o.shippingAddressDetail }}</p>
-              <p>{{ o.shippingWardCode }}, {{ o.shippingDistrictCode }}, {{ o.shippingProvinceCode }}</p>
+              <p class="font-medium">Tên: {{ o.shippingFullName }}</p>
+              <p>Số điện thoại: {{ o.shippingPhoneNumber }}</p>
+
+              <!-- ****** SỬA HIỂN THỊ ĐỊA CHỈ GIAO HÀNG ****** -->
+              <p>Địa chỉ: {{ o.shippingAddressDetail }},
+                <ng-container *ngIf="getLocationName('ward', o.shippingWardCode) | async as name; else wardCodeOnly">{{ name || '...' }}<span *ngIf="name">, </span></ng-container><ng-template #wardCodeOnly><span *ngIf="o.shippingWardCode">{{o.shippingWardCode}}, </span></ng-template>
+                <ng-container *ngIf="getLocationName('district', o.shippingDistrictCode) | async as name; else districtCodeOnly">{{ name || '...' }}<span *ngIf="name">, </span></ng-container><ng-template #districtCodeOnly><span *ngIf="o.shippingDistrictCode">{{o.shippingDistrictCode}}, </span></ng-template>
+                <ng-container *ngIf="getLocationName('province', o.shippingProvinceCode) | async as name; else provinceCodeOnly">{{ name || '...' }}</ng-container><ng-template #provinceCodeOnly><span *ngIf="o.shippingProvinceCode">{{o.shippingProvinceCode}}</span></ng-template>
+              </p>
+              <!-- ******************************************* -->
             </div>
           </div>
         </div>

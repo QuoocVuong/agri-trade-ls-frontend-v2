@@ -1,9 +1,9 @@
 <div class="p-4 h-full flex flex-col">
   <h2 class="text-lg font-semibold mb-4 px-2">Tin nhắn</h2>
   <!-- TODO: Thêm ô tìm kiếm phòng chat -->
-  <!-- <div class="px-2 mb-3">
+   <div class="px-2 mb-3">
     <input type="text" placeholder="Tìm kiếm cuộc trò chuyện..." class="input input-sm input-bordered w-full">
-  </div> -->
+  </div>
 
   <!-- Loading -->
   <div *ngIf="isLoading()" class="flex-grow flex items-center justify-center">
@@ -24,6 +24,11 @@
         <!-- Avatar -->
         <div class="avatar indicator">
           <!-- Badge số tin nhắn chưa đọc -->
+          <!-- ****** THÊM CHỈ BÁO ONLINE ****** -->
+          <span *ngIf="chatService.isUserOnline(room.otherUser?.id)"
+                class="indicator-item indicator-bottom indicator-start badge badge-success badge-xs p-1 border-2 border-base-100"></span>
+
+          <!-- ******************************** -->
           <span *ngIf="room.myUnreadCount && room.myUnreadCount > 0"
                 class="indicator-item indicator-top indicator-end badge badge-secondary badge-xs z-10">
                 {{ room.myUnreadCount > 9 ? '9+' : room.myUnreadCount }}
@@ -37,18 +42,23 @@
           <div class="flex justify-between items-center">
             <span class="font-semibold text-sm truncate">{{ room.otherUser?.fullName || 'Người dùng' }}</span>
             <span *ngIf="room.lastMessageTime" class="text-xs text-base-content/60 flex-shrink-0 ml-1">
-              {{ room.lastMessageTime | date:'HH:mm' }} <!-- Hoặc định dạng khác -->
+              {{ room.lastMessageTime | date:'HH:mm' }}
             </span>
           </div>
-          <p *ngIf="room.lastMessage" class="text-xs text-base-content/70 truncate"
-             [class.font-semibold]="room.myUnreadCount && room.myUnreadCount > 0"> <!-- In đậm nếu chưa đọc -->
-            <!-- Hiển thị người gửi nếu là tin nhắn cuối -->
-            <span *ngIf="room.lastMessage?.sender?.id === currentUserId()">Bạn: </span>
-            {{ room.lastMessage.content }}
-          </p>
-          <p *ngIf="!room.lastMessage" class="text-xs text-base-content/50 italic">
-            Chưa có tin nhắn.
-          </p>
+          <div class="flex justify-between items-center mt-1"> <!-- Thêm dòng này để chứa tin nhắn cuối và trạng thái online -->
+            <p *ngIf="room.lastMessage" class="text-xs text-base-content/70 truncate flex-grow mr-2"
+               [class.font-semibold]="room.myUnreadCount && room.myUnreadCount > 0">
+              <span *ngIf="room.lastMessage?.sender?.id === currentUserId()">Bạn: </span>
+              {{ room.lastMessage.content }}
+            </p>
+            <p *ngIf="!room.lastMessage" class="text-xs text-base-content/50 italic flex-grow mr-2">
+              Chưa có tin nhắn.
+            </p>
+            <!-- ****** BỎ ASYNC PIPE ****** -->
+            <span *ngIf="chatService.isUserOnline(room.otherUser?.id)" class="text-xs text-success flex-shrink-0">Online</span>
+            <span *ngIf="!chatService.isUserOnline(room.otherUser?.id)" class="text-xs text-base-content/50 flex-shrink-0">Offline</span>
+            <!-- ************************** -->
+          </div>
         </div>
       </a>
     </li>

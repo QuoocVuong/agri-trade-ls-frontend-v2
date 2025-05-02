@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal, OnDestroy } from '@angular/core';
+import {Component, OnInit, inject, signal, OnDestroy, AfterViewInit, ViewChild} from '@angular/core';
 import { CommonModule, DatePipe, DecimalPipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { DashboardService } from '../../../user-profile/services/DashboardService'; // Sử dụng DashboardService chung
@@ -21,14 +21,18 @@ import BigDecimal from 'js-big-decimal';
 import {TimeSeriesDataPoint} from '../../../user-profile/dto/response/TimeSeriesDataPoint';
 import {LocalDate} from '@js-joda/core';
 
+import { ChartConfiguration, ChartOptions, ChartType } from 'chart.js';
+import { BaseChartDirective } from 'ng2-charts';
+
+
 
 @Component({
   selector: 'app-farmer-stats',
   standalone: true,
-  imports: [CommonModule, LoadingSpinnerComponent, AlertComponent, DecimalPipe, DatePipe, RouterLink, FormatBigDecimalPipe, NgxChartsModule],
+  imports: [CommonModule, LoadingSpinnerComponent, AlertComponent, DecimalPipe, DatePipe, RouterLink, FormatBigDecimalPipe, BaseChartDirective ],
   templateUrl: './farmer-stats.component.html',
 })
-export class FarmerStatsComponent implements OnInit, OnDestroy {
+export class FarmerStatsComponent implements OnInit, OnDestroy, AfterViewInit {
   private dashboardService = inject(DashboardService);
   private destroy$ = new Subject<void>();
   private toastr = inject(ToastrService);
@@ -45,49 +49,113 @@ export class FarmerStatsComponent implements OnInit, OnDestroy {
   // Đưa các hàm helper vào component để template sử dụng
   getStatusText = getOrderStatusText;
   getStatusClass = getOrderStatusCssClass;
-  getPaymentStatusText = getPaymentStatusText;
-  getPaymentStatusClass = getPaymentStatusCssClass;
+
+  // ****** KHAI BÁO CHO CHART.JS ******
+  @ViewChild(BaseChartDirective) chart?: BaseChartDirective; // Tham chiếu đến directive của chart
 
 
-  // Signals cho dữ liệu chart
-  revenueChartData = signal<any[]>([]); // Dữ liệu cho ngx-charts [{ name: "Doanh thu", series: [...] }]
-  orderCountChartData = signal<any[]>([]);
+
   isLoadingChart = signal(true);
 
-  // Cấu hình biểu đồ (ví dụ)
-  view: [number, number] = [700, 300]; // Kích thước [width, height] - sẽ bị ghi đè bởi responsive container
-  showXAxis = true;
-  showYAxis = true;
-  gradient = false;
-  showLegend = false;
-  showXAxisLabel = true;
-  xAxisLabel = 'Ngày';
-  showYAxisLabel = true;
-  yAxisLabelRevenue = 'Doanh thu (VNĐ)';
-  yAxisLabelCount = 'Số đơn hàng';
-  timeline = true; // Cho phép zoom/pan theo trục thời gian
-  colorScheme: any = { // Hoặc dùng string tên scheme 'vivid', 'natural'...
-    domain: ['#5AA454', '#E44D25', '#CFC0BB', '#7aa3e5', '#a8385d', '#aae3f5'] // Màu tùy chỉnh
-  };
-  yAxisTickFormatting = (val: any) => { // Hàm format trục Y an toàn hơn
-    if (typeof val === 'number') {
-      return val.toLocaleString('vi-VN');
-    }
-    if (val instanceof BigDecimal) {
-      return Number(val.toString()).toLocaleString('vi-VN');
-    }
-    return val;
-  }; // Format trục Y tiền tệ VNĐ
 
-  xAxisTickFormatting = (value: string) => {
-    return value.split('-').slice(1).join('-'); // Chỉ hiển thị MM-DD
+
+  // --- Cấu hình chung cho biểu đồ đường ---
+  public lineChartOptions: ChartOptions<'line'> = {
+    responsive: true,
+    maintainAspectRatio: false, // Cho phép biểu đồ fill container
+    scales: {
+      x: {
+        grid: {
+          color: 'rgba(200, 200, 200, 0.2)' // Màu lưới trục X nhạt hơn
+        },
+        ticks: {
+          color: '#9ca3af', // Màu chữ trục X (Tailwind gray-400)
+          maxRotation: 70, // Xoay label nếu cần
+          minRotation: 45
+        }
+      },
+      y: {
+        beginAtZero: true, // Bắt đầu trục Y từ 0
+        grid: {
+          color: 'rgba(200, 200, 200, 0.2)' // Màu lưới trục Y nhạt hơn
+        },
+        ticks: {
+          color: '#9ca3af' // Màu chữ trục Y
+        }
+      }
+    },
+    plugins: {
+      legend: {
+        display: true, // Hiển thị chú giải
+        position: 'top',
+        labels: {
+          color: '#d1d5db' // Màu chữ chú giải (Tailwind gray-300)
+        }
+      },
+      tooltip: { // Tùy chỉnh tooltip
+        backgroundColor: 'rgba(0, 0, 0, 0.7)',
+        titleColor: '#ffffff',
+        bodyColor: '#ffffff',
+        padding: 10,
+        cornerRadius: 4,
+      }
+    },
+    elements: {
+      line: {
+        tension: 0.3 // Làm mượt đường line
+      },
+      point: {
+        radius: 3, // Kích thước điểm
+        hoverRadius: 5
+      }
+    }
   };
+  public lineChartLegend = true;
+  public lineChartType: 'line' = 'line';
+
+  // --- Dữ liệu riêng cho từng biểu đồ ---
+  public revenueChartData: ChartConfiguration<'line'>['data'] = {
+    labels: [],
+    datasets: [
+      {
+        data: [],
+        label: 'Doanh thu (VNĐ)',
+        fill: true, // Tô màu vùng dưới đường line
+        borderColor: 'rgb(59, 130, 246)', // Màu xanh dương (Tailwind blue-500)
+        backgroundColor: 'rgba(59, 130, 246, 0.2)', // Màu nền nhạt hơn
+        pointBackgroundColor: 'rgb(59, 130, 246)',
+        pointHoverBorderColor: 'rgba(59, 130, 246, 0.8)'
+      }
+    ]
+  };
+
+  public orderCountChartData: ChartConfiguration<'line'>['data'] = {
+    labels: [],
+    datasets: [
+      {
+        data: [],
+        label: 'Số đơn hàng',
+        fill: true,
+        borderColor: 'rgb(34, 197, 94)', // Màu xanh lá (Tailwind green-500)
+        backgroundColor: 'rgba(34, 197, 94, 0.2)',
+        pointBackgroundColor: 'rgb(34, 197, 94)',
+        pointHoverBorderColor: 'rgba(34, 197, 94, 0.8)'
+      }
+    ]
+  };
+  // ***********************************
 
 
 
   ngOnInit(): void {
     this.loadAllData();
     this.loadChartData(); // Gọi hàm load dữ liệu chart
+  }
+
+  ngAfterViewInit(): void {
+    // Có thể để trống hoặc thêm logic nếu cần chạy sau khi view đã khởi tạo
+    // Ví dụ: Cập nhật lại biểu đồ nếu kích thước ban đầu không đúng
+    // setTimeout(() => this.chart?.update(), 0);
   }
 
   ngOnDestroy(): void {
@@ -168,6 +236,7 @@ export class FarmerStatsComponent implements OnInit, OnDestroy {
     console.error(err);
   }
 
+
   loadChartData(): void {
     this.isLoadingChart.set(true);
     const endDate = LocalDate.now();
@@ -183,62 +252,64 @@ export class FarmerStatsComponent implements OnInit, OnDestroy {
       )
       .subscribe({
         next: ({ revenue, count }) => {
-          // Xử lý dữ liệu doanh thu
-          if (revenue.success && revenue.data && Array.isArray(revenue.data)) {
-            const formattedRevenue = this.formatRevenueChartData(revenue.data);
-            this.revenueChartData.set(formattedRevenue.length > 0 ? [{ name: "Doanh thu", series: formattedRevenue }] : []);
-          } else {
-            this.revenueChartData.set([]);
-            this.toastr.warning('Không có dữ liệu doanh thu từ API.');
+          const labels: string[] = [];
+          const revenueValues: number[] = [];
+          const countValues: number[] = [];
+          const dateMapRevenue = new Map<string, number>();
+          const dateMapCount = new Map<string, number>();
+
+          // ****** XỬ LÝ DỮ LIỆU TRỰC TIẾP ******
+          if (revenue.success && revenue.data) {
+            revenue.data.forEach(point => {
+              if (point.label) {
+                let numericValue: number;
+                if (point.value instanceof BigDecimal) numericValue = Number(point.value.getValue());
+                else if (typeof point.value === 'string') numericValue = parseFloat(point.value) || 0;
+                else numericValue = point.value || 0;
+                dateMapRevenue.set(point.label, numericValue);
+              }
+            });
+          }
+          if (count.success && count.data) {
+            count.data.forEach(point => {
+              if (point.label) dateMapCount.set(point.label, point.value ?? 0);
+            });
           }
 
-          // Xử lý dữ liệu số đơn hàng
-          if (count.success && count.data && Array.isArray(count.data)) {
-            const formattedCount = this.formatOrderCountChartData(count.data);
-            this.orderCountChartData.set(formattedCount.length > 0 ? [{ name: "Số đơn hàng", series: formattedCount }] : []);
-          } else {
-            this.orderCountChartData.set([]);
-            this.toastr.warning('Không có dữ liệu số đơn hàng từ API.');
+          for (let i = 0; i < 30; i++) {
+            const currentDate = startDate.plusDays(i);
+            const dateString = currentDate.toString();
+            labels.push(dateString); // Hoặc format MM-DD: currentDate.format('MM-dd')
+            revenueValues.push(dateMapRevenue.get(dateString) ?? 0);
+            countValues.push(dateMapCount.get(dateString) ?? 0);
           }
+
+          // Cập nhật dữ liệu cho biểu đồ doanh thu
+          this.revenueChartData.labels = labels;
+          this.revenueChartData.datasets[0].data = revenueValues;
+
+          // Cập nhật dữ liệu cho biểu đồ số đơn hàng
+          this.orderCountChartData.labels = labels;
+          this.orderCountChartData.datasets[0].data = countValues;
+
+          // Trigger update cho biểu đồ
+          this.chart?.update();
+          // *****************************************
         },
         error: (err) => {
-          this.revenueChartData.set([]);
-          this.orderCountChartData.set([]);
+          // Reset dữ liệu chart khi có lỗi
+          this.revenueChartData.labels = [];
+          this.revenueChartData.datasets[0].data = [];
+          this.orderCountChartData.labels = [];
+          this.orderCountChartData.datasets[0].data = [];
+          this.chart?.update(); // Cập nhật để xóa biểu đồ cũ
           this.handleError(err, 'Lỗi tải dữ liệu biểu đồ');
         }
       });
   }
-  // *** Hàm format riêng cho dữ liệu doanh thu (T có thể là number | string | BigDecimal) ***
-  private formatRevenueChartData(data: TimeSeriesDataPoint<BigDecimal | number | string>[]): { name: string, value: number }[] {
-    return data
-      .filter(point => point.label != null) // Lọc bỏ các điểm có date là null/undefined
-      .map(point => {
-        let numericValue: number;
-        if (point.value instanceof BigDecimal) {
-          numericValue = Number(point.value.toString());
-        } else if (typeof point.value === 'string') {
-          numericValue = parseFloat(point.value) || 0;
-        } else {
-          numericValue = point.value || 0;
-        }
-        return {
-          name: point.label,
-          value: numericValue
-        };
-      })
-      .filter(item => !isNaN(item.value));
-  }
 
 
-  // *** Hàm format riêng cho dữ liệu số lượng (T là number) ***
-  private formatOrderCountChartData(data: TimeSeriesDataPoint<number>[]): { name: string, value: number }[] {
-    return data
-      .filter(point => point.label != null) // Kiểm tra label không null/undefined
-      .map(point => ({
-        name: point.label, // Sử dụng label thay vì date
-        value: point.value ?? 0
-      }));
-  }
+
 
 
 

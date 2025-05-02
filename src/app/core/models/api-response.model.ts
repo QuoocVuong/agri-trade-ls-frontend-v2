@@ -6,6 +6,12 @@ export interface ApiResponse<T> {
   timestamp: string; // Kiểu string vì JSON trả về thường là string ISO date
   // errorCode?: string; // Mã lỗi tùy chỉnh (optional)
   // errors?: Record<string, string>; // Chi tiết lỗi validation (optional)
+  // ****** THÊM TRƯỜNG NÀY ******
+  // details là một object chứa thông tin lỗi bổ sung (ví dụ: errorCode, availableStock)
+  // Dùng Record<string, any> để linh hoạt cho các loại lỗi khác nhau
+  // Đặt là optional (?) vì response thành công sẽ không có details
+  details?: Record<string, any>;
+  // ****************************
 }
 
 // Có thể tạo thêm interface cho Paged Data nếu API trả về phân trang

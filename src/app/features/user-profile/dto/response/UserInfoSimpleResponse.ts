@@ -13,4 +13,6 @@ export interface UserInfoSimpleResponse {
 
   /** URL ảnh đại diện (có thể null) */
   avatarUrl: string | null;
+
+  Online?: boolean;
 }

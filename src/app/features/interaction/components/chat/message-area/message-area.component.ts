@@ -10,7 +10,7 @@ import {
   ViewChild,
   ElementRef,
   AfterViewChecked,
-  computed
+  computed, effect, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRef
 } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
@@ -26,23 +26,26 @@ import { takeUntil, finalize, map } from 'rxjs/operators';
 import {MessageType} from '../../../domain/message-type.enum';
 import {AlertComponent} from '../../../../../shared/components/alert/alert.component';
 import {PagedApiResponse} from '../../../../../core/models/api-response.model';
+import {UserInfoSimpleResponse} from '../../../../user-profile/dto/response/UserInfoSimpleResponse';
 
 @Component({
   selector: 'app-message-area',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, LoadingSpinnerComponent, DatePipe, AlertComponent],
   templateUrl: './message-area.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush // Sử dụng OnPush
 })
-export class MessageAreaComponent implements OnChanges, AfterViewChecked {
+export class MessageAreaComponent implements OnChanges, OnDestroy  {
   @Input({ required: true }) selectedRoom!: ChatRoomResponse | null;
   @Output() backToList = new EventEmitter<void>(); // Event để quay lại list trên mobile
 
   @ViewChild('messageContainer') private messageContainer!: ElementRef; // Để scroll xuống cuối
 
-  private chatService = inject(ChatService);
+  public  chatService = inject(ChatService);
   private authService = inject(AuthService);
   private fb = inject(FormBuilder);
   private destroy$ = new Subject<void>();
+  private cdr = inject(ChangeDetectorRef);
 
   messages = signal<ChatMessageResponse[]>([]);
   isLoading = this.chatService.isLoadingMessages;
@@ -62,70 +65,97 @@ export class MessageAreaComponent implements OnChanges, AfterViewChecked {
     content: ['', [Validators.required, Validators.maxLength(2000)]]
   });
 
-  private shouldScrollToBottom = false; // Cờ để chỉ scroll khi có tin nhắn mới
+  // Signal để lưu thông tin người đang chat cùng
+  currentChatPartner = signal<UserInfoSimpleResponse | null>(null);
+
+  //private shouldScrollToBottom = false; // Cờ để chỉ scroll khi có tin nhắn mới
 
   // *** Thêm constructor hoặc ngOnInit để subscribe ***
   constructor() {
-    // Lắng nghe cập nhật từ currentMessages$ của service
+    // Lắng nghe tin nhắn từ service
     this.chatService.currentMessages$
       .pipe(takeUntil(this.destroy$))
       .subscribe(newMessages => {
-        console.log("MessageArea received messages from service:", newMessages); // Log để debug
-        // Chỉ cập nhật nếu danh sách mới khác danh sách cũ (tránh vòng lặp vô hạn nếu có)
-        // So sánh đơn giản bằng độ dài và ID cuối cùng (có thể cần cách so sánh sâu hơn)
+        console.log("[MessageAreaComponent] Received update from currentMessages$:", newMessages);
         const currentMsgArray = this.messages();
-        if (newMessages.length !== currentMsgArray.length ||
-          (newMessages.length > 0 && newMessages[newMessages.length - 1].id !== currentMsgArray[currentMsgArray.length - 1]?.id))
-        {
-          this.messages.set(newMessages); // Cập nhật signal của component
-          // Đặt cờ scroll khi có tin nhắn mới từ service (bao gồm cả tin nhắn mình gửi và người khác gửi)
-          this.shouldScrollToBottom = true;
+        // Chỉ cập nhật nếu thực sự có thay đổi để tránh trigger effect không cần thiết
+        if (newMessages.length !== currentMsgArray.length || (newMessages.length > 0 && newMessages[newMessages.length - 1].id !== currentMsgArray[currentMsgArray.length - 1]?.id)) {
+          this.messages.set(newMessages);
+          // Không cần scroll ở đây, effect sẽ xử lý
         }
+        this.cdr.markForCheck(); // Cần thiết khi dùng OnPush và nhận dữ liệu từ Observable
       });
+
+    // Effect để scroll khi tin nhắn thay đổi
+    effect(() => {
+      const currentMessages = this.messages();
+      if (currentMessages.length > 0 && this.messageContainer?.nativeElement) {
+        // Chỉ scroll xuống nếu user đang ở gần cuối hoặc là tin nhắn mới của chính mình
+        const element = this.messageContainer.nativeElement;
+        const threshold = 100; // Ngưỡng pixel để coi là đang ở cuối
+        const isNearBottom = element.scrollHeight - element.scrollTop - element.clientHeight < threshold;
+        const lastMessageIsMine = currentMessages[currentMessages.length - 1]?.sender?.id === this.currentUserId();
+
+        if (isNearBottom || lastMessageIsMine) {
+          setTimeout(() => this.scrollToBottom('smooth'), 50); // Scroll mượt hơn, delay nhỏ
+        }
+      }
+    });
+
+    // Effect để cập nhật trạng thái online của người đang chat
+    effect(() => {
+      const partnerId = this.currentChatPartner()?.id;
+      const onlineStatus = this.chatService.isUserOnline(partnerId); // Lắng nghe signal onlineUsers gián tiếp
+      // Chỉ cần log hoặc làm gì đó nếu cần, template sẽ tự cập nhật
+      console.log(`Online status changed for partner ${partnerId}: ${onlineStatus}`);
+      this.cdr.markForCheck(); // Trigger kiểm tra lại component khi trạng thái online thay đổi
+    });
   }
 
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['selectedRoom']) { // Chỉ chạy khi selectedRoom thay đổi thực sự
-      if (this.selectedRoom) {
+    if (changes['selectedRoom']) {
+      const newRoom = changes['selectedRoom'].currentValue as ChatRoomResponse | null;
+      this.currentChatPartner.set(newRoom?.otherUser || null); // Cập nhật signal partner
+      if (newRoom) {
         this.resetChat();
         this.loadInitialMessages();
-        // *** Thông báo cho service biết phòng nào đang mở ***
-        this.chatService.setCurrentChatRoom(this.selectedRoom.id);
+        this.chatService.setCurrentChatRoom(newRoom.id);
       } else {
         this.resetChat();
-        // *** Thông báo cho service không có phòng nào mở ***
         this.chatService.setCurrentChatRoom(null);
       }
+      this.cdr.markForCheck(); // Cần thiết khi Input thay đổi và dùng OnPush
     }
   }
 
 
-  ngAfterViewChecked(): void {
-    if (this.shouldScrollToBottom) {
-      this.scrollToBottom();
-      this.shouldScrollToBottom = false; // Reset cờ
-    }
-  }
-
+  // ****** SỬA HÀM NÀY ******
+  // ngAfterViewChecked(): void {
+  //   if (this.shouldScrollToBottom) {
+  //     // Đặt việc scroll vào setTimeout để nó chạy sau khi DOM đã cập nhật xong
+  //     setTimeout(() => this.scrollToBottom(), 0);
+  //     // Reset cờ ngay lập tức để tránh gọi scroll nhiều lần không cần thiết
+  //     this.shouldScrollToBottom = false;
+  //     console.log("Reset shouldScrollToBottom = false");
+  //   }
+  // }
+  // *************************
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
-    // Reset phòng đang mở khi component bị hủy
-    this.chatService.setCurrentChatRoom(null);
+    this.chatService.setCurrentChatRoom(null); // Thông báo không còn phòng nào mở
   }
 
 
   resetChat(): void {
-    // Không reset this.messages() ở đây nữa vì nó sẽ được cập nhật từ service
-    // this.messages.set([]);
+    this.messages.set([]); // Reset signal messages
     this.currentPage = 0;
     this.totalPages = 0;
     this.hasMoreMessages.set(true);
     this.errorMessage.set(null);
     this.messageForm.reset();
-    // Xóa tin nhắn cũ trong service khi đổi phòng
-    this.chatService.clearCurrentMessages(); // <-- Thêm hàm này vào ChatService
+    this.chatService.clearCurrentMessages();
   }
 
   loadInitialMessages(): void {
@@ -148,28 +178,48 @@ export class MessageAreaComponent implements OnChanges, AfterViewChecked {
     if (!this.selectedRoom) return;
     this.errorMessage.set(null);
 
+    const scrollState = isInitialLoad ? null : { // Lưu vị trí scroll trước khi load thêm
+      scrollHeight: this.messageContainer?.nativeElement.scrollHeight,
+      scrollTop: this.messageContainer?.nativeElement.scrollTop
+    };
+
+
     this.chatService.getChatMessages(this.selectedRoom.id, this.currentPage, this.pageSize)
       .pipe(
         takeUntil(this.destroy$),
         finalize(() => this.isLoadingMore.set(false))
       )
       .subscribe({
-        // Chỉ cần xử lý thông tin phân trang và lỗi
         next: (res: PagedApiResponse<ChatMessageResponse>) => {
           if (res.success && res.data) {
             this.totalPages = res.data.totalPages;
             this.hasMoreMessages.set(!res.data.last);
-            if (isInitialLoad) {
-              this.shouldScrollToBottom = true;
+            const newMessages = res.data.content.reverse(); // API trả về mới nhất trước, cần đảo lại
+            if (!isInitialLoad) {
+              // Thêm tin nhắn cũ vào đầu danh sách hiện tại
+              this.messages.update(current => [...newMessages, ...current]);
+              // Khôi phục vị trí scroll sau khi DOM cập nhật
+              setTimeout(() => {
+                if (this.messageContainer?.nativeElement && scrollState) {
+                  this.messageContainer.nativeElement.scrollTop =
+                    this.messageContainer.nativeElement.scrollHeight - scrollState.scrollHeight + scrollState.scrollTop;
+                }
+              }, 0);
+            } else {
+              // Tin nhắn ban đầu đã được cập nhật qua currentMessages$
+              // this.messages.set(newMessages); // Không cần set lại ở đây
+              // Scroll xuống cuối sẽ được xử lý bởi effect
             }
           } else {
             this.errorMessage.set(res.message || "Lỗi tải tin nhắn.");
             this.hasMoreMessages.set(false);
           }
+          this.cdr.markForCheck(); // Cần thiết khi dùng OnPush
         },
         error: (err) => {
           this.errorMessage.set(err.message || "Lỗi tải tin nhắn.");
           this.hasMoreMessages.set(false);
+          this.cdr.markForCheck();
         }
       });
   }
@@ -177,40 +227,64 @@ export class MessageAreaComponent implements OnChanges, AfterViewChecked {
 
 
   sendMessage(): void {
+    // ... (logic gửi tin nhắn như cũ, bao gồm tạo tempMessage và gọi service) ...
     if (this.messageForm.invalid || !this.selectedRoom || !this.selectedRoom.otherUser) {
       return;
     }
 
-    const request: ChatMessageRequest = {
-      recipientId: this.selectedRoom.otherUser.id, // Gửi cho người kia trong phòng
-      content: this.messageForm.value.content || '',
-      messageType: MessageType.TEXT // Mặc định là text
+    const contentToSend = this.messageForm.value.content || '';
+    const recipientId = this.selectedRoom.otherUser.id;
+    const currentRoomId = this.selectedRoom.id;
+    const currentUser = this.authService.currentUser();
+
+    if (!currentUser) return;
+
+    const tempId = Date.now();
+    const tempMessage: ChatMessageResponse = {
+      id: tempId,
+      roomId: currentRoomId,
+      sender: {
+        id: currentUser.id,
+        fullName: currentUser.fullName,
+        avatarUrl: currentUser.avatarUrl,
+        Online: true // Giả định mình đang online
+      },
+      recipient: this.selectedRoom.otherUser,
+      content: contentToSend,
+      messageType: MessageType.TEXT,
+      sentAt: new Date().toISOString(),
+      isRead: false,
+      readAt: null,
     };
 
-    // Gọi service để gửi qua WebSocket
-    this.chatService.sendMessageViaWebSocket(request);
-    this.messageForm.reset(); // Xóa ô input sau khi gửi
-    //this.shouldScrollToBottom = true; // Scroll xuống khi gửi tin nhắn mới
-  }
+    // Thêm ngay vào signal để cập nhật UI
+    this.messages.update(msgs => [...msgs, tempMessage]);
+    // Effect sẽ tự scroll
 
+    this.messageForm.reset();
+
+    const request: ChatMessageRequest = {
+      recipientId: recipientId,
+      content: contentToSend,
+      messageType: MessageType.TEXT
+    };
+    this.chatService.sendMessageViaWebSocket(request);
+  }
   // Hàm scroll xuống cuối
-  private scrollToBottom(): void {
+  scrollToBottom(behavior: ScrollBehavior = 'auto'): void {
     try {
       if (this.messageContainer?.nativeElement) {
-        this.messageContainer.nativeElement.scrollTop = this.messageContainer.nativeElement.scrollHeight;
-        // Dùng setTimeout nhỏ để đảm bảo DOM đã update hoàn toàn
-        // setTimeout(() => {
-        //     if (this.messageContainer?.nativeElement) {
-        //         this.messageContainer.nativeElement.scrollTop = this.messageContainer.nativeElement.scrollHeight;
-        //     }
-        // }, 0);
+        const element = this.messageContainer.nativeElement;
+        element.scrollTo({ top: element.scrollHeight, behavior: behavior });
+        // console.log(`Scrolled to bottom (${behavior}). ScrollTop: ${element.scrollTop}, ScrollHeight: ${element.scrollHeight}`);
       }
     } catch (err) {
       console.error("Could not scroll to bottom:", err);
     }
   }
 
-  trackMessageById(index: number, message: ChatMessageResponse): number {
-    return message.id;
+  trackMessageById(index: number, message: ChatMessageResponse): number | string {
+    // Dùng ID thật nếu có, hoặc ID tạm thời + sentAt để đảm bảo unique key
+    return message.id > 0 ? message.id : `${message.id}-${message.sentAt}`;
   }
 }
