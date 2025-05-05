@@ -34,6 +34,21 @@ export class CartService {
   // Signal cho trạng thái loading của các thao tác giỏ hàng
   public isLoading = signal(false);
 
+  // Signal xác định vai trò user (để các hàm helper dùng)
+  private isBusinessBuyer = this.authService.hasRoleSignal('ROLE_BUSINESS_BUYER');
+
+  // ****** COMPUTED SIGNAL TÍNH TOÁN LẠI SUB TOTAL ******
+  public readonly calculatedSubTotal = computed(() => {
+    const cart = this.cartState(); // Lắng nghe cartState
+    if (!cart || !cart.items) {
+      return new BigDecimal(0);
+    }
+    // Gọi hàm helper để tính tổng
+    return this.calculateCartSubTotal(cart.items);
+  });
+  // *********************************************************
+
+
 
   constructor() {
     // Tự động tải giỏ hàng khi người dùng đăng nhập
@@ -41,7 +56,8 @@ export class CartService {
       if (this.authService.isAuthenticated()) {
         this.loadCart().subscribe(); // Tải giỏ hàng khi user thay đổi hoặc token xuất hiện
       } else {
-        this.cartSubject.next(null); // Xóa giỏ hàng khi logout
+        // this.cartSubject.next(null); // Xóa giỏ hàng khi logout
+        this.cartState.set(null); // Reset state khi logout
       }
     }, { allowSignalWrites: true }); // Cần thiết nếu effect ghi vào signal khác (dù ở đây ko có)
 
@@ -186,4 +202,53 @@ export class CartService {
     // Trả về lỗi để component có thể xử lý
     return throwError(() => error);
   }
+
+  // ****** THÊM CÁC HÀM HELPER TÍNH TOÁN GIÁ B2B/B2C ******
+  // Hàm này có thể để public nếu component khác cần dùng trực tiếp
+  public getDisplayPriceAndUnit(item: CartItemResponse): { price: BigDecimal | null, unit: string | null } {
+    const product = item.product;
+    const quantity = item.quantity;
+    if (!product) return { price: null, unit: 'N/A' };
+
+    // Dùng signal isBusinessBuyer đã inject
+    if (this.isBusinessBuyer() && product.b2bEnabled) { // Giả sử tên trường là b2bEnabled
+      let finalPrice = product.b2bBasePrice ? new BigDecimal(product.b2bBasePrice.toString()) : null;
+      const unit = product.b2bUnit ?? product.unit;
+
+      if (product.pricingTiers && product.pricingTiers.length > 0) {
+        const applicableTier = product.pricingTiers
+          .filter(tier => quantity >= tier.minQuantity)
+          .sort((a, b) => b.minQuantity - a.minQuantity)[0];
+        if (applicableTier?.pricePerUnit) {
+          finalPrice = new BigDecimal(applicableTier.pricePerUnit.toString());
+        }
+      }
+      if (finalPrice === null) {
+        finalPrice = product.price ? new BigDecimal(product.price.toString()) : null;
+      }
+      return { price: finalPrice, unit: unit };
+    } else {
+      return { price: product.price ? new BigDecimal(product.price.toString()) : null, unit: product.unit };
+    }
+  }
+
+  // Hàm này có thể để public
+  public calculateItemTotal(item: CartItemResponse): BigDecimal {
+    const displayInfo = this.getDisplayPriceAndUnit(item);
+    if (displayInfo.price !== null && item.quantity > 0) {
+      try {
+        return displayInfo.price.multiply(new BigDecimal(item.quantity));
+      } catch (e) { return new BigDecimal(0); }
+    }
+    return new BigDecimal(0);
+  }
+
+  // Hàm này chủ yếu dùng nội bộ để tính calculatedSubTotal
+  private calculateCartSubTotal(items: CartItemResponse[]): BigDecimal {
+    if (!items) return new BigDecimal(0);
+    return items.reduce((sum, item) => {
+      return sum.add(this.calculateItemTotal(item)); // Gọi hàm helper trong cùng service
+    }, new BigDecimal(0));
+  }
+  // *********************************************************
 }

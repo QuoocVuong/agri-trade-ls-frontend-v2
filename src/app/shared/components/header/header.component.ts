@@ -18,7 +18,7 @@ import {SafeHtmlPipe} from '../../pipes/safe-html.pipe';
 @Component({
   selector: 'app-header',
   standalone: true,
-  imports: [CommonModule, RouterLink, RouterLinkActive, FormatBigDecimalPipe, DatePipe, TimeAgoPipe, LoadingSpinnerComponent, AlertComponent, SafeHtmlPipe], // Import CommonModule
+  imports: [CommonModule, RouterLink, RouterLinkActive, FormatBigDecimalPipe, DatePipe, TimeAgoPipe, LoadingSpinnerComponent, AlertComponent], // Import CommonModule
   templateUrl: './header.component.html',
 })
 export class HeaderComponent {
@@ -37,8 +37,7 @@ export class HeaderComponent {
   cartItemCount = this.cartService.totalItems; // <-- Lấy signal từ CartService
   unreadNotificationCount = this.notificationService.unreadCount; // <-- Lấy signal từ NotificationService
 
-  // *** THÊM COMPUTED SIGNAL CHO subTotal ***
-  cartSubTotal = computed(() => this.cartService.currentCart()?.subTotal); // Lấy subTotal từ cartService
+  cartSubTotal = this.cartService.calculatedSubTotal; // Đọc trực tiếp từ service
   getIcon = getNotificationTypeIcon;
 
 

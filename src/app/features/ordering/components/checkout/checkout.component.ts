@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal, computed, ChangeDetectorRef } from '@angular/core';
+import {Component, OnInit, inject, signal, computed, ChangeDetectorRef, effect} from '@angular/core';
 import { CommonModule, DecimalPipe } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
@@ -14,12 +14,15 @@ import { AlertComponent } from '../../../../shared/components/alert/alert.compon
 import { ToastrService } from 'ngx-toastr';
 import { ApiResponse } from '../../../../core/models/api-response.model';
 import { OrderResponse } from '../../dto/response/OrderResponse';
-import {finalize, takeUntil} from 'rxjs/operators';
+import {distinctUntilChanged, finalize, takeUntil} from 'rxjs/operators';
 import {log} from '@angular-devkit/build-angular/src/builders/ssr-dev-server';
 import {FormatBigDecimalPipe} from '../../../../shared/pipes/format-big-decimal.pipe';
 import {Observable, of, shareReplay, Subject} from 'rxjs';
 import {AuthService} from '../../../../core/services/auth.service';
 import {LocationService} from '../../../../core/services/location.service';
+import BigDecimal from 'js-big-decimal';
+import {OrderType} from '../../domain/order-type.enum';
+import {CartItemResponse} from '../../dto/response/CartItemResponse';
 
 @Component({
   selector: 'app-checkout',
@@ -54,11 +57,33 @@ export class CheckoutComponent implements OnInit {
   cart = computed(() => this.cartService.getCurrentCart());
 
   // Lấy danh sách phương thức thanh toán hợp lệ (ví dụ lọc bỏ INVOICE)
-  paymentMethods = Object.values(PaymentMethod).filter(m => m !== PaymentMethod.INVOICE);
+  //paymentMethodsok = Object.values(PaymentMethod).filter(m => m !== PaymentMethod.INVOICE);
+
+
+
+  // ****** TẠO SIGNAL RIÊNG CHO PAYMENT METHODS ******
+  availablePaymentMethods = signal<PaymentMethod[]>([]); // Khởi tạo mảng rỗng
+  // ***********************************************
+
   getPaymentMethodText = getPaymentMethodText;
+
+  selectedAddressId = signal<number | null>(null); // Signal riêng cho addressId
 
 
   isBusinessBuyer = this.authService.hasRoleSignal('ROLE_BUSINESS_BUYER');
+
+  // // Lọc phương thức thanh toán dựa trên vai trò
+  // paymentMethods = computed(() => {
+  //   const allMethods = Object.values(PaymentMethod);
+  //   if (this.isBusinessBuyer()) {
+  //     // Cho phép Công nợ và Chuyển khoản cho B2B (Ví dụ)
+  //     return allMethods.filter(m => m === PaymentMethod.INVOICE || m === PaymentMethod.BANK_TRANSFER );
+  //   } else {
+  //     // Bỏ Công nợ cho B2C
+  //     return allMethods.filter(m => m !== PaymentMethod.INVOICE);
+  //   }
+  // });
+
 
   // Tính toán tạm thời (cần logic chính xác hơn)
   // TODO: Implement accurate shipping fee calculation
@@ -69,6 +94,65 @@ export class CheckoutComponent implements OnInit {
     return subTotal + this.shippingFee() - this.discount();
   });
 
+  // Signals cho tổng tiền tính toán từ API (Cách 1)
+  calculatedSubTotal = signal<number | string | BigDecimal>(0);
+  calculatedShippingFee = signal<number | string | BigDecimal>(0);
+  calculatedDiscount = signal<number | string | BigDecimal>(0);
+  calculatedTotalAmount = signal<number | string | BigDecimal>(0);
+  isLoadingTotals = signal(false);
+
+
+  // ****** THÊM SIGNAL LƯU ORDER TYPE TỪ API ******
+  orderTypeUsedInCalc = signal<OrderType | null>(null);
+  // **********************************************
+
+  // ****** EXPOSE ENUM CHO TEMPLATE ******
+  OrderType = OrderType;
+  // ************************************
+
+
+  constructor() {
+    // Effect 1: Cập nhật Payment Methods (Chỉ chạy khi isBusinessBuyer thay đổi)
+    effect(() => {
+      const allMethods = Object.values(PaymentMethod);
+      const isB2B = this.isBusinessBuyer();
+      let filteredMethods: PaymentMethod[];
+      if (isB2B) {
+        filteredMethods = allMethods.filter(m => m === PaymentMethod.INVOICE || m === PaymentMethod.BANK_TRANSFER );
+      } else {
+        filteredMethods = allMethods.filter(m => m !== PaymentMethod.INVOICE);
+      }
+      this.availablePaymentMethods.set(filteredMethods);
+
+      // Cập nhật giá trị mặc định cho form control paymentMethod
+      if (this.checkoutForm) {
+        const currentFormValue = this.checkoutForm.get('paymentMethod')?.value;
+        if (!filteredMethods.includes(currentFormValue)) {
+          this.checkoutForm.patchValue({ paymentMethod: filteredMethods[0] ?? null }, { emitEvent: false });
+        }
+      }
+    }, { allowSignalWrites: true });
+
+    // Effect 2: Lắng nghe thay đổi GIỎ HÀNG để tính lại totals
+    effect(() => {
+      const currentCart = this.cart(); // Chỉ lắng nghe cart ở đây
+      const selectedAddressId = this.checkoutForm?.get('shippingAddressId')?.value; // Lấy addressId hiện tại
+
+      console.log("Effect triggered by CART change. Cart items:", currentCart?.items?.length, "Address ID:", selectedAddressId);
+
+      if (this.checkoutForm) { // Đảm bảo form đã init
+        if (currentCart && currentCart.items.length > 0) {
+          // Gọi tính toán khi giỏ hàng thay đổi, với địa chỉ hiện tại
+          this.calculateTotals({ shippingAddressId: selectedAddressId });
+        } else {
+          // Reset nếu giỏ hàng trống
+          this.resetCalculatedTotals();
+        }
+      }
+    });
+  }
+
+
   ngOnInit(): void {
     // Nếu giỏ hàng trống, quay về trang chủ hoặc giỏ hàng
     if (!this.cart() || (this.cart()?.items?.length ?? 0) === 0) {
@@ -76,23 +160,124 @@ export class CheckoutComponent implements OnInit {
       this.router.navigate(['/cart']);
       return; // Dừng thực thi ngOnInit
     }
-    this.loadAddresses();
+    // Quan trọng: Khởi tạo form TRƯỚC khi load địa chỉ
     this.initForm();
+    this.loadAddresses(); // Hàm này sẽ patch address và trigger effect ở trên
+   // this.loadInitialTotals(); // Gọi hàm load tổng tiền ban đầu
+
+    // Gọi tính toán tổng tiền ban đầu sau khi form và địa chỉ được load (hoặc có giá trị ban đầu)
+    // Dùng effect để đảm bảo address được set trước khi gọi calculate
+    // effect(() => {
+    //   const initialAddressId = this.checkoutForm.get('shippingAddressId')?.value;
+    //   if(initialAddressId !== null || this.addresses().length === 0) { // Gọi khi có address hoặc khi chắc chắn ko có address
+    //     this.calculateTotals({ shippingAddressId: initialAddressId });
+    //   }
+    // }, { allowSignalWrites: true });
+
+    // Lắng nghe thay đổi địa chỉ để tính lại tổng tiền
+    // this.checkoutForm.get('shippingAddressId')?.valueChanges
+    //   .pipe(takeUntil(this.destroy$))
+    //   .subscribe(addressId => {
+    //     if (addressId) {
+    //       this.calculateTotals({ shippingAddressId: addressId });
+    //     } else {
+    //       // Reset totals nếu không chọn địa chỉ nào
+    //       this.resetCalculatedTotals();
+    //     }
+    //   });
+    // Lắng nghe thay đổi addressId từ form để tính lại totals
+    this.checkoutForm.get('shippingAddressId')?.valueChanges
+      .pipe(
+        takeUntil(this.destroy$),
+        distinctUntilChanged(), // Chỉ trigger khi ID thực sự thay đổi
+        // skip(1) // Bỏ qua giá trị null ban đầu nếu không muốn tính toán với null
+      )
+      .subscribe(addressId => {
+        console.log("shippingAddressId changed in form:", addressId);
+        // Gọi tính toán khi địa chỉ thay đổi
+        this.calculateTotals({ shippingAddressId: addressId });
+      });
   }
 
-  // ****** THÊM ngOnDestroy ******
+
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
   }
-  // ****************************
+
+
+  loadInitialTotals(): void {
+    const initialAddressId = this.checkoutForm.get('shippingAddressId')?.value;
+    this.calculateTotals({ shippingAddressId: initialAddressId });
+  }
+  // ****** HÀM GỌI API TÍNH TOÁN ******
+  calculateTotals(requestData: { shippingAddressId: number | null }): void {
+    // Không tính nếu giỏ hàng trống
+    if (!this.cart() || (this.cart()?.items?.length ?? 0) === 0) {
+      this.resetCalculatedTotals();
+      return;
+    }
+
+    console.log("Calling calculateTotals API with request:", requestData); // Log để debug
+
+    this.isLoadingTotals.set(true);
+    this.errorMessage.set(null); // Xóa lỗi cũ
+    this.orderService.calculateTotals(requestData)
+      .pipe(
+        takeUntil(this.destroy$),
+        )
+      .subscribe({
+        next: (res) => {
+          if (res.success && res.data) {
+            this.calculatedSubTotal.set(res.data.subTotal);
+            this.calculatedShippingFee.set(res.data.shippingFee);
+            this.calculatedDiscount.set(res.data.discountAmount);
+            this.calculatedTotalAmount.set(res.data.totalAmount);
+            // ****** LƯU ORDER TYPE ******
+            this.orderTypeUsedInCalc.set(res.data.calculatedOrderType);
+            // ***************************
+            console.log("API Calculated Totals Received:", res.data);
+            // Cập nhật lại validator cho payment method nếu cần dựa trên totalAmount
+          } else {
+            this.toastr.error(res.message || 'Lỗi tính toán tổng tiền đơn hàng.');
+            this.resetCalculatedTotals(); // Reset về 0 nếu lỗi
+          }
+          this.isLoadingTotals.set(false); // Tắt loading khi thành công hoặc lỗi API
+          this.cdr.markForCheck(); // Đảm bảo UI cập nhật sau khi set signal
+        },
+        error: (err) => {
+          this.toastr.error(err.error?.message || 'Lỗi kết nối khi tính tổng tiền.');
+          this.resetCalculatedTotals();
+          this.isLoadingTotals.set(false); // Tắt loading khi lỗi kết nối
+          this.cdr.markForCheck();
+          this.errorMessage.set(err.error?.message || 'Lỗi kết nối khi tính tổng tiền.'); // Hiển thị lỗi chung
+        }
+      });
+  }
+
+  // Hàm reset giá trị tính toán
+  private resetCalculatedTotals(): void {
+    this.calculatedSubTotal.set(0);
+    this.calculatedShippingFee.set(0);
+    this.calculatedDiscount.set(0);
+    this.orderTypeUsedInCalc.set(null);
+    this.calculatedTotalAmount.set(0);
+    this.isLoadingTotals.set(false);
+  }
+  // ***********************************
+
+
+
+
 
   initForm(): void {
     this.checkoutForm = this.fb.group({
       shippingAddressId: [null, Validators.required],
-      paymentMethod: [PaymentMethod.COD, Validators.required],
+      // Lấy giá trị mặc định từ availablePaymentMethods signal sau khi effect chạy lần đầu
+      // Hoặc đặt tạm là null và effect sẽ cập nhật
+      paymentMethod: [null, Validators.required],
       notes: ['', Validators.maxLength(500)],
-      purchaseOrderNumber: ['', Validators.maxLength(50)]
+      purchaseOrderNumber: ['', Validators.maxLength(50)] // PO Number chỉ hiển thị cho B2B nhưng control vẫn tồn tại
     });
   }
 
@@ -103,15 +288,29 @@ export class CheckoutComponent implements OnInit {
         if (res.success && res.data) {
           this.addresses.set(res.data);
           const defaultAddress = res.data.find(addr => addr.isDefault);
-          if (defaultAddress) {
-            this.checkoutForm.patchValue({ shippingAddressId: defaultAddress.id });
-          } else if (res.data.length > 0) {
-            this.checkoutForm.patchValue({ shippingAddressId: res.data[0].id });
+          // if (defaultAddress) {
+          //   this.checkoutForm.patchValue({ shippingAddressId: defaultAddress.id });
+          // } else if (res.data.length > 0) {
+          //   this.checkoutForm.patchValue({ shippingAddressId: res.data[0].id });
+          // } else {
+          //   // Nếu không có địa chỉ nào, bắt buộc phải thêm mới
+          //   this.showNewAddressForm.set(true);
+          //   this.checkoutForm.controls['shippingAddressId'].clearValidators();
+          //   this.checkoutForm.controls['shippingAddressId'].updateValueAndValidity();
+          // }
+          const preselectAddressId = defaultAddress?.id ?? (res.data.length > 0 ? res.data[0].id : null);
+
+
+
+          if (preselectAddressId) {
+            // Patch value và trigger tính toán ban đầu
+            this.checkoutForm.patchValue({ shippingAddressId: preselectAddressId }, { emitEvent: true }); // emitEvent: true để trigger effect
           } else {
-            // Nếu không có địa chỉ nào, bắt buộc phải thêm mới
             this.showNewAddressForm.set(true);
             this.checkoutForm.controls['shippingAddressId'].clearValidators();
             this.checkoutForm.controls['shippingAddressId'].updateValueAndValidity();
+            // Không cần gọi calculateTotals ở đây, effect cart sẽ xử lý hoặc valueChanges sẽ xử lý khi có địa chỉ
+            this.resetCalculatedTotals(); // Reset khi không có địa chỉ ban đầu
           }
         } else {
           // Lỗi tải địa chỉ, nhưng có thể cho phép thêm mới
@@ -119,6 +318,8 @@ export class CheckoutComponent implements OnInit {
           this.checkoutForm.controls['shippingAddressId'].clearValidators();
           this.checkoutForm.controls['shippingAddressId'].updateValueAndValidity();
           this.toastr.warning(res.message || 'Không tải được địa chỉ đã lưu, vui lòng thêm địa chỉ mới.');
+          // Gọi calculate với addressId là null
+          //this.calculateTotals({ shippingAddressId: null });
         }
         this.isLoadingAddresses.set(false);
       },
@@ -128,6 +329,8 @@ export class CheckoutComponent implements OnInit {
         this.showNewAddressForm.set(true); // Cho phép thêm mới nếu lỗi
         this.checkoutForm.controls['shippingAddressId'].clearValidators();
         this.checkoutForm.controls['shippingAddressId'].updateValueAndValidity();
+
+        //this.calculateTotals({ shippingAddressId: null }); // Vẫn gọi calculate khi lỗi
       }
     });
   }
@@ -156,6 +359,8 @@ export class CheckoutComponent implements OnInit {
     this.checkoutForm.controls['shippingAddressId'].updateValueAndValidity();
     this.cdr.detectChanges(); // Cần detectChanges để cập nhật UI ngay lập tức
   }
+
+
 
 
   onSubmit(): void {
@@ -242,7 +447,54 @@ export class CheckoutComponent implements OnInit {
     this.locationNameCache.set(cacheKey, cachedName$);
     return cachedName$;
   }
-  // ************************************
+
+  // ****** SAO CHÉP CÁC HÀM HELPER TỪ CartComponent ******
+  getDisplayInfo(item: CartItemResponse): { price: BigDecimal | null, unit: string | null } {
+    const product = item.product;
+    const quantity = item.quantity;
+    if (!product) {
+      return { price: null, unit: 'N/A' };
+    }
+
+    // Sử dụng isBusinessBuyer() signal đã có
+    if (this.isBusinessBuyer() && product.b2bEnabled) { // Giả sử tên trường là b2bEnabled
+      let finalPrice = product.b2bBasePrice ? new BigDecimal(product.b2bBasePrice.toString()) : null;
+      const unit = product.b2bUnit ?? product.unit;
+
+      if (product.pricingTiers && product.pricingTiers.length > 0) {
+        const applicableTier = product.pricingTiers
+          .filter(tier => quantity >= tier.minQuantity)
+          .sort((a, b) => b.minQuantity - a.minQuantity)[0];
+
+        if (applicableTier?.pricePerUnit) {
+          finalPrice = new BigDecimal(applicableTier.pricePerUnit.toString());
+        }
+      }
+
+      if (finalPrice === null) {
+        finalPrice = product.price ? new BigDecimal(product.price.toString()) : null;
+      }
+      return { price: finalPrice, unit: unit };
+    } else {
+      return { price: product.price ? new BigDecimal(product.price.toString()) : null, unit: product.unit };
+    }
+  }
+
+  calculateItemTotal(item: CartItemResponse): BigDecimal {
+    const displayInfo = this.getDisplayInfo(item);
+    if (displayInfo.price !== null && item.quantity > 0) {
+      try {
+        return displayInfo.price.multiply(new BigDecimal(item.quantity));
+      } catch (e) {
+        console.error("Error calculating item total for item:", item, e);
+        return new BigDecimal(0);
+      }
+    }
+    return new BigDecimal(0);
+  }
+  // *****************************************************
+
+
 
   // Helper xử lý lỗi
   private handleError(err: any, defaultMessage: string): void {

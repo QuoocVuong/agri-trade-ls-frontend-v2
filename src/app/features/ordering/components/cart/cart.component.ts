@@ -1,4 +1,4 @@
-import { Component, inject, signal, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core'; // Thêm ChangeDetection
+import {Component, inject, signal, ChangeDetectionStrategy, ChangeDetectorRef, computed} from '@angular/core'; // Thêm ChangeDetection
 import { CommonModule, DecimalPipe } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { CartService } from '../../services/cart.service';
@@ -13,11 +13,13 @@ import { NgxSpinnerService } from 'ngx-spinner'; // Ví dụ dùng thư viện s
 import { ToastrService } from 'ngx-toastr'; // Ví dụ dùng thư viện toastr
 import { FormatBigDecimalPipe } from '../../../../shared/pipes/format-big-decimal.pipe';
 import {ApiResponse} from '../../../../core/models/api-response.model';
+import {AuthService} from '../../../../core/services/auth.service';
+import BigDecimal from 'js-big-decimal';
 
 @Component({
   selector: 'app-cart',
   standalone: true,
-  imports: [CommonModule, RouterLink, DecimalPipe, LoadingSpinnerComponent, AlertComponent, FormatBigDecimalPipe ],
+  imports: [CommonModule, RouterLink, LoadingSpinnerComponent, AlertComponent, FormatBigDecimalPipe ],
   templateUrl: './cart.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush // Tối ưu change detection
 })
@@ -27,8 +29,14 @@ export class CartComponent {
   cdr = inject(ChangeDetectorRef); // Inject ChangeDetectorRef
   spinner = inject(NgxSpinnerService); // Inject spinner service
   toastr = inject(ToastrService); // Inject toastr service
+  authService = inject(AuthService);
 
   cart$: Observable<CartResponse | null> = this.cartService.cart$;
+
+  // Lấy cart$ từ service và chuyển thành signal để dễ dùng hơn
+  private cartDataSource = signal<CartResponse | null>(null);
+  cart = computed(() => this.cartDataSource()); // Signal cart chính
+
   isLoading = this.cartService.isLoading;
   // Dùng Map để quản lý loading cho từng item hiệu quả hơn signal lồng
   itemLoadingMap = new Map<number, boolean>();
@@ -36,6 +44,22 @@ export class CartComponent {
   errorMessage = signal<string | null>(null);
 
   private destroy$ = new Subject<void>(); // Subject để unsubscribe
+
+  // Signal xác định vai trò user
+  isBusinessBuyer = this.authService.hasRoleSignal('ROLE_BUSINESS_BUYER');
+
+  constructor() {
+    // Lắng nghe cart$ từ service để cập nhật signal nội bộ
+    this.cartService.cart$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(cartData => {
+        this.cartDataSource.set(cartData);
+        this.cdr.markForCheck(); // Cần thiết khi dùng OnPush
+      });
+  }
+
+
+
 
   ngOnInit(): void {
     // Không cần gọi loadCart vì service đã tự load khi user login
@@ -45,6 +69,74 @@ export class CartComponent {
     this.destroy$.next();
     this.destroy$.complete();
   }
+
+  // ****** HÀM HELPER LẤY GIÁ VÀ ĐƠN VỊ HIỂN THỊ ******
+  // ****** SỬA HÀM LẤY GIÁ VÀ ĐƠN VỊ (BAO GỒM BẬC GIÁ) ******
+  getDisplayInfo(item: CartItemResponse): { price: BigDecimal | null, unit: string | null } {
+    const product = item.product;
+    const quantity = item.quantity;
+    if (!product) {
+      return { price: null, unit: 'N/A' };
+    }
+
+    if (this.isBusinessBuyer() && product.b2bEnabled) {
+      let finalPrice = product.b2bBasePrice ? new BigDecimal(product.b2bBasePrice.toString()) : null;
+      const unit = product.b2bUnit ?? product.unit; // Ưu tiên đơn vị B2B
+
+      // Xử lý bậc giá
+      if (product.pricingTiers && product.pricingTiers.length > 0) {
+        // Tìm bậc giá cao nhất mà số lượng hiện tại đạt được
+        const applicableTier = product.pricingTiers
+          .filter(tier => quantity >= tier.minQuantity) // Lọc các bậc đạt đủ số lượng
+          .sort((a, b) => b.minQuantity - a.minQuantity)[0]; // Sắp xếp giảm dần và lấy bậc đầu tiên (cao nhất)
+
+        if (applicableTier?.pricePerUnit) {
+          finalPrice = new BigDecimal(applicableTier.pricePerUnit.toString());
+        }
+      }
+
+      // Nếu không tìm thấy bậc giá hoặc giá bậc thang là null, dùng giá B2B cơ bản
+      // Nếu giá B2B cơ bản cũng null, fallback về giá B2C (hoặc xử lý khác)
+      if (finalPrice === null) {
+        finalPrice = product.price ? new BigDecimal(product.price.toString()) : null;
+      }
+
+      return { price: finalPrice, unit: unit };
+
+    } else {
+      // Trường hợp B2C
+      return { price: product.price ? new BigDecimal(product.price.toString()) : null, unit: product.unit };
+    }
+  }
+  // ***********************************************************
+
+  // ****** HÀM HELPER TÍNH LẠI ITEM TOTAL ******
+  calculateItemTotal(item: CartItemResponse): BigDecimal {
+    const displayInfo = this.getDisplayInfo(item);
+    if (displayInfo.price !== null && item.quantity > 0) {
+      try {
+        // price đã là BigDecimal từ getDisplayInfo
+        return displayInfo.price.multiply(new BigDecimal(item.quantity));
+      } catch (e) {
+        console.error("Error calculating item total for item:", item, e);
+        return new BigDecimal(0);
+      }
+
+    }
+    return new BigDecimal(0);
+  }
+
+  // ****** COMPUTED SIGNAL TÍNH LẠI SUB TOTAL ******
+  calculatedSubTotal = computed(() => {
+    const currentCart = this.cart();
+    if (!currentCart || !currentCart.items) {
+      return new BigDecimal(0);
+    }
+    return currentCart.items.reduce((sum, item) => {
+      return sum.add(this.calculateItemTotal(item));
+    }, new BigDecimal(0));
+  });
+  // ************************************************
 
   updateQuantity(item: CartItemResponse, newQuantityInput: number | string): void {
     // Chuyển đổi và kiểm tra giá trị nhập
@@ -58,13 +150,28 @@ export class CartComponent {
       return;
     }
 
-    // Đảm bảo số lượng không nhỏ hơn 1
-    if (newQuantity < 1) {
-      newQuantity = 1;
+    // ****** KIỂM TRA SỐ LƯỢNG TỐI THIỂU B2B ******
+    const minQuantity = (this.isBusinessBuyer() && item.product.b2bEnabled)
+      ? (item.product.minB2bQuantity || 1)
+      : 1;
+    if (newQuantity < minQuantity) {
+      this.toastr.warning(`Số lượng tối thiểu cho sản phẩm này là ${minQuantity}.`);
+      newQuantity = minQuantity; // Set về mức tối thiểu
+      // Cập nhật lại input nếu cần
+      const inputElement = document.getElementById(`quantity-input-${item.id}`) as HTMLInputElement | null;
+      if(inputElement) inputElement.value = newQuantity.toString();
+      // Không return vội, vẫn gọi API với số lượng min
     }
+    // *******************************************
+
+    // // Đảm bảo số lượng không nhỏ hơn 1
+    // if (newQuantity < 1) {
+    //   newQuantity = 1;
+    // }
 
     const availableStock = item.product.stockQuantity ?? 0;
     const oldQuantity = item.quantity;
+    const productName = item.product.name ?? 'Sản phẩm';
 
     // ****** THÊM KIỂM TRA TỒN KHO CLIENT-SIDE ******
     if (newQuantity > availableStock) {
@@ -93,6 +200,15 @@ export class CartComponent {
       )
       .subscribe({
         // next: thành công, CartService sẽ tự cập nhật cart$
+        next: (response) => {
+          // Kiểm tra lại sau khi API thành công (Backend nên trả về số lượng tồn mới nhất)
+          const updatedItemData = response.data; // Giả sử API trả về CartItemResponse mới
+          const finalQuantity = updatedItemData?.quantity ?? newQuantity;
+          const finalStock = updatedItemData?.product?.stockQuantity ?? availableStock;
+          if (finalQuantity === finalStock) {
+            this.toastr.info(`Đã đạt số lượng tối đa (${finalStock}) cho "${productName}".`);
+          }
+        },
         error: (err) => this.handleError(err, 'Lỗi cập nhật số lượng.', item.id, oldQuantity) // Truyền thêm oldQuantity
       });
   }

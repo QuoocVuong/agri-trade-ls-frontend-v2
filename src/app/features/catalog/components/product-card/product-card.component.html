@@ -6,7 +6,11 @@
          loading="lazy"
          class="w-full h-full object-cover transition-transform duration-500 hover:scale-110" />
     <!-- Badge cho sản phẩm mới hoặc giảm giá -->
-    <div *ngIf="product.isNew" class="badge badge-secondary absolute top-3 right-3 badge-sm font-semibold">Mới</div>
+    <div *ngIf="product.new" class="badge badge-secondary absolute top-3 right-3 badge-sm font-semibold">Mới</div>
+    <!-- ****** (TÙY CHỌN) THÊM BADGE B2B ****** -->
+    <div *ngIf="isBusinessBuyer() && product.b2bEnabled"
+         class="badge badge-xs badge-info ml-1 absolute top-3 left-3 font-medium">B2B</div>
+    <!-- ************************************ -->
   </a>
 
   <div class="card-body flex-grow flex flex-col justify-between p-4">
@@ -37,8 +41,8 @@
     <!-- Giá và nút bấm -->
     <div class="card-actions flex items-center justify-between mt-3">
       <div class="flex flex-col">
-        <span class="text-primary font-bold text-base md:text-lg">{{ product.price | formatBigDecimal:'1.0-0' }} ₫</span>
-        <span class="text-xs text-base-content/70">/ {{ product.unit }}</span>
+        <span class="text-primary font-bold text-base md:text-lg">{{ getDisplayInfo().price| formatBigDecimal:'1.0-0' }} ₫</span>
+        <span class="text-xs text-base-content/70">/ {{ getDisplayInfo().unit }}</span>
       </div>
       <div class="flex items-center space-x-2">
         <!-- Nút yêu thích -->

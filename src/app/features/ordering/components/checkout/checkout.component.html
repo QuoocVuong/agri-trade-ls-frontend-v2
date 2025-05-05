@@ -77,7 +77,7 @@
           <h2 class="card-title text-lg mb-4">2. Phương thức thanh toán</h2>
           <div class="form-control space-y-2">
             <label
-              *ngFor="let method of paymentMethods"
+              *ngFor="let method of availablePaymentMethods()"
               class="label cursor-pointer border border-base-300 rounded-lg p-3 hover:bg-base-200 transition-colors flex justify-between items-center">
               <span class="label-text font-medium">{{ getPaymentMethodText(method) }}</span>
               <input
@@ -137,6 +137,7 @@
       <div class="card bg-base-200 shadow-md rounded-lg sticky top-20">
         <div class="card-body">
           <h2 class="card-title text-lg mb-4">Tóm tắt đơn hàng</h2>
+          <!-- Danh sách sản phẩm -->
           <div class="space-y-3 max-h-60 overflow-y-auto pr-2 mb-4">
             <div *ngFor="let item of cart()?.items" class="flex items-center gap-3 border-b border-base-300 pb-3 last:border-b-0">
               <img
@@ -146,29 +147,53 @@
               <div class="flex-grow">
                 <p class="text-sm font-medium line-clamp-1">{{ item.product?.name }}</p>
                 <p class="text-xs text-base-content/60">SL: {{ item.quantity }}</p>
+                <!-- (Tùy chọn) Hiển thị đơn giá đã tính -->
+                <p class="text-xs text-base-content/60">
+                  Đơn giá: {{ getDisplayInfo(item).price | formatBigDecimal:'1.0-0' }} đ / {{ getDisplayInfo(item).unit }}
+                  <!-- Chỉ hiển thị text màu xanh -->
+                  <span *ngIf="isBusinessBuyer() && item.product?.b2bEnabled" class="badge badge-xs badge-info  ml-1">B2B</span>
+                </p>
               </div>
-              <span class="text-sm font-medium flex-shrink-0">{{ item.itemTotal | formatBigDecimal:'1.0-0' }} đ</span>
+              <span class="text-sm font-medium flex-shrink-0">{{ calculateItemTotal(item)  | formatBigDecimal:'1.0-0' }} đ</span>
             </div>
           </div>
           <div class="space-y-2 text-sm border-t border-base-300 pt-4">
-            <div class="flex justify-between">
-              <span>Tạm tính</span>
-              <span class="font-medium">{{ cart()?.subTotal | formatBigDecimal:'1.0-0' }} đ</span>
+            <!-- Loading -->
+            <div *ngIf="isLoadingTotals()" class="text-center text-xs py-1">
+              <span class="loading loading-dots loading-xs"></span> Đang tính toán...
             </div>
-            <div class="flex justify-between">
-              <span>Phí vận chuyển <span class="text-xs text-base-content/60">(Tạm tính)</span></span>
-              <span class="font-medium">{{ shippingFee() | number:'1.0-0' }} đ</span>
-            </div>
-            <div class="flex justify-between">
-              <span>Giảm giá</span>
-              <span class="font-medium">- {{ discount() | number:'1.0-0' }} đ</span>
-            </div>
-            <div class="divider my-1"></div>
-            <div class="flex justify-between font-bold text-base">
-              <span>Tổng cộng</span>
-              <span class="text-primary">{{ totalAmount() | number:'1.0-0' }} đ</span>
-            </div>
+            <ng-container *ngIf="!isLoadingTotals()">
+              <div class="flex justify-between">
+                <span>Tạm tính</span>
+                <span class="font-medium">{{ calculatedSubTotal() | formatBigDecimal:'1.0-0' }} đ</span>
+              </div>
+              <div class="flex justify-between">
+                <span>Phí vận chuyển</span>
+                <span class="font-medium">{{ calculatedShippingFee() | formatBigDecimal:'1.0-0' }} đ</span>
+              </div>
+              <div class="flex justify-between">
+                <span>Giảm giá</span>
+                <span class="font-medium text-success">- {{ calculatedDiscount() | formatBigDecimal:'1.0-0' }} đ</span>
+              </div>
+              <div class="divider my-1"></div>
+              <div class="flex justify-between font-bold text-base">
+                <span>Tổng cộng</span>
+                <span class="text-primary">{{ calculatedTotalAmount() | formatBigDecimal:'1.0-0' }} đ</span>
+              </div>
+            </ng-container>
           </div>
+          <!-- ****** THÊM GHI CHÚ B2B/B2C ****** -->
+          <div *ngIf="!isLoadingTotals() && orderTypeUsedInCalc()"> <!-- Chỉ hiện khi đã có kết quả tính toán -->
+            <p *ngIf="isBusinessBuyer() && orderTypeUsedInCalc() === OrderType.B2B" class="text-xs text-info mt-2 text-center">
+              Giá B2B và chiết khấu (nếu có) đã được áp dụng.
+            </p>
+            <!-- (Tùy chọn) Hiển thị cảnh báo nếu B2B user nhưng lại tính giá B2C -->
+            <p *ngIf="isBusinessBuyer() && orderTypeUsedInCalc() === OrderType.B2C" class="text-xs text-warning mt-2 text-center">
+              Lưu ý: Giá bán lẻ (B2C) đang được áp dụng cho đơn hàng này.
+            </p>
+            <!-- Có thể không cần hiển thị gì đặc biệt cho user B2C -->
+          </div>
+          <!-- ********************************** -->
           <p class="text-xs text-center mt-4 text-base-content/60">
             Nhấn "Đặt hàng" đồng nghĩa với việc bạn đồng ý với
             <a href="#" class="link link-hover hover:text-primary">Điều khoản dịch vụ</a> của chúng tôi.

@@ -11,11 +11,12 @@ import {finalize, takeUntil} from 'rxjs/operators';
 import {CartItemRequest} from '../../../ordering/dto/request/CartItemRequest';
 import {ApiResponse} from '../../../../core/models/api-response.model';
 import {FormatBigDecimalPipe} from '../../../../shared/pipes/format-big-decimal.pipe';
+import BigDecimal from 'js-big-decimal';
 
 @Component({
   selector: 'app-product-card',
   standalone: true,
-  imports: [CommonModule, RouterLink, DecimalPipe, FormatBigDecimalPipe], // Thêm DecimalPipe
+  imports: [CommonModule, RouterLink, FormatBigDecimalPipe], // Thêm DecimalPipe
   templateUrl: './product-card.component.html',
 })
 export class ProductCardComponent {
@@ -38,8 +39,18 @@ export class ProductCardComponent {
   // Lấy trạng thái đăng nhập
   isAuthenticated = this.authService.isAuthenticated;
 
+  // ****** THÊM SIGNAL XÁC ĐỊNH VAI TRÒ ******
+  isBusinessBuyer = this.authService.hasRoleSignal('ROLE_BUSINESS_BUYER');
+  // *****************************************
+
+
+
+
+
   ngOnInit(): void {
     // Kiểm tra trạng thái yêu thích ban đầu nếu user đăng nhập
+    console.log('ProductCard Input:', this.product); // Xem toàn bộ object
+    console.log('ProductCard Input - New:', this.product?.new); // Xem giá trị cụ thể
     if (this.isAuthenticated() && this.product) {
       this.checkFavoriteStatus();
     }
@@ -254,6 +265,24 @@ export class ProductCardComponent {
         }
       });
   }
+
+  // ****** THÊM HÀM HELPER LẤY GIÁ/ĐƠN VỊ HIỂN THỊ ******
+  getDisplayInfo(): { price: string | number | BigDecimal | null, unit: string | null } {
+    if (!this.product) {
+      return { price: null, unit: 'N/A' };
+    }
+    // Nếu là Business Buyer và sản phẩm có hỗ trợ B2B -> hiển thị giá B2B cơ bản
+    if (this.isBusinessBuyer() && this.product.b2bEnabled) { // Giả sử tên trường là b2bEnabled
+      // Ưu tiên giá B2B cơ bản, nếu không có thì dùng giá B2C
+      const priceToShow = this.product.b2bBasePrice ?? this.product.price;
+      const unitToShow = this.product.b2bUnit ?? this.product.unit; // Ưu tiên đơn vị B2B
+      return { price: priceToShow, unit: unitToShow };
+    } else {
+      // Mặc định hiển thị giá và đơn vị B2C
+      return { price: this.product.price, unit: this.product.unit };
+    }
+  }
+  // *****************************************************
 
   // Hàm trackBy (nếu component này dùng *ngFor, mặc dù hiện tại không)
   trackById(index: number, item: any): number {

@@ -2,7 +2,8 @@
 import { ProductStatus } from '../../domain/product-status.enum'; // Import Enum Status
 import { FarmerInfoResponse } from './FarmerInfoResponse';
 import  BigDecimal  from 'js-big-decimal';
-import {CategoryInfoResponse} from './CategoryInfoResponse'; // Hoặc dùng number/string
+import {CategoryInfoResponse} from './CategoryInfoResponse';
+import {ProductPricingTierResponse} from './ProductPricingTierResponse'; // Hoặc dùng number/string
 
 export interface ProductSummaryResponse {
   id: number;
@@ -19,14 +20,17 @@ export interface ProductSummaryResponse {
   b2bEnabled : boolean;
   b2bUnit: string | null;
   b2bBasePrice: number | string | BigDecimal | null; // Hoặc kiểu dữ liệu bạn dùng
+  minB2bQuantity?: number | null;
+  pricingTiers?: ProductPricingTierResponse[] | null;
   category: CategoryInfoResponse | null;
   stockQuantity: number;
   description: string | null;
   createdAt: Date | null;
   updatedAt: Date | null;
   isFavorite: boolean;
-  isNew: boolean;
+  new?: boolean;
+
 
   // Có thể thêm favorite count nếu cần hiển thị nhanh
-  // favoriteCount?: number;
+   favoriteCount?: number;
 }

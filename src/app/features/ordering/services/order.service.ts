@@ -7,7 +7,8 @@ import { OrderResponse } from '../dto/response/OrderResponse';
 import { OrderSummaryResponse } from '../dto/response/OrderSummaryResponse';
 import { CheckoutRequest } from '../dto/request/CheckoutRequest';
 import { OrderStatusUpdateRequest } from '../dto/request/OrderStatusUpdateRequest';
-import { OrderStatus } from '../domain/order-status.enum'; // Import Enum
+import { OrderStatus } from '../domain/order-status.enum';
+import {OrderCalculationResponse} from '../dto/response/OrderCalculationResponse'; // Import Enum
 
 @Injectable({
   providedIn: 'root' // Cung cấp ở root vì nhiều nơi có thể cần xem đơn hàng
@@ -97,6 +98,11 @@ export class OrderService {
   downloadInvoice(orderId: number): Observable<Blob> { // Trả về Blob
     const url = `${this.orderApiUrl}/${orderId}/invoice/download`; // Hoặc /api/orders/...
     return this.http.get(url, { responseType: 'blob' }); // Yêu cầu response dạng blob
+  }
+
+  // OrderService.ts (Frontend)
+  calculateTotals(request: { shippingAddressId: number | null }): Observable<ApiResponse<OrderCalculationResponse>> {
+    return this.http.post<ApiResponse<OrderCalculationResponse>>(`${this.orderApiUrl}/calculate-totals`, request);
   }
 
 }

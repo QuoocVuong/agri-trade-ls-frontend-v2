@@ -7,13 +7,13 @@
   <app-alert *ngIf="errorMessage()" type="error" [message]="errorMessage()"></app-alert>
 
   <!-- Cart Content -->
-  <ng-container *ngIf="cart$ | async as cart; else emptyCart">
-    <div *ngIf="cart.items && cart.items.length > 0; else emptyCart" class="flex flex-col lg:flex-row gap-8">
+  <ng-container *ngIf="cart() as cartData; else emptyCart"> <!-- Dùng signal cart() -->
+    <div *ngIf="cartData.items && cartData.items.length > 0; else emptyCart" class="flex flex-col lg:flex-row gap-8">
 
       <!-- Cart Items List -->
       <div class="lg:w-2/3">
         <div class="space-y-4">
-          <div *ngFor="let item of cart.items; trackBy: trackCartItemById" class="card card-side bg-base-100 shadow-sm flex-col sm:flex-row relative">
+          <div *ngFor="let item of cartData.items; trackBy: trackCartItemById" class="card card-side bg-base-100 shadow-sm flex-col sm:flex-row relative">
             <figure class="p-2 sm:w-24 flex-shrink-0">
               <img [src]="item.product?.thumbnailUrl || 'assets/images/placeholder-image.png'"
                    [alt]="item.product?.name"
@@ -31,8 +31,11 @@
                       {{ item.product?.farmerInfo?.farmName || 'N/A' }}
                     </a>
                   </div>
+                  <!-- Hiển thị giá/đơn vị đúng -->
                   <div class="text-sm font-medium mt-1">
-                    {{ item.product?.price | formatBigDecimal:'1.0-0' }} đ / {{ item.product?.unit }}
+                    {{ getDisplayInfo(item).price | formatBigDecimal:'1.0-0' }} đ / {{ getDisplayInfo(item).unit }}
+                    <!-- Thêm nhãn B2B nếu cần -->
+                    <span *ngIf="isBusinessBuyer() && item.product?.b2bEnabled" class="badge badge-xs badge-info  ml-1">B2B</span>
                   </div>
                 </div>
                 <!-- Remove Button -->
@@ -47,9 +50,10 @@
                 <div class="join">
                   <button class="btn btn-xs join-item"
                           (click)="updateQuantity(item, item.quantity - 1)"
-                          [disabled]="item.quantity <= 1 || isItemLoading(item.id)">-</button>
+                          [disabled]="item.quantity <= ((isBusinessBuyer() && item.product?.b2bEnabled) ? (item.product?.minB2bQuantity || 1) : 1) || isItemLoading(item.id)">-</button>
                   <input type="number" class="input input-xs input-bordered w-12 text-center join-item"
-                         [value]="item.quantity" min="1"
+                         [value]="item.quantity"
+                         [min]="(isBusinessBuyer() && item.product?.b2bEnabled) ? (item.product?.minB2bQuantity || 1) : 1"
                          [max]="item.product?.stockQuantity"
                   #qtyInput
                   (change)="updateQuantity(item, qtyInput.valueAsNumber)"
@@ -62,7 +66,7 @@
                 <span class="text-xs text-base-content/60 ml-2">(Còn: {{ item.product?.stockQuantity ?? 0 }})</span>
               </div>
               <!-- Item Total -->
-              <p class="text-right font-semibold mt-2 text-sm">Thành tiền: {{ item.itemTotal | formatBigDecimal:'1.0-0' }} đ</p>
+              <p class="text-right font-semibold mt-2 text-sm">Thành tiền: {{ calculateItemTotal(item) | formatBigDecimal:'1.0-0' }} đ</p>
             </div>
           </div>
         </div>
@@ -82,15 +86,17 @@
             <h2 class="card-title text-lg mb-4">Tóm tắt đơn hàng</h2>
             <div class="flex justify-between text-sm mb-2">
               <span>Tổng số sản phẩm:</span>
-              <span>{{ cart.totalItems }}</span>
+              <span>{{ cartData.totalItems }}</span>
             </div>
             <div class="flex justify-between text-sm mb-4">
               <span>Tạm tính:</span>
               <!-- File: cart.component.html -->
-              <span class="font-semibold">{{ cart.subTotal | formatBigDecimal:'1.0-0' }} đ</span>
+              <span class="font-semibold">{{ calculatedSubTotal() | formatBigDecimal:'1.0-0' }} đ</span>
             </div>
             <div class="divider my-0"></div>
             <p class="text-xs text-base-content/60 mt-2">Phí vận chuyển và giảm giá (nếu có) sẽ được tính ở bước thanh toán.</p>
+            <!-- Thêm ghi chú B2B -->
+            <p *ngIf="isBusinessBuyer()" class="text-xs text-info mt-1">Giá B2B đã được áp dụng (nếu có).</p>
             <div class="card-actions mt-4">
               <button class="btn btn-primary w-full" (click)="goToCheckout()">Tiến hành Thanh toán</button>
             </div>

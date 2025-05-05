@@ -37,7 +37,8 @@ export class FormatBigDecimalPipe implements PipeTransform {
       try {
         // Sử dụng toFixed() để lấy chuỗi số thập phân với số lượng chữ số mong muốn (nếu cần)
         // Hoặc dùng toString() để lấy biểu diễn chuỗi đầy đủ
-        numberValue = value.toString();
+        // numberValue = value.toString(); // Thử cách khác nếu toString() lỗi
+        numberValue = value.getValue(); // <<< THỬ DÙNG getValue()
         // Ví dụ nếu muốn làm tròn trước khi format:
         // const scale = digitsInfo.match(/\.\d+-(\d+)/)?.[1]; // Lấy số chữ số thập phân từ digitsInfo
         // numberValue = value.round(scale ? parseInt(scale, 10) : 0).toString();

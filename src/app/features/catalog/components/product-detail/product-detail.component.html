@@ -103,25 +103,30 @@
           </div>
 
           <!-- Hiển thị giá B2B (chỉ khi là Business Buyer VÀ sản phẩm hỗ trợ B2B) -->
-          <div *ngIf="isBusinessBuyer() && p.b2bEnabled">
-            <p class="text-sm font-medium text-secondary mb-1">Giá doanh nghiệp:</p>
+          <div *ngIf="isBusinessBuyer() && p.b2bEnabled" class="p-3 bg-secondary/10 rounded-lg border border-secondary/20">
+            <p class="text-sm font-medium text-secondary mb-2">Giá doanh nghiệp:</p>
+            <!-- Giá B2B cơ bản -->
+            <div class="mb-2">
+              <span class="text-2xl font-bold text-secondary">{{ p.b2bBasePrice | formatBigDecimal:'1.0-0' }} ₫</span>
+              <span class="text-base-content/70 text-sm"> / {{ p.b2bUnit }}</span>
+              <span class="text-xs text-base-content/60"> (Giá cơ bản)</span>
+            </div>
+            <!-- Số lượng tối thiểu -->
+            <p *ngIf="p.minB2bQuantity != null && p.minB2bQuantity > 1" class="text-xs text-warning mb-2">
+              Số lượng đặt tối thiểu: {{ p.minB2bQuantity }} {{ p.b2bUnit }}
+            </p>
             <!-- Hiển thị giá bậc thang nếu có -->
             <div *ngIf="p.pricingTiers && p.pricingTiers.length > 0" class="space-y-1 text-sm">
-              <span class="text-xl font-bold text-secondary">{{ p.b2bBasePrice | formatBigDecimal:'1.0-0' }} ₫</span>
-              <span class="text-base-content/70 text-xs"> / {{ p.b2bUnit }} (Giá cơ bản)</span>
-              <p class="text-xs text-info">Giá ưu đãi theo số lượng:</p>
-              <ul class="list-disc list-inside text-xs ml-2">
+              <p class="text-xs text-info font-medium">Giá ưu đãi theo số lượng:</p>
+              <ul class="list-disc list-inside text-xs ml-2 space-y-1">
                 <li *ngFor="let tier of p.pricingTiers">
-                  Từ {{ tier.minQuantity }} {{ p.b2bUnit }}: {{ tier.pricePerUnit | formatBigDecimal:'1.0-0' }} ₫/{{ p.b2bUnit }}
+                  Từ {{ tier.minQuantity }} {{ p.b2bUnit }}: <span class="font-semibold">{{ tier.pricePerUnit | formatBigDecimal:'1.0-0' }} ₫/{{ p.b2bUnit }}</span>
                 </li>
               </ul>
             </div>
-            <!-- Hiển thị giá B2B cơ bản nếu không có bậc thang -->
-            <div *ngIf="!p.pricingTiers || p.pricingTiers.length === 0">
-              <span class="text-3xl font-bold text-secondary">{{ p.b2bBasePrice | formatBigDecimal:'1.0-0' }} ₫</span>
-              <span class="text-base-content/70 text-sm"> / {{ p.b2bUnit }}</span>
-            </div>
-            <p *ngIf="p.minB2bQuantity != null && p.minB2bQuantity > 1" class="text-xs text-warning mt-1">Số lượng tối thiểu: {{ p.minB2bQuantity }} {{ p.b2bUnit }}</p>
+
+
+
           </div>
         </div>
 
@@ -138,13 +143,15 @@
             <!-- Hiển thị đơn vị phù hợp -->
             <span class="text-xs text-base-content/70">({{ (isBusinessBuyer() && p.b2bEnabled) ? p.b2bUnit : p.unit }})</span>
             <div class="join">
+              <!-- Nút giảm -->
               <button type="button"
                       class="btn btn-sm join-item rounded-l-full"
                       (click)="changeQuantity(-1)"
-                      [disabled]="(quantityForm.controls.quantity.value ?? 1) <= 1"
-                      aria-label="Giảm số lượng">
-                -
+                      [disabled]="(quantityForm.controls.quantity.value ?? 1) <=
+                      ((isBusinessBuyer() && p.b2bEnabled) ? (p.minB2bQuantity || 1) : 1)"
+                      aria-label="Giảm số lượng">-
               </button>
+              <!-- Input số lượng -->
               <input type="number"
                      id="quantity"
                      formControlName="quantity"
@@ -152,12 +159,12 @@
                      [min]="(isBusinessBuyer() && p.b2bEnabled) ? (p.minB2bQuantity || 1) : 1"
                      [max]="p.stockQuantity"
                      aria-label="Số lượng sản phẩm">
+              <!-- Nút tăng -->
               <button type="button"
                       class="btn btn-sm join-item rounded-r-full"
                       (click)="changeQuantity(1)"
                       [disabled]="(quantityForm.controls.quantity.value ?? 0) >= (p.stockQuantity ?? 0)"
-                      aria-label="Tăng số lượng">
-                +
+                      aria-label="Tăng số lượng">+
               </button>
             </div>
           </div>
