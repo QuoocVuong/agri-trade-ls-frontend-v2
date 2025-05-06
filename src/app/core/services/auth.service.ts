@@ -14,6 +14,8 @@ import { LoginResponse } from '../../features/user-profile/dto/response/LoginRes
 import { ForgotPasswordRequest } from '../../features/user-profile/dto/request/ForgotPasswordRequest';
 import { ResetPasswordRequest } from '../../features/user-profile/dto/request/ResetPasswordRequest';
 import {UserProfileResponse} from '../../features/user-profile/dto/response/UserProfileResponse';
+import {AuthResponse} from '../models/auth-response.model';
+import {SocialAuthService} from '@abacritt/angularx-social-login';
 
 const AUTH_TOKEN_KEY = 'authToken';
 const CURRENT_USER_KEY = 'currentUser';
@@ -35,6 +37,9 @@ enum HttpStatus {
 export class AuthService {
   private http = inject(HttpClient);
   private router = inject(Router);
+
+  private socialAuthService = inject(SocialAuthService);
+
   private apiUrl = `${environment.apiUrl}/auth`;
   private userApiUrl = `${environment.apiUrl}/users`;
 
@@ -117,9 +122,12 @@ export class AuthService {
     return this.http.post<ApiResponse<LoginResponse>>(`${this.apiUrl}/login`, data)
       .pipe(
         tap(response => {
-          if (response.success && response.data) {
-            this.authTokenSignal.set(response.data.accessToken);
-            this.currentUserSignal.set(response.data.user);
+          if (response.success && response.data?.accessToken) {
+            // ****** GỌI setSession THAY VÌ SET TRỰC TIẾP ******
+            this.setSession(response.data.accessToken);
+            // Không cần set currentUserSignal ở đây nữa, refreshUserProfile sẽ làm
+            // this.currentUserSignal.set(response.data.user);
+            // *************************************************
           } else {
             // Xử lý trường hợp API trả về success=true nhưng không có data
             this.clearAuthData();
@@ -161,9 +169,28 @@ export class AuthService {
     // ).subscribe();
 
     // Nếu không có API logout backend:
-    this.clearAuthData();
-    this.router.navigate(['/auth/login']);
+// Nếu không có API logout backend, thực hiện logout frontend ngay
+    this.performFrontendLogout();
   }
+
+  // Tách logic logout frontend ra hàm riêng
+  private performFrontendLogout(): void {
+    // 1. Đăng xuất khỏi SocialAuthService trước
+    this.socialAuthService.signOut()
+      .then(() => {
+        console.log('User signed out from social provider');
+      })
+      .catch(err => {
+        console.error('Error signing out from social provider:', err);
+      })
+      .finally(() => {
+        // 2. Luôn xóa dữ liệu ứng dụng và điều hướng sau khi thử signOut
+        this.clearAuthData();
+        this.router.navigate(['/auth/login']);
+        console.log('Local auth data cleared and navigated to login');
+      });
+  }
+  // ****************************
 
   // --- Phương thức mới để làm mới thông tin user profile ---
   refreshUserProfile(): Observable<UserResponse | null> {
@@ -206,6 +233,48 @@ export class AuthService {
         finalize(() => this.loadingSignal.set(false)) // Tắt loading
       );
   }
+
+  // ****** THÊM HÀM LOGIN GOOGLE ******
+  loginWithGoogle(idToken: string): Observable<ApiResponse<AuthResponse>> {
+    const requestBody = { idToken };
+    // Gọi API backend mới tạo
+    return this.http.post<ApiResponse<AuthResponse>>(`${this.apiUrl}/oauth2/google/verify`, requestBody)
+      .pipe(
+        tap(response => {
+          if (response.success && response.data?.accessToken) {
+            this.setSession(response.data.accessToken); // Lưu token JWT trả về
+            // Không cần load profile ở đây nữa, setSession sẽ làm nếu cần
+            // this.loadUserProfile().subscribe();
+          } else {
+            throw new Error(response.message || 'Google Sign-In failed on backend');
+          }
+        }),
+        // Không cần finalize ở đây vì component sẽ quản lý isLoading
+        catchError(this.handleError.bind(this))
+      );
+  }
+  // **********************************
+
+  // ****** THÊM PHƯƠNG THỨC NÀY ******
+  private setSession(token: string | null): void {
+    if (token) {
+      this.authTokenSignal.set(token);
+      // Tự động tải/làm mới thông tin người dùng sau khi có token
+      this.refreshUserProfile().subscribe({
+        error: (err) => {
+          // Xử lý lỗi nếu không thể tải profile sau khi đăng nhập
+          console.error("Failed to load user profile after setting session:", err);
+          // Có thể cân nhắc logout nếu không lấy được profile
+          // this.logout();
+        }
+      });
+    } else {
+      // Nếu token là null (ví dụ: logout), xóa dữ liệu
+      this.clearAuthData();
+    }
+    // Effect trong constructor sẽ tự động xử lý việc lưu/xóa localStorage
+  }
+  // **********************************
 
   // --- Helper Methods ---
 

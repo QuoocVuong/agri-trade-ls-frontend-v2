@@ -1,23 +1,38 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import {Component, OnInit, inject, signal, OnDestroy} from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink, ActivatedRoute } from '@angular/router'; // Import ActivatedRoute
 import { AuthService } from '../../../../core/services/auth.service';
 import { UserLoginRequest } from '../../../user-profile/dto/request/UserLoginRequest'; // Đổi đường dẫn nếu cần
 import { ApiResponse } from '../../../../core/models/api-response.model';
-import { LoginResponse } from '../../../user-profile/dto/response/LoginResponse'; // Đổi đường dẫn nếu cần
+import { LoginResponse } from '../../../user-profile/dto/response/LoginResponse';
+import {Subject, Subscription} from 'rxjs';
+import {
+  GoogleLoginProvider,
+  GoogleSigninButtonModule,
+  SocialAuthService,
+  SocialUser
+} from '@abacritt/angularx-social-login';
+import {takeUntil} from 'rxjs/operators';
+import {ToastrService} from 'ngx-toastr'; // Đổi đường dẫn nếu cần
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, GoogleSigninButtonModule],
   templateUrl: './login.component.html',
 })
-export class LoginComponent implements OnInit {
+export class LoginComponent implements OnInit, OnDestroy  {
   private fb = inject(FormBuilder);
   private authService = inject(AuthService);
   private router = inject(Router);
   private route = inject(ActivatedRoute); // Inject ActivatedRoute
+
+  private socialAuthService = inject(SocialAuthService); // Inject SocialAuthService
+
+  private toastr = inject(ToastrService);
+
+  private authSubscription: Subscription | null = null; // Để hủy subscribe
 
   loginForm!: FormGroup;
   isLoading = this.authService.isLoading; // Lấy signal loading từ service
@@ -39,7 +54,29 @@ export class LoginComponent implements OnInit {
     if (this.authService.isAuthenticated()) {
       this.router.navigateByUrl(this.returnUrl);
     }
+    // ****** LẮNG NGHE TRẠNG THÁI SOCIAL AUTH ******
+    this.authSubscription = this.socialAuthService.authState
+      .pipe(takeUntil(this.destroy$)) // Sử dụng takeUntil để tự hủy khi component destroy
+      .subscribe((user: SocialUser) => {
+        console.log("Social User State Changed:", user);
+        if (user && user.provider === GoogleLoginProvider.PROVIDER_ID && user.idToken) {
+          this.handleGoogleSignIn(user.idToken);
+          // Không cần signOut ở đây nữa vì autoLogin=false
+          // this.socialAuthService.signOut(true).catch(err => console.error("Error signing out from social service:", err));
+        }
+      });
+    // ******************************************
   }
+
+  // ****** THÊM ngOnDestroy ******
+  private destroy$ = new Subject<void>();
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+    // Không cần unsubscribe thủ công nếu đã dùng takeUntil
+    // this.authSubscription?.unsubscribe();
+  }
+  // ****************************
 
   onSubmit(): void {
     if (this.loginForm.invalid) {
@@ -64,4 +101,26 @@ export class LoginComponent implements OnInit {
       // finalize đã được xử lý trong service để tắt loading
     });
   }
+
+  // ****** HÀM XỬ LÝ GOOGLE SIGN IN ******
+  handleGoogleSignIn(idToken: string): void {
+    // Không set isLoading ở đây vì AuthService sẽ làm
+    this.errorMessage.set(null);
+    console.log("Sending Google ID Token to backend...");
+
+    this.authService.loginWithGoogle(idToken)
+      // Không cần finalize ở đây vì isLoading lấy từ service
+      .subscribe({
+        next: (response) => {
+          console.log("Backend Google Sign-In successful");
+          this.toastr.success('Đăng nhập bằng Google thành công!');
+          this.router.navigateByUrl(this.returnUrl);
+        },
+        error: (err: ApiResponse<null>) => { // Nhận kiểu lỗi ApiResponse
+          console.error("Backend Google Sign-In failed:", err);
+          this.errorMessage.set(err.message || 'Đăng nhập bằng Google thất bại.');
+        }
+      });
+  }
+  // *************************************
 }
