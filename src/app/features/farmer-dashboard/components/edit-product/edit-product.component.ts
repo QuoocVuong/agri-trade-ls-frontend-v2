@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal, OnDestroy, computed } from '@angular/core';
+import {Component, OnInit, inject, signal, OnDestroy, computed, ChangeDetectorRef} from '@angular/core';
 import { CommonModule, DecimalPipe } from '@angular/common';
 import { FormBuilder, FormGroup, FormArray, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -40,6 +40,7 @@ export class EditProductComponent implements OnInit, OnDestroy {
   private categoryService = inject(CategoryService);
   private toastr = inject(ToastrService);
   private destroy$ = new Subject<void>();
+  private cdr = inject(ChangeDetectorRef);
 
 
   productForm!: FormGroup;
@@ -212,11 +213,13 @@ export class EditProductComponent implements OnInit, OnDestroy {
             this.imagesArray.clear();
             this.pricingTiersArray.clear();
             // Thêm ảnh vào FormArray
-            product.images?.forEach(img => this.addImageControl(img));
+            // ****** KHI LOAD, ProductImageResponse CẦN CÓ blobPath ******
+            product.images?.forEach(imgResp => this.addImageControl(imgResp)); // imgResp là ProductImageResponse
+            // ***********************************************************
             // Thêm bậc giá vào FormArray
             product.pricingTiers?.forEach(tier => this.addPricingTierControl(tier));
-            // Trigger valueChanges cho b2bEnabled để disable/enable đúng
-            this.productForm.get('b2bEnabled')?.updateValueAndValidity();
+            this.toggleB2BControls(product.b2bEnabled); // Gọi lại toggle
+            this.cdr.markForCheck(); // Cập nhật view
           } else {
             this.handleErrorAndNavigate(res.message || 'Không tìm thấy sản phẩm.');
           }
@@ -228,70 +231,68 @@ export class EditProductComponent implements OnInit, OnDestroy {
   }
 
   // --- Quản lý Ảnh ---
-  createImageGroup(img?: ProductImageResponse | ProductImageRequest): FormGroup {
+  createImageGroup(imgData?: ProductImageResponse | ProductImageRequest): FormGroup {
     return this.fb.group({
-      id: [img?.id || null],
+      id: [(imgData && 'id' in imgData) ? imgData.id : null],
       // imageUrl không cần required ở form nữa vì sẽ lấy từ upload
-      imageUrl: [img?.imageUrl || '', Validators.maxLength(512)],
-      isDefault: [img?.isDefault || false],
-      displayOrder: [img?.displayOrder || 0, Validators.required]
+      imageUrl: [imgData?.imageUrl || '', [Validators.required]],
+      // ****** THÊM blobPath VÀO FORM GROUP ******
+      blobPath: [(imgData && 'blobPath' in imgData) ? imgData.blobPath : (imgData?.imageUrl || null)], // Nếu là request mới, imageUrl có thể là blobPath
+      // ****************************************
+      isDefault: [imgData?.isDefault ?? false],
+      displayOrder: [imgData?.displayOrder ?? 0, Validators.required]
     });
   }
 
 
-  addImageControl(img?: ProductImageResponse | ProductImageRequest): void {
-    let displayOrderValue: number;
-    let imageUrlValue: string = ''; // Khởi tạo giá trị mặc định
-    let isDefaultValue: boolean = false;
-    let idValue: number | null = null;
-
-    // Lấy giá trị từ img nếu nó tồn tại
-    if (img) {
-      // Ưu tiên displayOrder từ img nếu nó hợp lệ (không phải null/undefined và không phải 0 nếu đã có)
-      displayOrderValue = (img.displayOrder !== null && img.displayOrder !== undefined && img.displayOrder !== 0)
-        ? img.displayOrder
-        : this.imagesArray.length; // Gán thứ tự cuối nếu không có hoặc là 0
-
-      imageUrlValue = img.imageUrl || ''; // Lấy imageUrl hoặc rỗng
-      isDefaultValue = img.isDefault ?? false; // Lấy isDefault hoặc false
-      // Chỉ lấy id nếu nó tồn tại trong img (thường là từ ProductImageResponse)
-      if ('id' in img && img.id !== null && img.id !== undefined) {
-        idValue = img.id;
-      }
-    } else {
-      // Nếu không có img đầu vào (ví dụ: gọi từ nút "Thêm URL ảnh")
-      displayOrderValue = this.imagesArray.length;
-      isDefaultValue = this.imagesArray.length === 0; // Ảnh đầu tiên là default
+  addImageControl(imgData?: ProductImageRequest | ProductImageResponse): void {
+    const imageGroup = this.createImageGroup(imgData);
+    // Nếu là ảnh mới từ upload và chưa có isDefault, set ảnh đầu tiên làm default
+    if (!(imgData && 'id' in imgData) && this.imagesArray.length === 0) {
+      imageGroup.get('isDefault')?.setValue(true);
     }
-
-    // Tạo FormGroup với các giá trị đã xác định
-    const imageGroup = this.fb.group({
-      id: [idValue],
-      imageUrl: [imageUrlValue, [Validators.required, Validators.maxLength(512)]], // Vẫn cần required ở đây
-      isDefault: [isDefaultValue],
-      displayOrder: [displayOrderValue, Validators.required]
-    });
-
     this.imagesArray.push(imageGroup);
-    // Không cần sort ở đây nữa, sẽ sort khi drop hoặc submit
+    this.updateDisplayOrder(); // Cập nhật thứ tự sau khi thêm
+    this.checkAndSetDefaultImage(); // Đảm bảo có default
+    // 🔍 Debug sau khi thêm control ảnh
+    console.log('Form hợp lệ?', this.productForm.valid);
+    console.log('ImagesArray hợp lệ?', this.imagesArray.valid);
+    console.log('Lỗi form:', this.productForm.errors);
+    console.log('Lỗi từng ảnh:', this.imagesArray.controls.map(c => c.errors));
   }
 
   removeImageControl(index: number): void {
-    // TODO: Có thể cần gọi API xóa file vật lý nếu ảnh này đã được lưu trước đó
-    // const imageIdToRemove = this.imagesArray.at(index).value.id;
-    // const imageUrlToRemove = this.imagesArray.at(index).value.imageUrl;
-    // if (imageIdToRemove) { ... gọi API xóa file ... }
+    const imageControl = this.imagesArray.at(index);
+    const imageId = imageControl.get('id')?.value;
+    const blobPath = imageControl.get('blobPath')?.value; // Lấy blobPath từ form control
+
+    // Nếu ảnh này đã được lưu (có ID) và có blobPath, bạn có thể cân nhắc gọi API xóa file ngay
+    // Tuy nhiên, cách an toàn hơn là chỉ xóa khỏi FormArray, việc xóa file vật lý sẽ do Backend xử lý khi update Product
+    // nếu ảnh đó không còn trong danh sách images gửi lên.
+    // Nếu bạn muốn xóa ngay:
+    // if (imageId && blobPath) {
+    //   console.log(`TODO: Call API to delete file with blobPath: ${blobPath} if needed immediately`);
+    //   // this.fileService.deleteFile(blobPath).subscribe(...);
+    // }
+
     this.imagesArray.removeAt(index);
-    this.updateDisplayOrder(); // Cập nhật lại thứ tự sau khi xóa
-    this.checkAndSetDefaultImage(); // Đảm bảo luôn có ảnh default
+    this.updateDisplayOrder();
+    this.checkAndSetDefaultImage();
+    this.productForm.markAsDirty();
   }
 
   // Hàm xử lý khi upload thành công từ FileUploadComponent
-  onImageUploaded(fileResponse: FileUploadResponse): void {
+  onImageUploaded(uploadResponse: FileUploadResponse): void {
+    console.log('File uploaded, response from server:', uploadResponse);
+    console.log('FileUploadComponent Response:', uploadResponse); // Log toàn bộ response
+    console.log('File Download URI:', uploadResponse?.fileDownloadUri); // Log cụ thể URI
+    console.log('File Download URI Length:', uploadResponse?.fileDownloadUri?.length); // <<< THÊM LOG NÀY
     const newImageRequest: ProductImageRequest = {
-      imageUrl: fileResponse.fileDownloadUri, // Sử dụng URL trả về
-      isDefault: this.imagesArray.length === 0,
-      displayOrder: this.imagesArray.length
+      // id: null, // Ảnh mới không có ID
+      imageUrl: uploadResponse.fileDownloadUri, // URL để hiển thị
+      blobPath: uploadResponse.fileName,       // <<< LƯU blobPath (là fileName từ response)
+      isDefault: this.imagesArray.length === 0, // Ảnh đầu tiên là default
+      displayOrder: this.imagesArray.length    // Thứ tự cuối cùng
     };
     this.addImageControl(newImageRequest);
   }
@@ -363,6 +364,7 @@ export class EditProductComponent implements OnInit, OnDestroy {
       if (firstErrorControl instanceof HTMLElement) {
         firstErrorControl.focus();
       }
+
       this.toastr.error('Vui lòng kiểm tra lại các trường dữ liệu.');
       return;
     }
@@ -385,6 +387,26 @@ export class EditProductComponent implements OnInit, OnDestroy {
     // Lấy dữ liệu thô từ form
     const formValue = this.productForm.getRawValue();
     // *** THÊM LOGIC Ở ĐÂY: Gán status mặc định khi thêm mới ***
+
+    // ****** CHUẨN HÓA DỮ LIỆU ẢNH ĐỂ GỬI LÊN BACKEND ******
+    const imageRequests: ProductImageRequest[] = this.imagesArray.controls.map((ctrl, index) => {
+      const imgValue = ctrl.value;
+      return {
+        id: imgValue.id || null,
+        imageUrl: imgValue.imageUrl, // URL để hiển thị (Backend sẽ dùng blobPath để xóa nếu cần)
+        blobPath: imgValue.blobPath || null, // <<< GỬI blobPath LÊN
+        isDefault: imgValue.isDefault,
+        displayOrder: index // Luôn cập nhật displayOrder theo vị trí hiện tại
+      };
+    });
+    // ***************************************************
+
+    let pricingTierRequests: ProductPricingTierRequest[] | null = null;
+    if (formValue.b2bEnabled && this.pricingTiersArray.controls.length > 0) {
+      pricingTierRequests = this.pricingTiersArray.controls.map(ctrl => ctrl.value);
+    }
+
+
     let finalStatus = formValue.status;
     if (!this.isEditMode() && finalStatus === null) {
       finalStatus = ProductStatus.PENDING_APPROVAL; // Gán trạng thái chờ duyệt
@@ -395,9 +417,23 @@ export class EditProductComponent implements OnInit, OnDestroy {
 
     // Tạo request data với trạng thái đã được xử lý
     const requestData: ProductRequest = {
-      ...formValue, // Spread các giá trị khác từ form
-      status: finalStatus // Sử dụng trạng thái đã được xử lý
+      name: formValue.name,
+      categoryId: formValue.categoryId,
+      description: formValue.description || null,
+      unit: formValue.unit,
+      price: formValue.price,
+      stockQuantity: formValue.stockQuantity,
+      status: finalStatus,
+      b2bEnabled: formValue.b2bEnabled,
+      b2bUnit: formValue.b2bEnabled ? formValue.b2bUnit : null,
+      minB2bQuantity: formValue.b2bEnabled ? formValue.minB2bQuantity : null,
+      b2bBasePrice: formValue.b2bEnabled ? formValue.b2bBasePrice : null,
+      images: imageRequests, // Sử dụng mảng đã chuẩn hóa
+      pricingTiers: formValue.b2bEnabled ? pricingTierRequests : null
+      // slug sẽ được tạo ở backend
     };
+
+    console.log("Submitting product data:", JSON.stringify(requestData, null, 2));
 
     let apiCall: Observable<ApiResponse<ProductDetailResponse>>;
 
