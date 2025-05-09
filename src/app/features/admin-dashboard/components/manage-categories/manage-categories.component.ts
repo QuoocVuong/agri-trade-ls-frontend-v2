@@ -12,12 +12,14 @@ import { ToastrService } from 'ngx-toastr';
 import {Observable, Subject} from 'rxjs';
 import { takeUntil, finalize } from 'rxjs/operators';
 import { SlugifyPipe } from '../../../../shared/pipes/slugify.pipe';
-import {CategoryService} from '../../../catalog/services/category.service'; // Import pipe slugify (cần tạo)
+import {CategoryService} from '../../../catalog/services/category.service';
+import {FileUploadComponent} from '../../../../shared/components/file-uploader/file-uploader.component';
+import {FileUploadResponse} from '../../../../common/dto/response/FileUploadResponse'; // Import pipe slugify (cần tạo)
 
 @Component({
   selector: 'app-manage-categories',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, LoadingSpinnerComponent, AlertComponent, ModalComponent, SlugifyPipe], // Thêm SlugifyPipe
+  imports: [CommonModule, ReactiveFormsModule, LoadingSpinnerComponent, AlertComponent, ModalComponent, SlugifyPipe, FileUploadComponent ], // Thêm SlugifyPipe
   templateUrl: './manage-categories.component.html',
 })
 export class ManageCategoriesComponent implements OnInit, OnDestroy {
@@ -38,6 +40,9 @@ export class ManageCategoriesComponent implements OnInit, OnDestroy {
   selectedCategoryId = signal<number | null>(null); // ID của category đang sửa
   isSubmitting = signal(false); // Loading khi submit form
 
+  // Lưu blobPath cũ khi edit để xử lý xóa file cũ nếu cần
+  private oldBlobPath: string | null | undefined = null;
+
   ngOnInit(): void {
     this.initForm();
     this.loadCategories();
@@ -53,8 +58,11 @@ export class ManageCategoriesComponent implements OnInit, OnDestroy {
       name: ['', [Validators.required, Validators.maxLength(100)]],
       slug: ['', Validators.maxLength(120)], // Slug có thể tự tạo
       description: [''],
-      imageUrl: ['', Validators.maxLength(512)],
-      parentId: [null] // Kiểu number hoặc null
+      // imageUrl: ['', Validators.maxLength(512)], // <<< Bỏ imageUrl trực tiếp
+      parentId: [null],
+      // Thêm controls ẩn để lưu kết quả upload
+      blobPath: [null],
+      previewImageUrl: [null] // Lưu URL tạm thời để hiển thị preview
     });
   }
 
@@ -100,6 +108,7 @@ export class ManageCategoriesComponent implements OnInit, OnDestroy {
     this.isEditMode.set(false);
     this.selectedCategoryId.set(null);
     this.errorMessage.set(null); // Xóa lỗi cũ
+    this.oldBlobPath = null; // Reset blobPath cũ
     this.initForm(); // Reset form về trạng thái ban đầu
     this.showCategoryModal.set(true);
   }
@@ -108,14 +117,45 @@ export class ManageCategoriesComponent implements OnInit, OnDestroy {
     this.isEditMode.set(true);
     this.selectedCategoryId.set(category.id);
     this.errorMessage.set(null);
+    this.oldBlobPath = category.blobPath; // Lưu blobPath cũ
     this.categoryForm.patchValue({ // Điền dữ liệu category vào form
       name: category.name,
       slug: category.slug,
       description: category.description,
       imageUrl: category.imageUrl,
-      parentId: category.parentId
+      parentId: category.parentId,
+      blobPath: category.blobPath, // Điền blobPath hiện tại
+      previewImageUrl: category.imageUrl // Điền imageUrl (Signed URL) để hiển thị preview ban đầu
     });
     this.showCategoryModal.set(true);
+  }
+
+  // Xử lý khi upload ảnh thành công
+  onImageUploaded(response: FileUploadResponse): void {
+    this.categoryForm.patchValue({
+      blobPath: response.fileName, // Lưu blobPath (fileName)
+      previewImageUrl: response.fileDownloadUri // Lưu Signed URL để preview
+    });
+    this.categoryForm.markAsDirty(); // Đánh dấu form đã thay đổi
+    this.errorMessage.set(null); // Xóa lỗi cũ nếu có
+  }
+
+
+
+  // Xử lý khi upload lỗi
+  onImageUploadError(errorMsg: string): void {
+    this.errorMessage.set(`Lỗi tải ảnh: ${errorMsg}`);
+    this.toastr.error(`Lỗi tải ảnh: ${errorMsg}`);
+  }
+
+  // Xóa ảnh đã chọn/upload
+  removeImage(): void {
+    this.categoryForm.patchValue({
+      blobPath: null,
+      previewImageUrl: null
+    });
+    this.categoryForm.markAsDirty();
+    // Lưu ý: Việc xóa file vật lý trên storage sẽ được xử lý ở backend khi lưu
   }
 
   closeModal(): void {
@@ -132,8 +172,18 @@ export class ManageCategoriesComponent implements OnInit, OnDestroy {
     this.isSubmitting.set(true);
     this.errorMessage.set(null);
 
-    const requestData: CategoryRequest = this.categoryForm.value;
-    // Backend sẽ tự tạo slug nếu trường slug rỗng
+    // Lấy dữ liệu từ form, bao gồm cả blobPath và previewImageUrl
+    const formValue = this.categoryForm.value;
+
+    const requestData: CategoryRequest = {
+      name: formValue.name,
+      slug: formValue.slug,
+      description: formValue.description,
+      parentId: formValue.parentId,
+      blobPath: formValue.blobPath, // <<< Gửi blobPath
+      imageUrl: formValue.previewImageUrl // <<< Gửi URL preview (Signed URL)
+    };
+
 
     let apiCall: Observable<ApiResponse<CategoryResponse>>;
 
@@ -155,6 +205,7 @@ export class ManageCategoriesComponent implements OnInit, OnDestroy {
           this.toastr.success(message);
           this.closeModal();
           this.loadCategories(); // Tải lại danh sách category
+          // Không cần xóa file cũ ở đây, backend đã xử lý trong updateCategory
         } else {
           this.handleError(res, 'Lưu danh mục thất bại.');
         }

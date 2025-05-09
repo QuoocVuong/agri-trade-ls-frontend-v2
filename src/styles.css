@@ -1,9 +1,130 @@
-/* src/styles.css */
+/* src/styles.css hoặc src/styles.scss */
+@import 'ngx-toastr/toastr';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Thêm các style global tùy chỉnh ở đây nếu cần */
-body {
-  /* Ví dụ: font-family: 'Inter', sans-serif; */
+/* CUSTOM TOASTR STYLES - Đặt sau Tailwind để ghi đè */
+
+
+/* Toast chung - Thiết kế hiện đại hơn */
+.ngx-toastr {
+  @apply shadow-2xl rounded-xl border text-base; /* Bo góc lớn hơn, bóng đổ mạnh hơn */
+  /* Sử dụng màu nền có độ trong suốt nhẹ và hiệu ứng blur nếu trình duyệt hỗ trợ */
+  background-color: rgba(55, 65, 81, 0.85); /* Màu xám tối với độ trong suốt - bg-gray-700 opacity-85 */
+  backdrop-filter: blur(8px); /* Hiệu ứng blur cho nền phía sau (nếu hỗ trợ) */
+  -webkit-backdrop-filter: blur(8px); /* Cho Safari */
+  border-color: rgba(75, 85, 99, 0.5); /* Màu border tối hơn một chút - border-gray-600 opacity-50 */
+  color: #e5e7eb; /* Màu chữ sáng - text-gray-200 */
+  width: auto; /* Cho phép toast co giãn theo nội dung */
+  min-width: 300px; /* Chiều rộng tối thiểu */
+  max-width: 450px; /* Chiều rộng tối đa */
+  padding: 1rem 1.25rem; /* Thêm padding */
+}
+
+/* Nút đóng - Làm cho nó tinh tế hơn */
+.toast-close-button {
+  @apply text-gray-400 hover:text-white focus:text-white absolute top-3 right-3; /* Vị trí và màu sắc */
+  font-size: 1.5rem; /* Kích thước lớn hơn một chút */
+  line-height: 1;
+  opacity: 0.8;
+}
+.toast-close-button:focus, .toast-close-button:hover {
+  box-shadow: none !important;
+  opacity: 1;
+}
+
+/* Thanh tiến trình */
+.toast-progress-bar {
+  @apply h-1; /* Làm thanh tiến trình mỏng hơn */
+}
+
+/* --- SUCCESS TOAST --- */
+.toast-success {
+  /* Giữ lại màu nền và border từ .ngx-toastr hoặc tùy chỉnh nhẹ */
+  /* Có thể thêm một dải màu ở bên trái hoặc icon đặc trưng */
+  border-left: 4px solid theme('colors.green.500');
+  background-color: rgba(34, 197, 94, 0.15); /* Nền xanh lá rất nhạt với blur */
+  border-color: rgba(34, 197, 94, 0.3);
+  color: theme('colors.green.100');
+}
+.toast-success .toast-title {
+  color: theme('colors.green.300');
+}
+.toast-success .toast-progress-bar {
+  @apply bg-green-500;
+}
+.toast-success .toast-close-button {
+  @apply text-green-200 hover:text-white;
+}
+
+
+/* --- ERROR TOAST --- */
+.toast-error {
+  border-left: 4px solid theme('colors.red.500');
+  background-color: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: theme('colors.red.100');
+}
+.toast-error .toast-title {
+  color: theme('colors.red.300');
+}
+.toast-error .toast-progress-bar {
+  @apply bg-red-500;
+}
+.toast-error .toast-close-button {
+  @apply text-red-200 hover:text-white;
+}
+
+/* --- WARNING TOAST --- */
+.toast-warning {
+  border-left: 4px solid theme('colors.yellow.500');
+  background-color: rgba(245, 158, 11, 0.15);
+  border-color: rgba(245, 158, 11, 0.3);
+  color: theme('colors.yellow.800'); /* Chữ tối hơn trên nền vàng nhạt */
+}
+.toast-warning .toast-title {
+  color: theme('colors.yellow.700');
+}
+.toast-warning .toast-progress-bar {
+  @apply bg-yellow-500;
+}
+.toast-warning .toast-close-button {
+  @apply text-yellow-700 hover:text-yellow-800;
+}
+
+/* --- INFO TOAST --- */
+.toast-info {
+  border-left: 4px solid theme('colors.blue.500');
+  background-color: rgba(59, 130, 246, 0.15);
+  border-color: rgba(59, 130, 246, 0.3);
+  color: theme('colors.blue.100');
+}
+.toast-info .toast-title {
+  color: theme('colors.blue.300');
+}
+.toast-info .toast-progress-bar {
+  @apply bg-blue-500;
+}
+.toast-info .toast-close-button {
+  @apply text-blue-200 hover:text-white;
+}
+
+
+/* Tiêu đề và Message */
+.toast-title {
+  @apply font-semibold text-lg mb-1; /* Tăng kích thước tiêu đề, thêm margin bottom */
+}
+
+.toast-message {
+  @apply text-sm leading-relaxed; /* Cải thiện khả năng đọc */
+  word-break: break-word;
+}
+
+/* Loại bỏ icon mặc định của ngx-toastr nếu bạn muốn dùng icon tùy chỉnh hoàn toàn */
+/* Hoặc nếu bạn muốn giữ icon mặc định nhưng style lại, bạn có thể target các class như .toast-icon */
+.ngx-toastr > div:first-child:not(.toast-close-button):not(.toast-progress-bar) {
+  /* Đây là cách để target icon wrapper mặc định, có thể cần điều chỉnh */
+  /* Ví dụ: display: none; nếu muốn ẩn hoàn toàn icon mặc định */
 }

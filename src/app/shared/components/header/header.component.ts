@@ -1,4 +1,14 @@
-import {Component, computed, EventEmitter, inject, Output, signal} from '@angular/core';
+import {
+  AfterViewInit,
+  Component,
+  computed, effect,
+  ElementRef,
+  EventEmitter,
+  inject,
+  Output,
+  signal,
+  ViewChild
+} from '@angular/core';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service'; // Import AuthService
 import {CommonModule, DatePipe} from '@angular/common';
@@ -21,7 +31,7 @@ import {SafeHtmlPipe} from '../../pipes/safe-html.pipe';
   imports: [CommonModule, RouterLink, RouterLinkActive, FormatBigDecimalPipe, DatePipe, TimeAgoPipe, LoadingSpinnerComponent, AlertComponent], // Import CommonModule
   templateUrl: './header.component.html',
 })
-export class HeaderComponent {
+export class HeaderComponent implements AfterViewInit {
   private authService = inject(AuthService);
   private router = inject(Router);
   private cartService = inject(CartService); // <-- Inject CartService
@@ -52,6 +62,39 @@ export class HeaderComponent {
   isFarmer = computed(() => this.authService.hasRole('ROLE_FARMER'));
   isBusinessBuyer = computed(() => this.authService.hasRole('ROLE_BUSINESS_BUYER'));
   isConsumer = computed(() => this.authService.hasRole('ROLE_CONSUMER'));
+
+
+  isMobileSearchVisible = signal(false); // Signal mới
+
+  // Tham chiếu đến input tìm kiếm mobile để focus
+  @ViewChild('mobileSearchInput') mobileSearchInputRef?: ElementRef<HTMLInputElement>;
+
+  constructor() {
+    // Sử dụng effect để focus vào input khi nó hiển thị
+    effect(() => {
+      if (this.isMobileSearchVisible() && this.mobileSearchInputRef?.nativeElement) {
+        // Dùng setTimeout nhỏ để đảm bảo input đã render xong trước khi focus
+        setTimeout(() => this.mobileSearchInputRef?.nativeElement.focus(), 0);
+      }
+    });
+  }
+
+  ngAfterViewInit(): void {
+    // Có thể không cần làm gì ở đây nếu dùng effect
+  }
+
+  toggleMobileSearch(): void {
+    this.isMobileSearchVisible.update(visible => !visible);
+  }
+
+  performSearch(searchTerm: string): void {
+    if (searchTerm?.trim()) {
+      console.log('Performing search for:', searchTerm);
+      this.isMobileSearchVisible.set(false); // Ẩn ô search sau khi tìm
+      // TODO: Điều hướng đến trang kết quả tìm kiếm hoặc xử lý tìm kiếm
+      this.router.navigate(['/products'], { queryParams: { keyword: searchTerm.trim() } });
+    }
+  }
 
 
 

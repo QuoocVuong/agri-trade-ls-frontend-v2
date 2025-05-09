@@ -14,6 +14,8 @@ export class ReviewService {
   private http = inject(HttpClient);
   private apiUrl = `${environment.apiUrl}/reviews`; // Base URL cho API review
 
+  private farmerReviewApiUrl = `${environment.apiUrl}/farmer/reviews`; // <<< URL API mới
+
   // Tạo review mới
   createReview(request: ReviewRequest): Observable<ApiResponse<ReviewResponse>> {
     return this.http.post<ApiResponse<ReviewResponse>>(this.apiUrl, request);
@@ -67,5 +69,18 @@ export class ReviewService {
 
   deleteReview(reviewId: number): Observable<ApiResponse<void>> {
     return this.http.delete<ApiResponse<void>>(`${environment.apiUrl}/admin/reviews/${reviewId}`);
+  }
+
+  getReviewsForMyProducts(page: number, size: number, sort?: string, status?: ReviewStatus | null): Observable<PagedApiResponse<ReviewResponse>> {
+    let params = new HttpParams()
+      .set('page', page.toString())
+      .set('size', size.toString());
+    if (sort) {
+      params = params.set('sort', sort);
+    }
+    // if (status) { // <<< Thêm nếu backend hỗ trợ lọc status
+    //   params = params.set('status', status);
+    // }
+    return this.http.get<PagedApiResponse<ReviewResponse>>(this.farmerReviewApiUrl, { params });
   }
 }

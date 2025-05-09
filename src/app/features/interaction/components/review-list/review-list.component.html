@@ -1,3 +1,4 @@
+<!-- src/app/features/interaction/components/review-list/review-list.component.html -->
 <div> <!-- Container cho list review -->
   <!-- Loading / Error / Empty -->
   <div *ngIf="isLoading()" class="text-center py-5"><app-loading-spinner></app-loading-spinner></div>
@@ -5,12 +6,32 @@
   <div *ngIf="!isLoading() && (!reviewsPage() || (reviewsPage()?.content?.length ?? 0) === 0) && !errorMessage()" class="text-center py-5 text-base-content/60">
     <span *ngIf="mode === 'product'">Chưa có đánh giá nào cho sản phẩm này.</span>
     <span *ngIf="mode === 'my'">Bạn chưa viết đánh giá nào.</span>
-    <span *ngIf="mode === 'admin_pending'">Không có đánh giá nào đang chờ duyệt.</span>
+    <span *ngIf="mode === 'admin_manage' && statusFilter === ReviewStatusEnum.PENDING">Không có đánh giá nào đang chờ duyệt.</span>
+    <span *ngIf="mode === 'admin_manage' && statusFilter === ReviewStatusEnum.APPROVED">Không có đánh giá nào đã được duyệt.</span>
+    <span *ngIf="mode === 'admin_manage' && statusFilter === ReviewStatusEnum.REJECTED">Không có đánh giá nào bị từ chối.</span>
+    <span *ngIf="mode === 'admin_manage' && !statusFilter">Vui lòng chọn trạng thái để xem đánh giá.</span>
+
+    <span *ngIf="mode === 'farmer_product_reviews'">Chưa có đánh giá nào cho sản phẩm của bạn.</span>
   </div>
 
   <!-- Review List -->
-  <div *ngIf="!isLoading() && reviewsPage() && reviewsPage()!.content.length > 0" class="space-y-4">
-    <div *ngFor="let review of reviewsPage()?.content; trackBy: trackReviewById" class="border-b border-base-300 pb-4 last:border-b-0 last:pb-0">
+  <div *ngIf="!isLoading() && reviewsPage() && reviewsPage()!.content.length > 0" class="space-y-6"> <!-- Tăng space-y -->
+    <div *ngFor="let review of reviewsPage()?.content; trackBy: trackReviewById" class="border-b border-base-300 pb-6 last:border-b-0 last:pb-0"> <!-- Tăng pb -->
+
+      <!-- ****** THÊM THÔNG TIN SẢN PHẨM ****** -->
+      <div *ngIf="mode !== 'product' && review.productInfo" class="mb-3 flex items-center gap-3 p-2 bg-base-200 rounded-md">
+        <img [src]="review.productInfo.thumbnailUrl || 'assets/images/placeholder-image.png'"
+             [alt]="review.productInfo.name"
+             class="w-10 h-10 object-cover rounded">
+        <div>
+          <p class="text-xs text-base-content/70">Đánh giá cho sản phẩm:</p>
+          <a [routerLink]="['/products', review.productInfo.slug]" class="link link-hover text-sm font-medium">
+            {{ review.productInfo.name }}
+          </a>
+        </div>
+      </div>
+      <!-- ********************************** -->
+
       <div class="flex items-start space-x-3">
         <!-- Avatar -->
         <div class="avatar flex-shrink-0">
@@ -20,20 +41,33 @@
         </div>
         <!-- Review Content -->
         <div class="flex-grow">
-          <div class="flex items-center justify-between mb-1">
+          <div class="flex items-center justify-between mb-1 flex-wrap gap-2"> <!-- Thêm flex-wrap và gap -->
             <span class="font-semibold text-sm">{{ review.consumer?.fullName || 'Người dùng ẩn danh' }}</span>
             <!-- Rating Stars -->
             <div class="flex items-center text-xs">
               <svg *ngFor="let i of [1,2,3,4,5]" class="w-3 h-3 fill-current" [ngClass]="i <= review.rating ? 'text-warning' : 'text-base-300'" viewBox="0 0 24 24"><path d="M12 .587l3.668 7.568 8.332 1.151-6.064 5.828 1.48 8.279-7.416-3.967-7.417 3.967 1.481-8.279-6.064-5.828 8.332-1.151z"/></svg>
+              <!-- Hiển thị trạng thái review nếu là admin -->
+              <span *ngIf="showAdminActions" class="badge ml-2" [ngClass]="getReviewStatusCssClass(review.status)">
+                {{ getReviewStatusText(review.status) }}
+              </span>
             </div>
           </div>
           <p *ngIf="review.comment" class="text-sm text-base-content/90 mb-1">{{ review.comment }}</p>
           <p class="text-xs text-base-content/60">{{ review.createdAt | date:'dd/MM/yyyy HH:mm' }}</p>
 
-          <!-- Admin Actions -->
-          <div *ngIf="mode === 'admin_pending'" class="mt-2 space-x-2">
-            <button class="btn btn-xs btn-success" (click)="approveReview(review.id)">Duyệt</button>
-            <button class="btn btn-xs btn-error" (click)="rejectReview(review.id)">Từ chối</button>
+          <!-- Admin Actions: Hiển thị nếu showAdminActions là true -->
+          <div *ngIf="showAdminActions" class="mt-2 space-x-2">
+            <!-- Nút Duyệt: Chỉ hiện khi status là PENDING hoặc REJECTED -->
+            <button *ngIf="review.status === ReviewStatusEnum.PENDING || review.status === ReviewStatusEnum.REJECTED"
+                    class="btn btn-xs btn-success" (click)="approveReview(review.id)">
+              Duyệt
+            </button>
+            <!-- Nút Từ chối: Chỉ hiện khi status là PENDING hoặc APPROVED -->
+            <button *ngIf="review.status === ReviewStatusEnum.PENDING || review.status === ReviewStatusEnum.APPROVED"
+                    class="btn btn-xs btn-warning" (click)="rejectReview(review.id)">
+              Từ chối
+            </button>
+            <!-- Nút Xóa: Luôn hiển thị cho admin -->
             <button class="btn btn-xs btn-ghost text-error" (click)="deleteReview(review.id)">Xóa</button>
           </div>
         </div>

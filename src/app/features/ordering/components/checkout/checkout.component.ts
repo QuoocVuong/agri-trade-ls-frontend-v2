@@ -414,7 +414,28 @@ export class CheckoutComponent implements OnInit {
             this.handleError(response, 'Đặt hàng thất bại.');
           }
         },
-        error: (err) => this.handleError(err, 'Đã xảy ra lỗi khi đặt hàng.')
+        // CheckoutComponent.ts -> onSubmit() -> error block
+        error: (err) => {
+          const apiError = err.error as ApiResponse<null>;
+          const message = apiError?.message || 'Đã xảy ra lỗi khi đặt hàng.';
+          this.errorMessage.set(message);
+          this.toastr.error(message, 'Đặt hàng thất bại', { timeOut: 7000 }); // Tăng thời gian hiển thị toastr
+          this.isLoadingCheckout.set(false);
+          console.error(err);
+
+          // Nếu lỗi là do sản phẩm không khả dụng (backend đã xóa khỏi giỏ)
+          // thì tải lại giỏ hàng ở frontend để cập nhật UI
+          if (message.includes('không còn khả dụng')) {
+            this.cartService.loadCart().subscribe(() => {
+              this.cdr.markForCheck(); // Đảm bảo UI tóm tắt đơn hàng cập nhật
+              // Có thể kiểm tra lại nếu giỏ hàng trống thì điều hướng
+              if (!this.cart() || (this.cart()?.items?.length ?? 0) === 0) {
+                this.toastr.info("Giỏ hàng của bạn hiện đã trống.");
+                this.router.navigate(['/cart']);
+              }
+            });
+          }
+        }
       });
   }
 

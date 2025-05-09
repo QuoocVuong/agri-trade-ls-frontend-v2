@@ -6,7 +6,8 @@ export interface CategoryResponse {
   name: string;
   slug: string;
   description: string | null;
-  imageUrl: string | null;
+  imageUrl: string | null; // Signed URL tạo động
+  blobPath: string | null; // <<< Thêm blobPath
   parentId: number | null;
   children?: CategoryResponse[] | null; // Cho cấu trúc cây
   createdAt: string; // ISO date string

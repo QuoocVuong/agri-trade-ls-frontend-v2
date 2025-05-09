@@ -234,11 +234,10 @@ export class EditProductComponent implements OnInit, OnDestroy {
   createImageGroup(imgData?: ProductImageResponse | ProductImageRequest): FormGroup {
     return this.fb.group({
       id: [(imgData && 'id' in imgData) ? imgData.id : null],
-      // imageUrl không cần required ở form nữa vì sẽ lấy từ upload
-      imageUrl: [imgData?.imageUrl || '', [Validators.required]],
-      // ****** THÊM blobPath VÀO FORM GROUP ******
-      blobPath: [(imgData && 'blobPath' in imgData) ? imgData.blobPath : (imgData?.imageUrl || null)], // Nếu là request mới, imageUrl có thể là blobPath
-      // ****************************************
+      imageUrl: [imgData?.imageUrl || '', Validators.required], // Dùng imageUrl từ response/request
+      // blobPath sẽ lấy từ imgData.blobPath nếu là ProductImageResponse,
+      // hoặc từ imgData.blobPath nếu là ProductImageRequest (khi upload mới)
+      blobPath: [(imgData?.blobPath) || null, Validators.required],
       isDefault: [imgData?.isDefault ?? false],
       displayOrder: [imgData?.displayOrder ?? 0, Validators.required]
     });
@@ -295,7 +294,15 @@ export class EditProductComponent implements OnInit, OnDestroy {
       displayOrder: this.imagesArray.length    // Thứ tự cuối cùng
     };
     this.addImageControl(newImageRequest);
+    this.errorMessage.set(null); // Xóa lỗi cũ nếu có
   }
+
+  // *** THÊM HÀM NÀY ***
+  onImageUploadError(errorMsg: string): void {
+    this.errorMessage.set(`Lỗi tải ảnh: ${errorMsg}`); // Hiển thị lỗi chung của form nếu muốn
+    this.toastr.error(`Lỗi tải ảnh: ${errorMsg}`); // Hiển thị toastr lỗi
+  }
+  // *******************
 
   setDefaultImage(selectedIndex: number): void {
     this.imagesArray.controls.forEach((control, index) => {

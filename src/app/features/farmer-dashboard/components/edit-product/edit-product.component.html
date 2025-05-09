@@ -221,7 +221,14 @@
       <div class="pt-4 border-t border-base-300">
         <h3 class="text-lg font-semibold mb-2">Hình ảnh sản phẩm <span class="text-error">*</span></h3>
         <div class="mb-4">
-          <app-file-uploader (fileUploaded)="onImageUploaded($event)"></app-file-uploader>
+          <!-- edit-product.component.html -->
+          <app-file-uploader
+            [uploadUrlPath]="'/files/upload'"
+            [allowedTypes]="['image/png', 'image/jpeg', 'image/gif', 'image/webp']"
+            [uploadParams]="{ type: 'product_images' }"
+          (uploadSuccess)="onImageUploaded($event)"
+          (uploadError)="onImageUploadError($event)">
+          </app-file-uploader>
           <p class="text-xs text-base-content/60 mt-1">Thêm ảnh cho sản phẩm (kéo thả để sắp xếp).</p>
         </div>
         <div cdkDropList class="space-y-3" formArrayName="images" (cdkDropListDropped)="dropImage($event)">

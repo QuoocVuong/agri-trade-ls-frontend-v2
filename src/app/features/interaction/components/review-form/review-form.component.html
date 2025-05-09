@@ -1,65 +1,70 @@
-<div *ngIf="isAuthenticated(); else loginRequired"> <!-- Chỉ hiển thị form nếu đã đăng nhập -->
-  <form [formGroup]="reviewForm" (ngSubmit)="onSubmit()">
-    <!-- Rating Stars -->
-    <div class="mb-4">
-      <label class="label"><span class="label-text font-medium">Đánh giá của bạn <span class="text-error">*</span></span></label>
-      <div class="rating rating-md rating-half">
-        <!-- Clear rating button (optional) -->
-        <!-- <input type="radio" name="rating-10" class="rating-hidden" [checked]="selectedRating() === 0" (change)="setRating(0)"/> -->
+<!-- src/app/features/interaction/components/review-form/review-form.component.html -->
+<div *ngIf="isAuthenticated(); else loginRequired">
+  <!-- Sử dụng card để bao bọc form -->
+  <div class="card bg-base-100 shadow-lg border border-base-300">
+    <form [formGroup]="reviewForm" (ngSubmit)="onSubmit()" class="card-body p-5 sm:p-6"> <!-- Thêm padding -->
+      <h3 class="card-title text-lg mb-4">Viết đánh giá của bạn</h3>
 
-        <!-- Stars -->
-        <ng-container *ngFor="let i of [1, 2, 3, 4, 5]">
-          <!-- Half star (không cần thiết nếu chỉ cho chọn sao chẵn) -->
-          <!-- <input type="radio" name="rating-10" class="bg-orange-500 mask mask-star-2 mask-half-1" [value]="i - 0.5" (change)="setRating(i - 0.5)" (mouseenter)="setHoverRating(i - 0.5)" (mouseleave)="resetHoverRating()" [checked]="selectedRating() === i - 0.5"/> -->
-          <input type="radio"
-                 name="rating" class="mask mask-star-2"
-                 [ngClass]="(hoverRating() >= i || selectedRating() >= i) ? 'bg-orange-400' : 'bg-orange-400/30'"
-                 [value]="i"
-                 (change)="setRating(i)"
-                 (mouseenter)="setHoverRating(i)"
-                 (mouseleave)="resetHoverRating()"
-                 [checked]="selectedRating() === i"
-                 formControlName="rating" /> <!-- Binding vào form control -->
-          <!-- Full star -->
-          <!-- <input type="radio" name="rating-10" class="bg-orange-500 mask mask-star-2 mask-half-2" [value]="i" (change)="setRating(i)" (mouseenter)="setHoverRating(i)" (mouseleave)="resetHoverRating()" [checked]="selectedRating() === i"/> -->
-        </ng-container>
+      <!-- Rating Stars Section -->
+      <div class="mb-6"> <!-- Tăng khoảng cách dưới -->
+        <label class="label justify-start mb-1"> <!-- Căn trái label -->
+          <span class="label-text font-medium">Đánh giá sản phẩm <span class="text-error">*</span></span>
+        </label>
+        <!-- Tăng kích thước sao và khoảng cách -->
+        <div class="rating rating-lg gap-1"> <!-- rating-lg và gap-1 -->
+          <ng-container *ngFor="let i of [1, 2, 3, 4, 5]">
+            <input
+              type="radio"
+              name="rating"
+            class="mask mask-star-2"
+            [value]="i"
+            (change)="setRating(i)"
+            (mouseenter)="setHoverRating(i)"
+            (mouseleave)="resetHoverRating()"
+            [checked]="selectedRating() === i"
+            formControlName="rating"
+            [ngClass]="(hoverRating() >= i || selectedRating() >= i) ? 'text-yellow-400 bg-yellow-400' : 'text-base-content bg-base-content opacity-20'" />
+            <!-- Dùng màu vàng và opacity cho hiệu ứng -->
+          </ng-container>
+        </div>
+        <!-- Validation Message -->
+        <label class="label pt-1" *ngIf="reviewForm.controls['rating'].invalid && reviewForm.controls['rating'].touched">
+          <span class="label-text-alt text-error text-xs">Vui lòng chọn số sao đánh giá.</span>
+        </label>
       </div>
-      <label class="label" *ngIf="reviewForm.controls['rating'].invalid && reviewForm.controls['rating'].touched">
-        <span class="label-text-alt text-error">Vui lòng chọn số sao đánh giá.</span>
-      </label>
-    </div>
 
-    <!-- Comment Textarea -->
-    <div class="form-control w-full">
-      <label class="label"><span class="label-text">Viết bình luận (Tùy chọn)</span></label>
-      <textarea class="textarea textarea-bordered h-24"
-                placeholder="Chia sẻ cảm nhận của bạn về sản phẩm..."
-                formControlName="comment"
-                [ngClass]="{'textarea-error': reviewForm.controls['comment'].invalid && reviewForm.controls['comment'].touched}"></textarea>
-      <label class="label" *ngIf="reviewForm.controls['comment'].invalid && reviewForm.controls['comment'].touched">
-        <span class="label-text-alt text-error" *ngIf="reviewForm.controls['comment'].errors?.['maxlength']">Bình luận quá dài.</span>
-      </label>
-    </div>
+      <!-- Comment Textarea Section -->
+      <div class="form-control w-full mb-4">
+        <label class="label"><span class="label-text font-medium">Viết bình luận (Tùy chọn)</span></label>
+        <textarea
+          class="textarea textarea-bordered h-28 text-base"
+          placeholder="Sản phẩm này như thế nào? Chia sẻ cảm nhận của bạn..."
+          formControlName="comment"
+          [ngClass]="{'textarea-error': reviewForm.controls['comment'].invalid && reviewForm.controls['comment'].touched}"></textarea>
+        <label class="label pt-1" *ngIf="reviewForm.controls['comment'].invalid && reviewForm.controls['comment'].touched">
+          <span class="label-text-alt text-error text-xs" *ngIf="reviewForm.controls['comment'].errors?.['maxlength']">Bình luận không được vượt quá 1000 ký tự.</span>
+        </label>
+      </div>
 
-    <!-- Error Message -->
-    <div *ngIf="errorMessage()" class="alert alert-error shadow-sm mt-4 text-sm p-2">
-      <span>{{ errorMessage() }}</span>
-    </div>
+      <!-- Error Message -->
+      <div *ngIf="errorMessage()" class="alert alert-error shadow-sm mt-4 text-sm p-3">
+        <span>{{ errorMessage() }}</span>
+      </div>
 
-    <!-- Submit Button -->
-    <div class="mt-4 text-right">
-      <button type="submit" class="btn btn-primary btn-sm" [disabled]="isLoading() || reviewForm.invalid">
-        <span *ngIf="isLoading()" class="loading loading-spinner loading-xs"></span>
-        {{ isLoading() ? 'Đang gửi...' : 'Gửi đánh giá' }}
-      </button>
-    </div>
+      <!-- Submit Button -->
+      <div class="card-actions justify-end mt-6"> <!-- Dùng card-actions -->
+        <button type="submit" class="btn btn-primary" [disabled]="isLoading() || reviewForm.invalid"> <!-- Bỏ btn-sm -->
+          <span *ngIf="isLoading()" class="loading loading-spinner loading-sm"></span>
+          {{ isLoading() ? 'Đang gửi...' : 'Gửi đánh giá' }}
+        </button>
+      </div>
 
-  </form>
+    </form>
+  </div>
 </div>
 
 <ng-template #loginRequired>
-  <div class="text-center text-sm text-base-content/70 border rounded-md p-4">
-    <!-- File: review-form.component.html -->
-    Vui lòng <a [routerLink]="['/auth/login']" [queryParams]="{ returnUrl: '/products/' + productId }" class="link link-primary">đăng nhập</a> để viết đánh giá.
+  <div class="text-center text-sm text-base-content/70 border rounded-md p-6 bg-base-200 shadow">
+    Vui lòng <a [routerLink]="['/auth/login']" [queryParams]="{ returnUrl: '/products/' + productId }" class="link link-primary font-medium">đăng nhập</a> để viết đánh giá cho sản phẩm này.
   </div>
 </ng-template>

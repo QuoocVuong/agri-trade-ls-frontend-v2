@@ -59,12 +59,13 @@
 
 
 <!-- Modal Thêm/Sửa Category -->
+
 <app-modal [title]="isEditMode() ? 'Chỉnh sửa Danh mục' : 'Thêm Danh mục mới'"
            [isOpen]="showCategoryModal()"
            (closed)="closeModal()"
            [showActions]="true" [hideDefaultCancel]="true" modalBoxClasses="w-11/12 max-w-xl">
   <form *ngIf="showCategoryModal()" [formGroup]="categoryForm" (ngSubmit)="saveCategory()">
-    <!-- Error Message trong Modal -->
+    <!-- Error Message -->
     <app-alert *ngIf="errorMessage()" type="error" [message]="errorMessage()" class="mb-4"></app-alert>
 
     <div class="grid grid-cols-1 gap-4">
@@ -74,18 +75,16 @@
         <input type="text" placeholder="Nhập tên danh mục" class="input input-sm input-bordered w-full" formControlName="name" />
         <!-- Validation -->
       </div>
-      <!-- Slug (Optional - có thể tự tạo từ tên) -->
+      <!-- Slug -->
       <div class="form-control w-full">
         <label class="label"><span class="label-text">Slug (Để trống sẽ tự tạo)</span></label>
         <input type="text" placeholder="vi-du-slug" class="input input-sm input-bordered w-full" formControlName="slug" />
-        <!-- Validation -->
       </div>
       <!-- Parent Category -->
       <div class="form-control w-full">
-        <label class="label"><span class="label-text">Danh mục cha (Để trống nếu là gốc)</span></label>
+        <label class="label"><span class="label-text">Danh mục cha</span></label>
         <select class="select select-sm select-bordered w-full" formControlName="parentId">
           <option [ngValue]="null">-- Là danh mục gốc --</option>
-          <!-- Chỉ hiển thị những category không phải là chính nó hoặc con của nó -->
           <option *ngFor="let cat of flatCategories()" [value]="cat.id" [disabled]="cat.id === selectedCategoryId()">
             {{ cat.name }}
           </option>
@@ -96,15 +95,34 @@
         <label class="label"><span class="label-text">Mô tả</span></label>
         <textarea class="textarea textarea-bordered h-20 text-sm" placeholder="Mô tả ngắn..." formControlName="description"></textarea>
       </div>
-      <!-- Image URL -->
+
+      <!-- Image Upload -->
       <div class="form-control w-full">
-        <label class="label"><span class="label-text">URL Hình ảnh đại diện</span></label>
-        <input type="url" placeholder="Nhập URL ảnh" class="input input-sm input-bordered w-full" formControlName="imageUrl" />
-        <!-- TODO: Tích hợp upload ảnh -->
+        <label class="label"><span class="label-text">Hình ảnh đại diện</span></label>
+        <!-- manage-categories.component.html -->
+        <app-file-uploader
+          [uploadUrlPath]="'/files/upload'"
+          [allowedTypes]="['image/png', 'image/jpeg', 'image/gif', 'image/webp']"
+          [uploadParams]="{ type: 'category_images' }"
+        (uploadSuccess)="onImageUploaded($event)"
+        (uploadError)="onImageUploadError($event)">
+        </app-file-uploader>
+
+
+        <!-- Image Preview and Remove Button -->
+        <div *ngIf="categoryForm.get('previewImageUrl')?.value" class="mt-2 flex items-center space-x-2">
+          <img [src]="categoryForm.get('previewImageUrl')?.value" alt="Preview" class="w-16 h-16 object-cover rounded border border-base-300">
+          <button type="button" class="btn btn-xs btn-ghost text-error" (click)="removeImage()">Xóa ảnh</button>
+        </div>
+        <!-- Hidden controls for blobPath and previewImageUrl -->
+        <input type="hidden" formControlName="blobPath">
+        <input type="hidden" formControlName="previewImageUrl">
       </div>
+
     </div>
 
-    <div class="mt-6"> <!-- Chỉ cần class hoặc không cần div nếu modal-action đã style đủ -->
+    <!-- Modal Actions -->
+    <div class="modal-action mt-6">
       <button type="button" class="btn btn-sm btn-ghost" (click)="closeModal()">Hủy</button>
       <button type="submit" class="btn btn-sm btn-primary" [disabled]="isSubmitting() || categoryForm.invalid">
         <span *ngIf="isSubmitting()" class="loading loading-spinner loading-xs"></span>

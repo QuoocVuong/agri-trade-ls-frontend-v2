@@ -41,11 +41,9 @@ export const FARMER_ROUTES: Routes = [
     pathMatch: 'full'
   },
   {
-    path: 'reviews', // Ví dụ: /user/my-reviews (cần import vào user profile routes)
-    loadComponent: () => import('../../features/interaction/components/review-list/review-list.component').then(m => m.ReviewListComponent),
-    data: { mode: 'my' }, // Truyền dữ liệu để component biết cần load review của tôi
-
-    title: 'Đánh giá của tôi'
+    path: 'reviews',
+    loadComponent: () => import('./components/farmer-reviews/farmer-reviews.component').then(m => m.FarmerReviewsComponent),
+    title: 'Kênh người bán - Đánh giá sản phẩm' // <<< Đổi title cho phù hợp
   },
   // Redirect mặc định của /farmer về /farmer/dashboard
   {

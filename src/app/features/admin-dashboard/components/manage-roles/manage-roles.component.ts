@@ -12,12 +12,13 @@ import { ModalComponent } from '../../../../shared/components/modal/modal.compon
 import { ToastrService } from 'ngx-toastr';
 import {forkJoin, Subject} from 'rxjs';
 import { takeUntil, finalize, } from 'rxjs/operators'; // Import forkJoin
-import { getRoleTypeText, RoleType } from '../../../../common/model/role-type.enum'; // Import RoleType helpers
+import { getRoleTypeText, RoleType } from '../../../../common/model/role-type.enum';
+import {PermissionTranslatePipe} from '../../../../shared/pipes/permission-translate.pipe'; // Import RoleType helpers
 
 @Component({
   selector: 'app-manage-roles',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, LoadingSpinnerComponent, AlertComponent, ModalComponent],
+  imports: [CommonModule, ReactiveFormsModule, LoadingSpinnerComponent, AlertComponent, ModalComponent, PermissionTranslatePipe ],
   templateUrl: './manage-roles.component.html',
 })
 export class ManageRolesComponent implements OnInit {

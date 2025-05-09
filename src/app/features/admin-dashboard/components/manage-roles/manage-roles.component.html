@@ -42,7 +42,7 @@
               <div *ngFor="let permission of allPermissions(); let i = index; trackBy: trackPermissionByIndex" class="form-control">
                 <label class="label cursor-pointer justify-start gap-2 p-1">
                   <input type="checkbox" class="checkbox checkbox-primary checkbox-sm" [formControlName]="i" />
-                  <span class="label-text text-sm" [title]="permission.description || permission.name">{{ permission.name }}</span>
+                  <span class="label-text text-sm" [title]="permission.description || permission.name">{{ permission.name | permissionTranslate }}</span>
                 </label>
               </div>
             </div>

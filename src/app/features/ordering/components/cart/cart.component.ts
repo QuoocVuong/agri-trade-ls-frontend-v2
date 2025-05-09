@@ -1,4 +1,12 @@
-import {Component, inject, signal, ChangeDetectionStrategy, ChangeDetectorRef, computed} from '@angular/core'; // Thêm ChangeDetection
+import {
+  Component,
+  inject,
+  signal,
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  computed,
+  OnDestroy, OnInit
+} from '@angular/core'; // Thêm ChangeDetection
 import { CommonModule, DecimalPipe } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { CartService } from '../../services/cart.service';
@@ -15,6 +23,8 @@ import { FormatBigDecimalPipe } from '../../../../shared/pipes/format-big-decima
 import {ApiResponse} from '../../../../core/models/api-response.model';
 import {AuthService} from '../../../../core/services/auth.service';
 import BigDecimal from 'js-big-decimal';
+import {CartAdjustmentInfo} from '../../dto/response/CartAdjustmentInfo';
+import {CartValidationResponse} from '../../dto/response/CartValidationResponse';
 
 @Component({
   selector: 'app-cart',
@@ -23,7 +33,7 @@ import BigDecimal from 'js-big-decimal';
   templateUrl: './cart.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush // Tối ưu change detection
 })
-export class CartComponent {
+export class CartComponent implements OnInit, OnDestroy {
   cartService = inject(CartService);
   router = inject(Router);
   cdr = inject(ChangeDetectorRef); // Inject ChangeDetectorRef
@@ -62,7 +72,35 @@ export class CartComponent {
 
 
   ngOnInit(): void {
-    // Không cần gọi loadCart vì service đã tự load khi user login
+    this.cartService.cart$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(cartData => {
+        this.cartDataSource.set(cartData);
+        if (cartData && cartData.adjustments && cartData.adjustments.length > 0) {
+          // Hiển thị thông báo nếu getCart trả về adjustments
+          this.displayCartAdjustments(cartData.adjustments, "Thông tin giỏ hàng");
+          // Sau khi hiển thị, có thể muốn "reset" adjustments trong state của service
+          // để không hiển thị lại khi component khác subscribe.
+          // Hoặc CartService chỉ nên trả adjustments một lần.
+          // Hiện tại, cứ để nó hiển thị mỗi khi cart$ phát ra giá trị có adjustments.
+        }
+        this.cdr.markForCheck();
+      });
+
+    if (!this.cartService.getCurrentCart()) {
+      this.cartService.loadCart().subscribe();
+    }
+  }
+
+  // Hàm mới để hiển thị thông báo điều chỉnh
+  private displayCartAdjustments(adjustments: CartAdjustmentInfo[], titlePrefix: string = "Giỏ hàng đã cập nhật"): void {
+    adjustments.forEach(adj => {
+      if (adj.type === 'REMOVED') {
+        this.toastr.warning(adj.message, titlePrefix, { timeOut: 7000, closeButton: true});
+      } else if (adj.type === 'ADJUSTED') {
+        this.toastr.info(adj.message, titlePrefix, { timeOut: 7000, closeButton: true });
+      }
+    });
   }
 
   ngOnDestroy(): void {
@@ -246,12 +284,51 @@ export class CartComponent {
   }
 
   goToCheckout(): void {
-    const currentCart = this.cartService.getCurrentCart();
-    if (currentCart && currentCart.items && currentCart.items.length > 0) {
-      this.router.navigate(['/checkout']);
-    } else {
+    const currentCart = this.cart();
+    if (!currentCart || !currentCart.items || currentCart.items.length === 0) {
       this.toastr.warning("Giỏ hàng của bạn đang trống.");
+      return;
     }
+
+    // this.spinner.show(); // Có thể dùng isLoading signal của CartService
+    this.cartService.isLoading.set(true); // Sử dụng signal loading của service
+    this.cartService.validateCart()
+      .pipe(finalize(() => this.cartService.isLoading.set(false)))
+      .subscribe({
+        next: (res) => {
+          if (res.success && res.data) {
+            const validationData = res.data as CartValidationResponse; // Ép kiểu rõ ràng
+            console.log("Validation data received:", validationData);
+
+            // Hiển thị các thông báo điều chỉnh chi tiết từ validateCart
+            if (validationData.adjustments && validationData.adjustments.length > 0) {
+              this.displayCartAdjustments(validationData.adjustments, "Kiểm tra giỏ hàng");
+            }
+
+            if (validationData.valid) {
+              // Nếu backend nói OK (isValidForCheckout = true), nghĩa là không có item nào bị XÓA,
+              // chỉ có thể là số lượng được ĐIỀU CHỈNH (nếu có).
+              // Trong trường hợp này, vẫn cho phép đi đến checkout.
+              console.log("Cart is valid. Attempting to navigate to /checkout...");
+              this.router.navigate(['/checkout']);
+            } else {
+              // Nếu isValidForCheckout = false, nghĩa là có item bị XÓA hoặc số lượng thay đổi.
+              // Người dùng nên ở lại trang giỏ hàng để xem các thay đổi.
+              // CartService.loadCart() sẽ được gọi bên dưới để cập nhật UI.
+              this.toastr.error("Giỏ hàng của bạn đã có thay đổi. Vui lòng kiểm tra lại trước khi thanh toán.", "Giỏ hàng không hợp lệ", { timeOut: 7000 });
+              // Tải lại giỏ hàng để cập nhật UI với các thay đổi từ backend
+              this.cartService.loadCart().subscribe(() => {
+                this.cdr.markForCheck();
+              });
+            }
+          } else {
+            this.toastr.error(res.message || "Lỗi kiểm tra giỏ hàng.");
+          }
+        },
+        error: (err) => {
+          this.toastr.error(err.error?.message || "Lỗi kết nối khi kiểm tra giỏ hàng.");
+        }
+      });
   }
 
   // Helper quản lý loading map

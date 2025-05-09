@@ -16,6 +16,6 @@ import { RouterOutlet } from '@angular/router';
   //styleUrl: './app.component.css' // File CSS riêng (thường trống)
 })
 export class AppComponent {
-  title = 'agri-trade-ls-frontend'; // Thuộc tính title mặc định, có thể xóa nếu không dùng
+  title = 'agri-trade-frontend'; // Thuộc tính title mặc định, có thể xóa nếu không dùng
   // Không cần thêm logic gì ở đây trừ khi có yêu cầu rất đặc biệt ở cấp độ gốc ứng dụng.
 }

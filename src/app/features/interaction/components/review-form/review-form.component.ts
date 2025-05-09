@@ -83,7 +83,7 @@ export class ReviewFormComponent {
           this.reviewSubmitted.emit(response.data); // Gửi sự kiện thành công
           this.reviewForm.reset(); // Xóa form
           this.selectedRating.set(0); // Reset sao đã chọn
-          this.toastr.success("Gửi đánh giá thành công, đang chờ duyệt.");
+          this.toastr.success("Gửi đánh giá thành công.");
         } else {
           this.errorMessage.set(response.message || 'Gửi đánh giá thất bại.');
         }

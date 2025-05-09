@@ -9,7 +9,8 @@ import { CartItemRequest } from '../dto/request/CartItemRequest';
 import { CartItemUpdateRequest } from '../dto/request/CartItemUpdateRequest';
 import { AuthService } from '../../../core/services/auth.service';
 import BigDecimal from 'js-big-decimal';
-import {catchError} from 'rxjs/operators'; // Import AuthService
+import {catchError} from 'rxjs/operators';
+import {CartValidationResponse} from '../dto/response/CartValidationResponse'; // Import AuthService
 
 @Injectable({
   providedIn: 'root' // Cung cấp ở root để dễ dàng truy cập từ header/các nơi khác
@@ -83,12 +84,12 @@ export class CartService {
         } else {
           this.cartSubject.next(null); // Xóa state nếu lỗi hoặc không có data
           console.error("Failed to load cart:", response.message);
-          this.cartState.set({ items: [], subTotal: 0, totalItems: 0 }); // Set giỏ hàng rỗng nếu lỗi hoặc không có data
+          this.cartState.set({ items: [], subTotal: 0, totalItems: 0, adjustments: null }); // Set giỏ hàng rỗng nếu lỗi hoặc không có data
         }
       }),
       catchError(err => {
         console.error("Error loading cart:", err);
-        this.cartState.set({ items: [], subTotal: 0, totalItems: 0 }); // Set giỏ hàng rỗng khi lỗi
+        this.cartState.set({ items: [], subTotal: 0, totalItems: 0, adjustments: null }); // Set giỏ hàng rỗng khi lỗi
         return of(err); // Trả về lỗi để component khác có thể xử lý nếu cần
       }),
       finalize(() => this.isLoading.set(false))
@@ -140,8 +141,8 @@ export class CartService {
     return this.http.delete<ApiResponse<void>>(this.apiUrl).pipe(
       tap(response => {
         if (response.success) {
-          this.cartSubject.next({ items: [], subTotal: new BigDecimal("0"), totalItems: 0 }); // Cập nhật state ngay lập tức
-          this.cartState.set({ items: [], subTotal: 0, totalItems: 0 }); // Cập nhật state ngay lập tức
+          this.cartSubject.next({ items: [], subTotal: new BigDecimal("0"), totalItems: 0, adjustments: null }); // Cập nhật state ngay lập tức
+          this.cartState.set({ items: [], subTotal: 0, totalItems: 0, adjustments: null }); // Cập nhật state ngay lập tức
         }
 
 
@@ -149,6 +150,23 @@ export class CartService {
       finalize(() => this.isLoading.set(false))
     );
   }
+
+  // ****** THÊM PHƯƠNG THỨC VALIDATE CART ******
+  validateCart(): Observable<ApiResponse<CartValidationResponse>> {
+    this.isLoading.set(true); // Có thể dùng một signal loading riêng cho validate
+    return this.http.post<ApiResponse<CartValidationResponse>>(`${this.apiUrl}/validate`, {}).pipe(
+      tap(response => {
+        // Không cần cập nhật cartSubject/cartState ở đây,
+        // component cha sẽ quyết định có load lại cart hay không dựa trên kết quả validate.
+        if (!response.success) {
+          console.error("Cart validation failed on server:", response.message);
+        }
+      }),
+      catchError(this.handleError.bind(this)), // Đảm bảo context đúng cho handleError
+      finalize(() => this.isLoading.set(false))
+    );
+  }
+  // *******************************************
 
   // ****** THÊM HÀM NÀY ******
   // Hàm để component gọi khi cần cập nhật số lượng item trong state mà không gọi API
@@ -183,7 +201,8 @@ export class CartService {
       this.cartSubject.next({
         items: updatedItems,
         subTotal: newSubTotal, // Trả về BigDecimal hoặc string tùy bạn muốn
-        totalItems: newTotalItems
+        totalItems: newTotalItems,
+        adjustments: currentCart.adjustments
       });
     }
   }

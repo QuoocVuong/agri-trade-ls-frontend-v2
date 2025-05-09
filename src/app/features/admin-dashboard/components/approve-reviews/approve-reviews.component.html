@@ -1,1 +1,30 @@
-<p>approve-reviews works!</p>
+<!-- src/app/features/admin/components/approve-reviews/approve-reviews.component.html -->
+<div class="container mx-auto px-4 py-6">
+  <h1 class="text-2xl font-bold mb-6">Quản lý Đánh giá</h1>
+
+  <!-- Tabs lọc theo trạng thái -->
+  <div role="tablist" class="tabs tabs-lifted tabs-lg mb-6">
+    <ng-container *ngFor="let status of statuses">
+      <a role="tab"
+         class="tab"
+         [class.tab-active]="selectedStatus() === status"
+         [class.text-success]="selectedStatus() === status && status === ReviewStatus.APPROVED"
+         [class.text-warning]="selectedStatus() === status && status === ReviewStatus.PENDING"
+         [class.text-error]="selectedStatus() === status && status === ReviewStatus.REJECTED"
+         (click)="selectStatus(status)">
+        {{ getStatusText(status) }}
+      </a>
+    </ng-container>
+  </div>
+
+  <!-- Hiển thị danh sách review sử dụng ReviewListComponent -->
+  <app-review-list
+    [mode]="'admin_manage'"
+    [statusFilter]="selectedStatus()"
+    [showAdminActions]="true"
+    (reviewApproved)="onReviewApproved($event)"
+    (reviewRejected)="onReviewRejected($event)"
+    (reviewDeleted)="onReviewDeleted($event)">
+  </app-review-list>
+
+</div>

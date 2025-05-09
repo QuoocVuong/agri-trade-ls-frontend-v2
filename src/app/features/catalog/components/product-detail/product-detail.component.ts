@@ -433,10 +433,21 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
 
   // Hàm xử lý khi review được gửi thành công từ ReviewFormComponent
   onReviewSubmitted(newReview: ReviewResponse): void {
-    console.log('New review submitted:', newReview);
-    this.toastr.success("Đánh giá của bạn đã được gửi và đang chờ duyệt.");
-    // TODO: Cập nhật danh sách review nếu cần (ví dụ: thêm vào đầu list với trạng thái PENDING)
+    console.log('New review submitted in parent:', newReview);
+    // Toastr đã được hiển thị ở form con, không cần ở đây nữa
+
+    // ****** TẢI LẠI DỮ LIỆU SẢN PHẨM ******
+    // Cách tốt nhất để cập nhật cả ratingCount và danh sách review
+    const currentProduct = this.product();
+    if (currentProduct) {
+      console.log(`Reloading product data for slug: ${currentProduct.slug}`); // Thêm log
+      this.loadProduct(currentProduct.slug); // Gọi lại hàm loadProduct
+    } else {
+      console.error("Cannot reload product data because current product is null.");
+    }
+    // ***************************************
   }
+
   // Helper xử lý lỗi
   private handleError(err: any, errorType: string): void {
     let message = 'Có lỗi xảy ra, vui lòng thử lại sau.'; // Thông báo mặc định
