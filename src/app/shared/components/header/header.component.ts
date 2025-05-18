@@ -4,7 +4,7 @@ import {
   computed, effect,
   ElementRef,
   EventEmitter,
-  inject,
+  inject, Input,
   Output,
   signal,
   ViewChild
@@ -24,6 +24,9 @@ import {LoadingSpinnerComponent} from '../loading-spinner/loading-spinner.compon
 import {AlertComponent} from '../alert/alert.component';
 import {getNotificationTypeIcon} from '../../../common/model/notification-type.enum';
 import {SafeHtmlPipe} from '../../pipes/safe-html.pipe';
+import {ThemeService} from '../../../core/services/theme.service';
+import {SidebarService} from '../../../core/services/sidebar.service';
+
 
 @Component({
   selector: 'app-header',
@@ -32,11 +35,21 @@ import {SafeHtmlPipe} from '../../pipes/safe-html.pipe';
   templateUrl: './header.component.html',
 })
 export class HeaderComponent implements AfterViewInit {
+
+  @Input() showSidebarToggle: boolean = true; // Mặc định là true (cho các layout có sidebar)
+
   private authService = inject(AuthService);
   private router = inject(Router);
   private cartService = inject(CartService); // <-- Inject CartService
   private notificationService = inject(NotificationService); // <-- Inject NotificationService
+  private themeService = inject(ThemeService); // <-- Inject ThemeService
   private destroy$ = new Subject<void>();
+  public sidebarService = inject(SidebarService); // INJECT SERVICE và để public
+
+  // Thêm signal để theo dõi trạng thái mở của sidebar từ service
+  isSidebarCurrentlyOpen = this.sidebarService.isOpen;
+
+  isHeaderDropdownOpen = signal(false); // Signal cho menu dropdown của header (cho public layout)
 
 
 
@@ -49,6 +62,8 @@ export class HeaderComponent implements AfterViewInit {
 
   cartSubTotal = this.cartService.calculatedSubTotal; // Đọc trực tiếp từ service
   getIcon = getNotificationTypeIcon;
+
+  isDarkMode = false; // Property to track dark mode state
 
 
   // --- Signals cho Dropdown Thông báo ---
@@ -68,10 +83,14 @@ export class HeaderComponent implements AfterViewInit {
 
   // Tham chiếu đến input tìm kiếm mobile để focus
   @ViewChild('mobileSearchInput') mobileSearchInputRef?: ElementRef<HTMLInputElement>;
+  @ViewChild('desktopSearchInput') desktopSearchInputRef?: ElementRef<HTMLInputElement>;
 
   constructor() {
     // Sử dụng effect để focus vào input khi nó hiển thị
     effect(() => {
+      this.themeService.darkMode$.subscribe(isDark => {
+        this.isDarkMode = isDark;
+      });
       if (this.isMobileSearchVisible() && this.mobileSearchInputRef?.nativeElement) {
         // Dùng setTimeout nhỏ để đảm bảo input đã render xong trước khi focus
         setTimeout(() => this.mobileSearchInputRef?.nativeElement.focus(), 0);
@@ -83,14 +102,38 @@ export class HeaderComponent implements AfterViewInit {
     // Có thể không cần làm gì ở đây nếu dùng effect
   }
 
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  handleMobileMenuToggle(): void {
+    if (this.showSidebarToggle) { // Nếu layout này có sidebar (ví dụ: dashboard)
+      this.sidebarService.toggle();
+      this.isHeaderDropdownOpen.set(false); // Đảm bảo dropdown header đóng
+    } else { // Nếu layout này không có sidebar (ví dụ: public layout/trang chủ)
+      this.isHeaderDropdownOpen.update(v => !v);
+    }
+  }
+
+  closeHeaderDropdown(): void {
+    this.isHeaderDropdownOpen.set(false);
+  }
+
   toggleMobileSearch(): void {
     this.isMobileSearchVisible.update(visible => !visible);
   }
 
+  toggleDarkMode(): void {
+    this.themeService.toggleDarkMode();
+  }
+
   performSearch(searchTerm: string): void {
     if (searchTerm?.trim()) {
-      console.log('Performing search for:', searchTerm);
-      this.isMobileSearchVisible.set(false); // Ẩn ô search sau khi tìm
+      this.isMobileSearchVisible.set(false); // Ẩn ô search mobile
+      if (this.desktopSearchInputRef) { // Xóa input desktop nếu có
+        this.desktopSearchInputRef.nativeElement.value = '';
+      }
       // TODO: Điều hướng đến trang kết quả tìm kiếm hoặc xử lý tìm kiếm
       this.router.navigate(['/products'], { queryParams: { keyword: searchTerm.trim() } });
     }
@@ -169,6 +212,8 @@ export class HeaderComponent implements AfterViewInit {
 
   logout(): void {
     this.authService.logout();
+    this.sidebarService.close(); // Đóng sidebar nếu đang mở
+    this.isHeaderDropdownOpen.set(false); // Đóng dropdown header nếu đang mở
     this.router.navigate(['/auth/login']); // Điều hướng về trang login sau khi logout
   }
 }

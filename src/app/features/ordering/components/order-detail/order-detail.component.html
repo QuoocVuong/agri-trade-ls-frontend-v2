@@ -8,7 +8,7 @@
 
   <!-- Order Details -->
   <div *ngIf="order() as o; else notFound" class="space-y-6">
-    <div class="flex flex-col sm:flex-row justify-between items-start gap-4 bg-base-100 p-6 rounded-lg shadow-md">
+    <div class="flex flex-col sm:flex-row justify-between items-start gap-4  p-6 rounded-lg shadow-md">
       <div>
         <h1 class="text-2xl md:text-3xl font-bold text-primary">Đơn hàng #{{ o.orderCode }}</h1>
         <p class="text-sm text-base-content/70 mt-1">Đặt lúc: {{ o.createdAt | date:'HH:mm dd/MM/yyyy' }}</p>
@@ -42,13 +42,23 @@
           <span *ngIf="isDownloadingInvoice()" class="loading loading-spinner loading-xs"></span>
           Tải hóa đơn (PDF)
         </button>
+        <!-- Ví dụ trong order-detail.component.html, khi isAdmin() là true -->
+        <div *ngIf="isAdmin() && o.paymentMethod === 'BANK_TRANSFER' && o.paymentStatus === 'PENDING'">
+          <button class="btn btn-sm btn-success"
+                  (click)="confirmPaymentByAdmin(o.id, 'BANK_TRANSFER')"
+                  [disabled]="isActionLoading()">
+            <span *ngIf="isActionLoading()" class="loading loading-spinner loading-xs"></span>
+            Xác nhận đã nhận Chuyển khoản
+          </button>
+          <!-- (Tùy chọn) Thêm input cho admin ghi chú hoặc mã giao dịch -->
+        </div>
       </div>
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <!-- Cột 1: Thông tin người mua & người bán -->
       <div class="lg:col-span-1 space-y-4">
-        <div class="card bg-base-100 shadow-md rounded-lg hover:shadow-lg transition-shadow">
+        <div class="card  shadow-md rounded-lg hover:shadow-lg transition-shadow">
           <div class="card-body p-5">
             <h3 class="card-title text-base font-semibold">Người mua</h3>
             <div class="flex items-center gap-3 mt-2">
@@ -64,7 +74,7 @@
             </div>
           </div>
         </div>
-        <div class="card bg-base-100 shadow-md rounded-lg hover:shadow-lg transition-shadow">
+        <div class="card  shadow-md rounded-lg hover:shadow-lg transition-shadow">
           <div class="card-body p-5">
             <h3 class="card-title text-base font-semibold">Người bán</h3>
             <div class="flex items-center gap-3 mt-2">
@@ -95,9 +105,9 @@
         </div>
       </div>
 
-      <!-- Cột 2: Địa chỉ & Thanh toán -->
+      <!-- Cột 2: Địa chỉ & Thanh toán & THÔNG TIN CHUYỂN KHOẢN -->
       <div class="lg:col-span-1 space-y-4">
-        <div class="card bg-base-100 shadow-md rounded-lg hover:shadow-lg transition-shadow">
+        <div class="card  shadow-md rounded-lg hover:shadow-lg transition-shadow">
           <div class="card-body p-5">
             <h3 class="card-title text-base font-semibold">Địa chỉ giao hàng</h3>
             <div class="mt-2 space-y-1 text-sm">
@@ -114,7 +124,7 @@
             </div>
           </div>
         </div>
-        <div class="card bg-base-100 shadow-md rounded-lg hover:shadow-lg transition-shadow">
+        <div class="card  shadow-md rounded-lg hover:shadow-lg transition-shadow">
           <div class="card-body p-5">
             <h3 class="card-title text-base font-semibold mb-3">Chi tiết thanh toán</h3>
             <div class="space-y-2 text-sm">
@@ -122,6 +132,9 @@
                 <span>Phương thức:</span>
                 <span class="font-medium">{{ getPaymentMethodText(o.paymentMethod) }}</span>
               </div>
+
+
+
               <div class="divider my-1"></div>
               <div class="flex justify-between">
                 <span>Tạm tính:</span>
@@ -156,11 +169,74 @@
             </div>
           </div>
         </div>
-      </div>
 
+        <!-- ****** ĐẶT KHỐI THÔNG TIN CHUYỂN KHOẢN VÀO ĐÂY ****** -->
+        <div *ngIf="o.paymentMethod === PaymentMethodEnum.BANK_TRANSFER && (o.paymentStatus === PaymentStatusEnum.PENDING || o.paymentStatus === PaymentStatusEnum.AWAITING_PAYMENT_TERM)"
+             class="card  shadow-xl rounded-lg border border-primary/30">
+          <div class="card-body p-5 sm:p-6">
+            <h3 class="card-title text-lg font-semibold text-primary flex items-center">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+              </svg>
+              Thông tin Chuyển khoản Ngân hàng
+            </h3>
+            <div *ngIf="isLoadingBankInfo()" class="text-center py-5"><app-loading-spinner></app-loading-spinner></div>
+
+            <ng-container *ngIf="bankTransferInfo() as info; else noBankInfoAvailable">
+              <p class="text-sm mt-3 mb-4">Vui lòng chuyển khoản tổng số tiền đơn hàng đến tài khoản của <strong class="text-accent">AgriTradeLS</strong> với thông tin sau:</p>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3 text-sm p-4  rounded-md">
+                <div>
+                  <p class="font-medium text-base-content/70">Tên chủ tài khoản:</p>
+                  <p class="font-semibold text-lg">{{ info.accountName }}</p>
+                </div>
+                <div>
+                  <p class="font-medium text-base-content/70">Số tài khoản:</p>
+                  <p class="font-semibold text-lg text-primary cursor-pointer" (click)="copyToClipboard(info.accountNumber)" title="Nhấn để sao chép">
+                    {{ info.accountNumber }} <span class="text-xs opacity-70">(nhấn để sao chép)</span>
+                  </p>
+                </div>
+                <div>
+                  <p class="font-medium text-base-content/70">Ngân hàng:</p>
+                  <p class="font-semibold">{{ info.bankNameDisplay }}</p>
+                </div>
+                <div>
+                  <p class="font-medium text-base-content/70">Số tiền cần chuyển:</p>
+                  <p class="font-bold text-xl text-accent">{{ info.amount | formatBigDecimal:'1.0-0' }} đ</p>
+                </div>
+                <div class="md:col-span-2">
+                  <p class="font-medium text-base-content/70">Nội dung chuyển khoản:</p>
+                  <p class="font-mono  px-3 py-2 rounded text-primary-focus text-center text-lg cursor-pointer" (click)="copyToClipboard(info.transferContent)" title="Nhấn để sao chép">
+                    {{ info.transferContent }}
+                  </p>
+                  <p class="text-xs text-center text-base-content/60 mt-1">(Vui lòng ghi đúng nội dung để đơn hàng được xử lý nhanh chóng)</p>
+                </div>
+
+                <!-- Hiển thị mã QR nếu backend trả về URL ảnh QR -->
+                <div *ngIf="info.qrCodeDataString" class="md:col-span-2 mt-4 text-center">
+                  <p class="text-sm font-medium mb-2">Hoặc quét mã QR (VietQR):</p>
+                  <img [src]="info.qrCodeDataString"
+                       alt="Mã QR Chuyển khoản AgriTradeLS"
+                       class="w-48 h-48 sm:w-56 sm:h-56 mx-auto border-4 border-white rounded-lg bg-white p-1 shadow-lg"
+                       (click)="openQrCodeZoomModal(info.qrCodeDataString)">
+                </div>
+                <div *ngIf="!info.qrCodeDataString && !isLoadingBankInfo()" class="md:col-span-2 mt-4 text-center text-warning text-sm">
+                  Không thể tạo hoặc hiển thị mã QR cho đơn hàng này.
+                </div>
+              </div>
+            </ng-container>
+            <ng-template #noBankInfoAvailable>
+              <p *ngIf="!isLoadingBankInfo()" class="text-sm text-error mt-3 p-3 bg-error/10 rounded-md">
+                Không thể tải thông tin chuyển khoản vào lúc này. Vui lòng thử lại sau hoặc liên hệ hỗ trợ.
+              </p>
+            </ng-template>
+            <p class="text-xs text-info mt-4 italic">Sau khi chuyển khoản thành công, quản trị viên sẽ xác nhận và cập nhật trạng thái đơn hàng của bạn.</p>
+          </div>
+        </div>
+        <!-- ************************************************** -->
+      </div>
       <!-- Cột 3: Chi tiết sản phẩm -->
       <div class="lg:col-span-1">
-        <div class="card bg-base-100 shadow-md rounded-lg hover:shadow-lg transition-shadow">
+        <div class="card shadow-md rounded-lg hover:shadow-lg transition-shadow">
           <div class="card-body p-5">
             <h3 class="card-title text-base font-semibold mb-4">Sản phẩm trong đơn ({{ o.orderItems.length }})</h3>
             <div class="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
@@ -251,6 +327,29 @@
     </div>
   </app-modal>
 </div>
+
+<!-- ****** MODAL ĐỂ ZOOM ẢNH QR ****** -->
+<input type="checkbox" id="qr-code-zoom-modal" class="modal-toggle"
+       [attr.checked]="isQrCodeZoomed() ? true : null"
+       (change)="isQrCodeZoomed.set($any($event.target)?.checked ?? false)" />
+<div class="modal modal-bottom sm:modal-middle" role="dialog" (click)="closeQrCodeZoomModal()"> <!-- Click vào backdrop để đóng -->
+  <div class="modal-box relative p-4 sm:p-6 w-11/12 max-w-xs sm:max-w-md md:max-w-lg bg-base-100 shadow-xl" (click)="$event.stopPropagation()"> <!-- Ngăn click bên trong modal đóng modal -->
+    <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2 z-10" (click)="closeQrCodeZoomModal()">✕</button>
+    <h3 class="font-bold text-md sm:text-lg mb-3 sm:mb-4 text-center">Mã QR Chuyển Khoản</h3>
+    <div *ngIf="zoomedQrCodeUrl()" class="flex justify-center items-center">
+      <img [src]="zoomedQrCodeUrl()"
+           alt="Zoomed QR Code"
+           class="max-w-[80vw] max-h-[60vh] sm:max-w-full sm:max-h-[70vh] object-contain rounded-lg bg-white p-1 sm:p-2 border-2 sm:border-4 border-primary">
+      <!-- Thêm p-2 và border để dễ nhìn hơn nếu QR có nền trắng -->
+    </div>
+    <div class="modal-action mt-3 sm:mt-4">
+      <button class="btn btn-sm btn-ghost" (click)="closeQrCodeZoomModal()">Đóng</button>
+    </div>
+  </div>
+  <!-- Phần nền mờ của modal, click vào đây cũng sẽ đóng modal -->
+  <label class="modal-backdrop" for="qr-code-zoom-modal" (click)="closeQrCodeZoomModal()">Đóng</label>
+</div>
+<!-- ********************************* -->
 
 <style>
   @keyframes fade-in {

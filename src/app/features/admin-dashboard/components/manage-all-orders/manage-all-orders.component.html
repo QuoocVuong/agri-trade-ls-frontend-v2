@@ -2,7 +2,7 @@
   <h1 class="text-3xl font-bold mb-6">Quản lý Đơn hàng</h1>
 
   <!-- Filter Form -->
-  <form [formGroup]="filterForm" class="mb-6 p-4 bg-base-200 rounded-box grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+  <form [formGroup]="filterForm" class="mb-6 p-4  rounded-box grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
     <div class="form-control w-full">
       <label class="label"><span class="label-text">Tìm kiếm (Mã ĐH, Tên...)</span></label>
       <input type="text" placeholder="Nhập từ khóa..." class="input input-sm input-bordered w-full" formControlName="keyword" />
@@ -32,7 +32,7 @@
   </div>
 
   <!-- Orders Table -->
-  <div *ngIf="!isLoading() && ordersPage() && ordersPage()!.content.length > 0" class="overflow-x-auto bg-base-100 rounded-box shadow">
+  <div *ngIf="!isLoading() && ordersPage() && ordersPage()!.content.length > 0" class="overflow-x-auto  rounded-box shadow">
     <table class="table table-zebra w-full table-sm">
       <thead>
       <tr>

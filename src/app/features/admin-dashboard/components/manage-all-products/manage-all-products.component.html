@@ -2,7 +2,7 @@
   <h1 class="text-3xl font-bold mb-6">Quản lý Sản phẩm</h1>
 
   <!-- Filter Form -->
-  <form [formGroup]="filterForm" class="mb-6 p-4 bg-base-200 rounded-box grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+  <form [formGroup]="filterForm" class="mb-6 p-4  rounded-box grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
     <div class="form-control w-full">
       <label class="label"><span class="label-text">Tìm kiếm (Tên, Mô tả)</span></label>
       <input type="text" placeholder="Nhập từ khóa..." class="input input-sm input-bordered w-full" formControlName="keyword" />
@@ -36,7 +36,7 @@
   </div>
 
   <!-- Products Table -->
-  <div *ngIf="!isLoading() && productsPage() && productsPage()!.content.length > 0" class="overflow-x-auto bg-base-100 rounded-box shadow">
+  <div *ngIf="!isLoading() && productsPage() && productsPage()!.content.length > 0" class="overflow-x-auto rounded-box shadow">
     <table class="table table-zebra w-full table-sm">
       <thead>
       <tr>
@@ -47,7 +47,7 @@
         <th class="text-right">Giá (B2C)</th>
         <th class="text-right">Giá (B2B)</th>
         <th class="text-right">Tồn kho</th>
-        <th>Trạng thái</th>
+        <th class="min-w-[100px]">Trạng thái</th>
         <th>Ngày tạo</th>
         <th>Hành động</th>
       </tr>
@@ -91,7 +91,7 @@
         <!-- *********************************** -->
         <td class="text-right text-xs">{{ product.stockQuantity }}</td>
         <td>
-            <span class="badge badge-sm" [ngClass]="getStatusClass(product.status)">
+            <span class="badge badge-sm min-w-[100px]" [ngClass]="getStatusClass(product.status)">
               {{ getStatusText(product.status) }}
             </span>
         </td>

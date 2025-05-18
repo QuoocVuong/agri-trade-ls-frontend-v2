@@ -56,7 +56,7 @@ export class EditProductComponent implements OnInit, OnDestroy {
   pricingTiersArray!: FormArray;
 
   // Lấy danh sách trạng thái Farmer có thể chọn
-  availableStatuses = [ProductStatus.DRAFT, ProductStatus.UNPUBLISHED, ProductStatus.PENDING_APPROVAL];
+  // availableStatuses = [ProductStatus.DRAFT, ProductStatus.UNPUBLISHED, ProductStatus.PENDING_APPROVAL];
 
   getStatusText = getProductStatusText;
 
@@ -81,6 +81,11 @@ export class EditProductComponent implements OnInit, OnDestroy {
         } else {
           this.productId.set(null); // Chế độ thêm mới
           this.isFetchingData.set(false); // Không cần fetch data
+          // ****** KHI THÊM MỚI, KHÔNG CẦN VALIDATOR CHO STATUS ******
+          // ****** VÀ CÓ THỂ SET GIÁ TRỊ MẶC ĐỊNH (HOẶC ĐỂ BACKEND XỬ LÝ) ******
+          this.productForm.get('status')?.clearValidators(); // Xóa validator nếu có
+          this.productForm.get('status')?.updateValueAndValidity();
+          // Không cần patchValue cho status ở đây, sẽ xử lý khi submit
         }
       });
   }
@@ -102,7 +107,7 @@ export class EditProductComponent implements OnInit, OnDestroy {
       unit: ['', [Validators.required, Validators.maxLength(50)]],
       price: [null, [Validators.required, Validators.min(0)]], // Giá B2C
       stockQuantity: [0, [Validators.required, Validators.min(0)]],
-      status: [null, Validators.required], // Mặc định DRAFT
+      status: [null],
       b2bEnabled: [false],
       b2bUnit: [{ value: '', disabled: true }, Validators.maxLength(50)], // Khởi tạo disable
       minB2bQuantity: [{ value: 1, disabled: true }, Validators.min(1)], // Khởi tạo disable
@@ -228,6 +233,14 @@ export class EditProductComponent implements OnInit, OnDestroy {
           this.handleErrorAndNavigate(err.message || 'Lỗi khi tải dữ liệu sản phẩm.');
         }
       });
+  }
+
+  // Hàm mới để cung cấp danh sách trạng thái cho Farmer khi chỉnh sửa
+  availableStatusesForFarmerWhenEditing(): ProductStatus[] {
+    // Farmer chỉ có thể chuyển sản phẩm của họ về DRAFT hoặc UNPUBLISHED
+    // PENDING_APPROVAL sẽ do hệ thống tự set khi có thay đổi đáng kể trên sản phẩm PUBLISHED
+    // hoặc khi tạo mới.
+    return [ProductStatus.DRAFT, ProductStatus.UNPUBLISHED];
   }
 
   // --- Quản lý Ảnh ---
@@ -414,11 +427,17 @@ export class EditProductComponent implements OnInit, OnDestroy {
     }
 
 
-    let finalStatus = formValue.status;
-    if (!this.isEditMode() && finalStatus === null) {
-      finalStatus = ProductStatus.PENDING_APPROVAL; // Gán trạng thái chờ duyệt
-    }
+    let finalStatus: ProductStatus; // Khai báo kiểu rõ ràng
 
+    if (this.isEditMode()) {
+      // Khi chỉnh sửa, lấy giá trị status từ form (nếu người dùng có thể thay đổi)
+      // Hoặc giữ nguyên trạng thái cũ nếu logic không cho phép Farmer thay đổi trực tiếp sang mọi trạng thái
+      finalStatus = formValue.status; // Farmer chỉ có thể chọn DRAFT/UNPUBLISHED
+                                      // Nếu sản phẩm đang PUBLISHED và có thay đổi, backend/service sẽ tự chuyển sang PENDING
+    } else {
+      // Khi thêm mới, mặc định là PENDING_APPROVAL
+      finalStatus = ProductStatus.PENDING_APPROVAL;
+    }
    // const requestData: ProductRequest = this.productForm.getRawValue(); // Lấy cả giá trị disable
 
 

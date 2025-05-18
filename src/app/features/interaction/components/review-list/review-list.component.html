@@ -19,7 +19,7 @@
     <div *ngFor="let review of reviewsPage()?.content; trackBy: trackReviewById" class="border-b border-base-300 pb-6 last:border-b-0 last:pb-0"> <!-- Tăng pb -->
 
       <!-- ****** THÊM THÔNG TIN SẢN PHẨM ****** -->
-      <div *ngIf="mode !== 'product' && review.productInfo" class="mb-3 flex items-center gap-3 p-2 bg-base-200 rounded-md">
+      <div *ngIf="mode !== 'product' && review.productInfo" class="mb-3 flex items-center gap-3 p-2  rounded-md">
         <img [src]="review.productInfo.thumbnailUrl || 'assets/images/placeholder-image.png'"
              [alt]="review.productInfo.name"
              class="w-10 h-10 object-cover rounded">

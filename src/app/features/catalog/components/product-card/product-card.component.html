@@ -1,4 +1,28 @@
-<div class="card card-compact bg-base-100 shadow-md hover:shadow-xl transition-all duration-300 rounded-xl overflow-hidden h-full flex flex-col max-w-[300px] mx-auto">
+
+<style>
+  /* Custom hover and transition effects */
+  .card:hover {
+    transform: translateY(-4px);
+  }
+
+  .btn-primary-dark {
+    background-color: #1e40af; /* Slightly darker primary color for hover */
+  }
+
+  /* Dark mode style for btn-primary-dark */
+  :host-context(.dark) .btn-primary-dark {
+    background-color: #14532d; /* Even darker shade for dark mode hover */
+  }
+
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+</style>
+
+<div class="card card-compact shadow-md hover:shadow-xl transition-all duration-300 rounded-xl overflow-hidden h-full flex flex-col max-w-[300px] mx-auto">
   <!-- Link bao quanh ảnh -->
   <a [routerLink]="['/products', product.slug]" class="relative block aspect-square overflow-hidden">
     <img [src]="product.thumbnailUrl || 'assets/images/placeholder-image.png'"
@@ -29,7 +53,7 @@
       <div class="flex items-center text-xs mb-3" *ngIf="product.averageRating && product.averageRating > 0">
         <svg *ngFor="let i of [1,2,3,4,5]"
              class="w-4 h-4"
-             [ngClass]="i <= product.averageRating ? 'text-yellow-400 fill-current' : 'text-gray-300 fill-current'"
+             [ngClass]="i <= product.averageRating ? 'text-yellow-400 fill-current' : 'text-gray-300 dark:text-gray-600 fill-current'"
              viewBox="0 0 24 24"
              aria-hidden="true">
           <path d="M12 .587l3.668 7.568 8.332 1.151-6.064 5.828 1.48 8.279-7.416-3.967-7.417 3.967 1.481-8.279-6.064-5.828 8.332-1.151z"/>
@@ -54,7 +78,7 @@
           <span *ngIf="isTogglingFavorite()" class="loading loading-spinner loading-xs"></span>
           <svg *ngIf="!isTogglingFavorite()"
                xmlns="http://www.w3.org/2000/svg"
-               class="h-5 w-5"
+               class="h-5 w-5 dark:text-base-content/50"
                [ngClass]="{'fill-red-500 text-red-500': isFavorite(), 'text-base-content/70': !product.isFavorite}"
                fill="none"
                viewBox="0 0 24 24"
@@ -81,19 +105,3 @@
     </div>
   </div>
 </div>
-
-<style>
-  /* Custom hover and transition effects */
-  .card:hover {
-    transform: translateY(-4px);
-  }
-  .btn-primary-dark {
-    background-color: #1e40af; /* Slightly darker primary color for hover */
-  }
-  .line-clamp-2 {
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-  }
-</style>

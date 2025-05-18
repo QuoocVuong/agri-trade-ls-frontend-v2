@@ -17,6 +17,7 @@ import { FormatBigDecimalPipe } from '../../../../shared/pipes/format-big-decima
 import { OrderStatusUpdateRequest } from '../../dto/request/OrderStatusUpdateRequest'; // Import DTO update status
 import { ReactiveFormsModule, FormControl, Validators } from '@angular/forms'; // Import Forms
 import { ModalComponent } from '../../../../shared/components/modal/modal.component'; // Import Modal
+import { QRCodeComponent } from 'angularx-qrcode';
 
 @Component({
   selector: 'app-order-detail',
@@ -30,7 +31,8 @@ import { ModalComponent } from '../../../../shared/components/modal/modal.compon
     DecimalPipe,
     FormatBigDecimalPipe, // Thêm Pipe
     ReactiveFormsModule, // Thêm Forms
-    ModalComponent // Thêm Modal
+    ModalComponent, // Thêm Modal
+    QRCodeComponent
   ],
   templateUrl: './order-detail.component.html',
 })
@@ -52,6 +54,15 @@ export class OrderDetailComponent implements OnInit, OnDestroy {
 
 
   isDownloadingInvoice = signal(false);
+
+  bankTransferInfo = signal<BankTransferInfoResponse | null>(null);
+  isLoadingBankInfo = signal(false);
+
+  // ****** THÊM CÁC SIGNALS CHO ZOOM QR ******
+  isQrCodeZoomed = signal(false);
+  zoomedQrCodeUrl = signal<string | null>(null);
+  // ****************************************
+
 
   // ****** THÊM CACHE CHO TÊN ĐỊA DANH ******
   private locationNameCache = new Map<string, Observable<string | null>>();
@@ -100,6 +111,9 @@ export class OrderDetailComponent implements OnInit, OnDestroy {
   availableNextStatuses = signal<OrderStatus[]>([]);
 
   // Helpers để dùng trong template
+  PaymentMethodEnum = PaymentMethod; // Expose enum cho template
+  PaymentStatusEnum = PaymentStatus;
+  OrderStatusEnum = OrderStatus;
   getStatusText = getOrderStatusText;
   getStatusClass = getOrderStatusCssClass;
   getPaymentStatusText = getPaymentStatusText;
@@ -132,6 +146,7 @@ export class OrderDetailComponent implements OnInit, OnDestroy {
     this.isLoading.set(true);
     this.errorMessage.set(null);
     this.successMessage.set(null); // Xóa thông báo cũ
+    this.bankTransferInfo.set(null); // Reset thông tin bank transfer cũ
     // Admin gọi API riêng, user thường gọi API chung (đã có kiểm tra quyền ở service)
     const apiCall = this.isAdmin()
       ? this.orderService.getAdminOrderDetails(id)
@@ -156,6 +171,12 @@ export class OrderDetailComponent implements OnInit, OnDestroy {
     next: (response: ApiResponse<OrderResponse>) => {
       if (response.success && response.data) {
         this.order.set(response.data);
+        // Nếu là chuyển khoản và đang chờ thanh toán, thì gọi lấy thông tin chuyển khoản
+        if (response.data.paymentMethod === PaymentMethod.BANK_TRANSFER &&
+          (response.data.paymentStatus === PaymentStatus.PENDING || response.data.paymentStatus === PaymentStatus.AWAITING_PAYMENT_TERM)) {
+          this.loadBankTransferDetails(response.data.id);
+        }
+
       } else {
         this.order.set(null);
         this.handleErrorAndRedirect(response.message || 'Không tìm thấy đơn hàng.');
@@ -168,6 +189,40 @@ export class OrderDetailComponent implements OnInit, OnDestroy {
       // if (err.status === 404) this.router.navigate(['/not-found']);
     }
   };
+
+  loadBankTransferDetails(orderId: number): void {
+    this.isLoadingBankInfo.set(true);
+    this.orderService.getBankTransferInfo(orderId)
+      .pipe(
+        takeUntil(this.destroy$),
+        finalize(() => this.isLoadingBankInfo.set(false))
+      )
+      .subscribe({
+        next: (res) => {
+          if (res.success && res.data) {
+            this.bankTransferInfo.set(res.data);
+          } else {
+            this.toastr.error(res.message || 'Không tải được thông tin chuyển khoản.');
+            this.bankTransferInfo.set(null); // Đặt là null nếu lỗi
+          }
+        },
+        error: (err) => {
+          this.toastr.error(err.error?.message || 'Lỗi tải thông tin chuyển khoản.');
+          this.bankTransferInfo.set(null);
+        }
+      });
+  }
+
+  async copyToClipboard(text: string | null | undefined) {
+    if (!text) return;
+    try {
+      await navigator.clipboard.writeText(text);
+      this.toastr.success(`Đã sao chép: ${text}`);
+    } catch (err) {
+      this.toastr.error('Không thể sao chép vào clipboard.');
+      console.error('Failed to copy: ', err);
+    }
+  }
 
   // Hủy đơn hàng
   cancelOrder(): void {
@@ -312,6 +367,48 @@ export class OrderDetailComponent implements OnInit, OnDestroy {
   }
   // ************************************
 
+  confirmPaymentByAdmin(orderId: number, method: string): void {
+    if (!this.isAdmin()) return;
+    // Lấy ghi chú hoặc mã giao dịch từ một form/input nếu cần
+    const notes = prompt("Ghi chú xác nhận (tùy chọn):");
+    const transactionRef = prompt("Mã giao dịch ngân hàng (nếu có):");
+
+    this.isActionLoading.set(true);
+    this.adminOrderingService.confirmOrderPayment(orderId, method as PaymentMethod, { notes, transactionReference: transactionRef })
+      .pipe(
+        takeUntil(this.destroy$),
+        finalize(() => this.isActionLoading.set(false))
+      )
+      .subscribe({
+        next: (res) => {
+          if (res.success && res.data) {
+            this.order.set(res.data);
+            this.toastr.success("Đã xác nhận thanh toán cho đơn hàng!");
+          } else {
+            this.toastr.error(res.message || "Lỗi xác nhận thanh toán.");
+          }
+        },
+        error: (err) => {
+          this.toastr.error(err.error?.message || "Lỗi kết nối khi xác nhận thanh toán.");
+        }
+      });
+  }
+
+  // ****** THÊM CÁC HÀM XỬ LÝ ZOOM ******
+  openQrCodeZoomModal(imageUrl: string | null): void {
+    if (imageUrl) {
+      this.zoomedQrCodeUrl.set(imageUrl);
+      this.isQrCodeZoomed.set(true);
+    }
+  }
+
+  closeQrCodeZoomModal(): void {
+    this.isQrCodeZoomed.set(false);
+    // Không cần reset zoomedQrCodeUrl ngay, nó sẽ tự mất khi modal đóng
+    // Hoặc this.zoomedQrCodeUrl.set(null); nếu muốn
+  }
+  // *************************************
+
 
   // Helper xử lý lỗi và điều hướng
   private handleErrorAndRedirect(message: string): void {
@@ -357,9 +454,12 @@ export class OrderDetailComponent implements OnInit, OnDestroy {
       });
   }
 
+  protected readonly HTMLInputElement = HTMLInputElement;
 }
 
 // Cần inject AdminOrderingService nếu chưa có
 import { AdminOrderingService } from '../../../admin-dashboard/services/admin-ordering.service';
 import {saveAs} from 'file-saver';
 import {LocationService} from '../../../../core/services/location.service';
+import {environment} from '../../../../../environments/environment';
+import {BankTransferInfoResponse} from '../../dto/response/BankTransferInfoResponse';

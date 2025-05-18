@@ -2,17 +2,17 @@
   <!-- Sidebar Filters -->
   <aside class="w-full md:w-1/4 lg:w-1/5 flex-shrink-0">
     <!-- Component Category Sidebar -->
-    <div class="bg-base-100 rounded-xl shadow-md p-4 mb-6">
+    <div class="rounded-xl shadow-md p-4 mb-6">
       <h3 class="text-lg font-semibold mb-3 text-primary">Danh mục</h3>
-      <app-category-sidebar (categorySelected)="onCategorySelected($event)"></app-category-sidebar>
+      <app-category-sidebar></app-category-sidebar>
     </div>
 
     <!-- Các bộ lọc khác -->
-    <div class="bg-base-100 rounded-xl shadow-md p-4">
+    <div class="rounded-xl shadow-md p-4">
       <h3 class="text-lg font-semibold mb-4 text-primary">Bộ lọc tìm kiếm</h3>
-      <form [formGroup]="filterForm" (ngSubmit)="applyFilter()">
+      <form [formGroup]="filterForm" (ngSubmit)="applyFilters(false)">
         <div class="form-control mb-4">
-          <label class="label"><span class="label-text font-medium">Tìm theo tên</span></label>
+          <label class="label dark:text-base-content"><span class="label-text font-medium">Tìm theo tên</span></label>
           <div class="relative">
             <input type="text"
                    placeholder="Nhập từ khóa..."
@@ -27,38 +27,58 @@
         </div>
         <!-- Bộ lọc giá -->
         <div class="form-control mb-4">
-          <label class="label"><span class="label-text font-medium">Khoảng giá</span></label>
+          <label class="label dark:text-base-content"><span class="label-text font-medium">Khoảng giá</span></label>
           <div class="flex gap-2">
             <input type="number"
                    placeholder="Từ"
-                   class="input input-sm input-bordered w-full rounded-full"
+                   class="input input-sm input-bordered w-full rounded-full dark:text-base-content dark:border-base-content/20 dark:bg-base-200"
                    formControlName="minPrice"
                    aria-label="Giá tối thiểu" />
             <input type="number"
                    placeholder="Đến"
-                   class="input input-sm input-bordered w-full rounded-full"
+                   class="input input-sm input-bordered w-full rounded-full dark:text-base-content dark:border-base-content/20 dark:bg-base-200"
                    formControlName="maxPrice"
                    aria-label="Giá tối đa" />
           </div>
         </div>
         <!-- Bộ lọc đánh giá -->
         <div class="form-control mb-4">
-          <label class="label"><span class="label-text font-medium">Đánh giá tối thiểu</span></label>
+          <label class="label dark:text-base-content"><span class="label-text font-medium">Đánh giá tối thiểu</span></label>
           <select class="select select-sm select-bordered w-full rounded-full"
                   formControlName="minRating"
                   aria-label="Chọn đánh giá tối thiểu">
-            <option value="0">Tất cả</option>
-            <option value="1">1 sao trở lên</option>
-            <option value="2">2 sao trở lên</option>
-            <option value="3">3 sao trở lên</option>
-            <option value="4">4 sao trở lên</option>
+            <option [ngValue]="0">Tất cả</option> <!-- Sửa value thành [ngValue] cho number -->
+            <option [ngValue]="1">1 sao trở lên</option>
+            <option [ngValue]="2">2 sao trở lên</option>
+            <option [ngValue]="3">3 sao trở lên</option>
+            <option [ngValue]="4">4 sao trở lên</option>
           </select>
         </div>
         <button type="submit"
-                class="btn btn-sm btn-primary w-full rounded-full mt-4 hover:bg-primary-dark transition-colors"
+                class="btn btn-sm btn-primary w-full rounded-full mt-4 ..."
                 [disabled]="filterForm.invalid">
-          Áp dụng bộ lọc
+          <!-- Thay đổi text tùy theo ngữ cảnh -->
+          <span *ngIf="currentCategory()">Lọc trong "{{currentCategory()?.name}}"</span>
+          <span *ngIf="!currentCategory()">Áp dụng bộ lọc</span>
         </button>
+
+        <!-- Nút tìm trên tất cả sản phẩm -->
+        <button type="button"
+                class="btn btn-sm btn-secondary w-full rounded-full mt-2 ..."
+                (click)="applyFilters(true)"
+                [disabled]="!filterForm.dirty && !filterForm.touched && !this.route.snapshot.paramMap.get('slug')">
+          <!-- Disable nếu form không thay đổi VÀ đang ở trang /products -->
+          Tìm trên tất cả sản phẩm
+        </button>
+
+        <!-- ****** THÊM NÚT XÓA BỘ LỌC ****** -->
+        <button type="button"
+        class="btn btn-sm btn-ghost w-full rounded-full mt-2 text-base-content/70 hover:bg-base-200 dark:hover:bg-base-300/20"
+        (click)="resetFilters()">
+        Xóa bộ lọc
+        </button>
+        <!-- ********************************** -->
+
       </form>
     </div>
   </aside>
@@ -67,23 +87,23 @@
   <div class="flex-grow">
     <!-- Header khu vực sản phẩm -->
     <div class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
-      <h2 class="text-2xl md:text-3xl font-bold animate-fade-in">
+      <h2 class="text-2xl md:text-3xl font-bold animate-fade-in dark:text-base-content">
         <span *ngIf="currentCategory()">{{ currentCategory()?.name }}</span>
         <span *ngIf="!currentCategory()">Tất cả Sản phẩm</span>
-        <span *ngIf="paginationData()" class="text-sm font-normal text-base-content/70 ml-2">
+        <span *ngIf="paginationData()" class="text-sm font-normal text-base-content/70 ml-2 dark:text-base-content/80">
           ({{ paginationData()?.totalElements }} sản phẩm)
         </span>
       </h2>
       <!-- Sắp xếp -->
-<!--      <select class="select select-sm select-bordered w-full sm:w-48 rounded-full focus:ring-2 focus:ring-primary"-->
-<!--              (change)="onSortChange($event)"-->
-<!--              aria-label="Sắp xếp sản phẩm">-->
-<!--        <option disabled selected>Sắp xếp theo</option>-->
-<!--        <option value="createdAt,desc">Mới nhất</option>-->
-<!--        <option value="price,asc">Giá tăng dần</option>-->
-<!--        <option value="price,desc">Giá giảm dần</option>-->
-<!--        <option value="averageRating,desc">Đánh giá cao</option>-->
-<!--      </select>-->
+      <!--      <select class="select select-sm select-bordered w-full sm:w-48 rounded-full focus:ring-2 focus:ring-primary"-->
+      <!--              (change)="onSortChange($event)"-->
+      <!--              aria-label="Sắp xếp sản phẩm">-->
+      <!--        <option disabled selected>Sắp xếp theo</option>-->
+      <!--        <option value="createdAt,desc">Mới nhất</option>-->
+      <!--        <option value="price,asc">Giá tăng dần</option>-->
+      <!--        <option value="price,desc">Giá giảm dần</option>-->
+      <!--        <option value="averageRating,desc">Đánh giá cao</option>-->
+      <!--      </select>-->
     </div>
 
     <!-- Loading/Error/Empty States -->
@@ -98,7 +118,7 @@
     </div>
     <div *ngIf="!isLoading() && products().length === 0 && !errorMessage()" class="text-center py-20">
       <p class="text-lg text-base-content/60">Không tìm thấy sản phẩm nào phù hợp.</p>
-<!--      <button class="btn btn-ghost btn-sm mt-4" (click)="resetFilters()">Xóa bộ lọc</button>-->
+      <!--      <button class="btn btn-ghost btn-sm mt-4" (click)="resetFilters()">Xóa bộ lọc</button>-->
     </div>
 
     <!-- Product Grid -->

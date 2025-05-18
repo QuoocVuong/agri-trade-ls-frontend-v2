@@ -1,6 +1,6 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import {Component, OnInit, inject, signal, ElementRef, ViewChild} from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import {Router, RouterLink} from '@angular/router';
 import { CategoryService } from '../catalog/services/category.service'; // Import CategoryService
 import { ProductService } from '../catalog/services/product.service';   // Import ProductService
 // Import các DTOs cần thiết
@@ -10,7 +10,8 @@ import { ProductSummaryResponse } from '../catalog/dto/response/ProductSummaryRe
 import { LoadingSpinnerComponent } from '../../shared/components/loading-spinner/loading-spinner.component';
 import { AlertComponent } from '../../shared/components/alert/alert.component';
 import { ProductCardComponent } from '../catalog/components/product-card/product-card.component';
-import {FarmerService} from '../user-profile/services/farmer.service'; // Import ProductCard
+import {FarmerService} from '../user-profile/services/farmer.service';
+import {FarmerSummaryResponse} from '../user-profile/dto/response/FarmerSummaryResponse'; // Import ProductCard
 
 @Component({
   selector: 'app-home',
@@ -29,6 +30,7 @@ export class HomeComponent implements OnInit {
   private categoryService = inject(CategoryService);
   private productService = inject(ProductService);
   private farmerService = inject(FarmerService);
+  private router = inject(Router);
 
   // Signals để lưu trữ dữ liệu
   featuredCategories = signal<CategoryResponse[]>([]);
@@ -40,6 +42,9 @@ export class HomeComponent implements OnInit {
   isLoadingProducts = signal(true);
    isLoadingFarmers = signal(true);
   errorMessage = signal<string | null>(null);
+
+  // Tham chiếu đến input tìm kiếm trong hero section
+  @ViewChild('heroSearchInput') heroSearchInputRef?: ElementRef<HTMLInputElement>;
 
   ngOnInit(): void {
     this.loadFeaturedCategories();
@@ -96,9 +101,13 @@ export class HomeComponent implements OnInit {
       next: (res) => {
         if (res.success && res.data) {
           this.featuredFarmers.set(res.data); // Cần đúng kiểu dữ liệu
-        } else {  }
+        } else {  // Xử lý nếu không có data hoặc lỗi nhẹ
+          console.warn("Could not load featured farmers:", res.message);
+        }
       },
-      error: (err) => {  },
+      error: (err) => {  console.error("Error loading featured farmers:", err);
+        // Có thể set errorMessage nếu đây là lỗi quan trọng
+      },
       complete: () => this.isLoadingFarmers.set(false)
     });
 
@@ -115,12 +124,30 @@ export class HomeComponent implements OnInit {
     // }, 1500);
   }
 
+  // --- THÊM PHƯƠNG THỨC TÌM KIẾM ---
+  performHeroSearch(searchTerm: string): void {
+    const trimmedSearchTerm = searchTerm?.trim();
+    if (trimmedSearchTerm) {
+      // Điều hướng đến trang sản phẩm với query param là keyword
+      this.router.navigate(['/products'], { queryParams: { keyword: trimmedSearchTerm } });
+      // Xóa nội dung input sau khi tìm kiếm (nếu muốn)
+      if (this.heroSearchInputRef) {
+        this.heroSearchInputRef.nativeElement.value = '';
+      }
+    }
+  }
+  // ---------------------------------
+
   // Hàm trackBy cho *ngFor
   trackProductById(index: number, item: ProductSummaryResponse): number {
     return item.id;
   }
   trackCategoryById(index: number, item: CategoryResponse): number {
     return item.id;
+  }
+  // Thêm trackBy cho farmer nếu cần
+  trackFarmerById(index: number, item: FarmerSummaryResponse): number { // Sửa any thành DTO phù hợp
+    return item.userId; // Hoặc item.userId tùy theo DTO
   }
 
 }

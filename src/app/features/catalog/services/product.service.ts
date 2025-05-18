@@ -15,6 +15,9 @@ export interface ProductSearchParams {
   provinceCode?: string | null;
   status?: ProductStatus | string | null; // Thêm status
   farmerId?: number | null; // Thêm farmerId
+  minPrice?: number | null;
+  maxPrice?: number | null;
+  minRating?: number | null;
   page?: number;
   size?: number;
   sort?: string;
@@ -39,6 +42,19 @@ export class ProductService {
     if (params.page !== undefined) httpParams = httpParams.set('page', params.page.toString());
     if (params.size !== undefined) httpParams = httpParams.set('size', params.size.toString());
     if (params.sort) httpParams = httpParams.set('sort', params.sort);
+
+    // --- THÊM CÁC THAM SỐ BỘ LỌC MỚI ---
+    if (params.minPrice !== null && params.minPrice !== undefined) {
+      httpParams = httpParams.set('minPrice', params.minPrice.toString());
+    }
+    if (params.maxPrice !== null && params.maxPrice !== undefined) {
+      httpParams = httpParams.set('maxPrice', params.maxPrice.toString());
+    }
+    // Chỉ gửi minRating nếu nó > 0, vì 0 có nghĩa là "Tất cả" (không lọc)
+    if (params.minRating !== null && params.minRating !== undefined && params.minRating > 0) {
+      httpParams = httpParams.set('minRating', params.minRating.toString());
+    }
+    // ------------------------------------
 
     return this.http.get<PagedApiResponse<ProductSummaryResponse>>(this.publicApiUrl, { params: httpParams });
   }

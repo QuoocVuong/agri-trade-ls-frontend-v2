@@ -8,7 +8,7 @@
   <div class="grid grid-cols-1 md:grid-cols-3 gap-6" *ngIf="!isLoadingRoles() && !isLoadingPermissions()">
     <!-- Cột danh sách Roles -->
     <div class="md:col-span-1">
-      <div class="card bg-base-100 shadow">
+      <div class="card  shadow">
         <div class="card-body p-4">
           <h2 class="card-title text-lg mb-3">Danh sách Vai trò</h2>
           <ul class="menu menu-sm p-0 space-y-1">
@@ -24,7 +24,7 @@
 
     <!-- Cột chi tiết Permissions -->
     <div class="md:col-span-2">
-      <div *ngIf="selectedRole(); else noRoleSelected" class="card bg-base-100 shadow">
+      <div *ngIf="selectedRole(); else noRoleSelected" class="card  shadow">
         <form [formGroup]="permissionForm" (ngSubmit)="savePermissions()">
           <div class="card-body p-4">
             <div class="flex justify-between items-center mb-4">
@@ -62,7 +62,7 @@
       </div>
 
       <ng-template #noRoleSelected>
-        <div class="card bg-base-100 shadow">
+        <div class="card  shadow">
           <div class="card-body items-center justify-center text-center h-60">
             <p class="text-base-content/60">Chọn một vai trò từ danh sách bên trái để xem và chỉnh sửa quyền hạn.</p>
           </div>

@@ -12,7 +12,7 @@ import { ApiResponse } from '../../../../core/models/api-response.model';
   templateUrl: './category-sidebar.component.html',
 })
 export class CategorySidebarComponent implements OnInit {
-  @Output() categorySelected = new EventEmitter<number | null>(); // Emit ID category được chọn
+ // @Output() categorySelected = new EventEmitter<string | null>(); // Emit ID category được chọn
 
   private categoryService = inject(CategoryService);
   private route = inject(ActivatedRoute); // Để lấy slug category hiện tại (nếu có)
@@ -23,20 +23,17 @@ export class CategorySidebarComponent implements OnInit {
   errorMessage = signal<string | null>(null);
   activeCategoryId = signal<number | null>(null); // ID của category đang active
 
+  activeCategorySlug = signal<string | null>(null); // Slug của category đang active
+
   ngOnInit(): void {
     this.loadCategories();
-    // Lắng nghe thay đổi route để cập nhật active category
+    // Lắng nghe thay đổi route để cập nhật active category slug
     this.route.paramMap.subscribe(params => {
       const categorySlug = params.get('slug');
-      if (categorySlug) {
-        // Tìm ID tương ứng với slug (cần gọi API hoặc tìm trong list đã load)
-        // Tạm thời reset khi có slug mới
-        // this.setActiveCategoryBySlug(categorySlug);
-      } else {
-        this.activeCategoryId.set(null); // Không có slug -> không active category nào
-      }
+      this.activeCategorySlug.set(categorySlug); // Cập nhật active slug từ URL
     });
   }
+
 
 
 
@@ -47,12 +44,10 @@ export class CategorySidebarComponent implements OnInit {
       next: (response: ApiResponse<CategoryResponse[]>) => {
         if (response.success && response.data) {
           this.categories.set(response.data);
-          // Sau khi load xong, kiểm tra lại route để set active category
+          // Sau khi load xong, cập nhật lại active slug từ snapshot của route
+          // (vì subscribe ở ngOnInit có thể chạy trước khi categories được load lần đầu)
           const currentSlug = this.route.snapshot.paramMap.get('slug');
-          if (currentSlug) {
-            this.setActiveCategoryBySlug(currentSlug, response.data);
-          }
-
+          this.activeCategorySlug.set(currentSlug);
         } else {
           this.errorMessage.set(response.message || 'Failed to load categories.');
         }
@@ -82,15 +77,14 @@ export class CategorySidebarComponent implements OnInit {
   }
 
 
-  selectCategory(categoryId: number | null, categorySlug?: string): void {
-    this.activeCategoryId.set(categoryId);
-    this.categorySelected.emit(categoryId); // Emit ID ra ngoài
-
-    // Điều hướng URL tương ứng
-    if (categoryId && categorySlug) {
-      this.router.navigate(['/categories', categorySlug]);
+  selectCategory(category: CategoryResponse | null): void {
+    if (category && category.slug) {
+      this.activeCategorySlug.set(category.slug);
+      // Chỉ điều hướng, ProductListComponent sẽ bắt sự kiện thay đổi URL
+      this.router.navigate(['/categories', category.slug], { queryParams: {} }); // Xóa query params cũ
     } else {
-      this.router.navigate(['/products']); // Quay về trang tất cả sản phẩm
+      this.activeCategorySlug.set(null);
+      this.router.navigate(['/products'], { queryParams: {} }); // Xóa query params cũ
     }
   }
 
@@ -110,12 +104,12 @@ export class CategorySidebarComponent implements OnInit {
    * @param category Category cha cần kiểm tra.
    * @returns true nếu category cha hoặc con của nó đang active.
    */
-  isCategoryOrChildActive(category: CategoryResponse): boolean { // *** THÊM HÀM NÀY ***
-    const activeId = this.activeCategoryId();
-    if (activeId === null) {
+  isCategoryOrChildActive(category: CategoryResponse): boolean {
+    const currentActiveSlug = this.activeCategorySlug();
+    if (currentActiveSlug === null) {
       return false;
     }
-    if (category.id === activeId) {
+    if (category.slug === currentActiveSlug) {
       return true;
     }
 
@@ -124,7 +118,7 @@ export class CategorySidebarComponent implements OnInit {
         return false;
       }
       for (const child of children) {
-        if (child.id === activeId) {
+        if (child.slug === currentActiveSlug) {
           return true;
         }
         if (child.children && child.children.length > 0) {
@@ -135,7 +129,6 @@ export class CategorySidebarComponent implements OnInit {
       }
       return false;
     };
-
     return checkChildren(category.children);
   }
 

@@ -6,7 +6,7 @@
     <!-- Cột trái: Form thông tin -->
     <form [formGroup]="checkoutForm" (ngSubmit)="onSubmit()" class="lg:col-span-2 space-y-6">
       <!-- Bước 1: Địa chỉ giao hàng -->
-      <div class="card bg-base-100 shadow-md rounded-lg">
+      <div class="card  shadow-md rounded-lg">
         <div class="card-body">
           <div class="flex justify-between items-center mb-4">
             <h2 class="card-title text-lg">1. Địa chỉ giao hàng</h2>
@@ -72,7 +72,7 @@
       </div>
 
       <!-- Bước 2: Phương thức thanh toán -->
-      <div class="card bg-base-100 shadow-md rounded-lg">
+      <div class="card  shadow-md rounded-lg">
         <div class="card-body">
           <h2 class="card-title text-lg mb-4">2. Phương thức thanh toán</h2>
           <div class="form-control space-y-2">
@@ -95,7 +95,7 @@
       </div>
 
       <!-- *** THÊM INPUT PO NUMBER (CHỈ CHO B2B) *** -->
-      <div *ngIf="isBusinessBuyer()" class="card bg-base-100 shadow">
+      <div *ngIf="isBusinessBuyer()" class="card  shadow">
         <div class="card-body">
           <h2 class="card-title text-lg mb-3">Thông tin Đơn đặt hàng (PO) - Tùy chọn</h2>
           <div class="form-control w-full">
@@ -107,7 +107,7 @@
       <!-- ****************************************** -->
 
       <!-- Bước 3: Ghi chú -->
-      <div class="card bg-base-100 shadow-md rounded-lg">
+      <div class="card  shadow-md rounded-lg">
         <div class="card-body">
           <h2 class="card-title text-lg mb-4">3. Ghi chú cho đơn hàng (Tùy chọn)</h2>
           <textarea
@@ -134,7 +134,7 @@
 
     <!-- Cột phải: Tóm tắt đơn hàng -->
     <div class="lg:col-span-1">
-      <div class="card bg-base-200 shadow-md rounded-lg sticky top-20">
+      <div class="card shadow-md rounded-lg sticky top-20">
         <div class="card-body">
           <h2 class="card-title text-lg mb-4">Tóm tắt đơn hàng</h2>
           <!-- Danh sách sản phẩm -->

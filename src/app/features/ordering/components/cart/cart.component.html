@@ -13,7 +13,7 @@
       <!-- Cart Items List -->
       <div class="lg:w-2/3">
         <div class="space-y-4">
-          <div *ngFor="let item of cartData.items; trackBy: trackCartItemById" class="card card-side bg-base-100 shadow-sm flex-col sm:flex-row relative">
+          <div *ngFor="let item of cartData.items; trackBy: trackCartItemById" class="card card-side shadow-sm flex-col sm:flex-row relative">
             <figure class="p-2 sm:w-24 flex-shrink-0">
               <img [src]="item.product?.thumbnailUrl || 'assets/images/placeholder-image.png'"
                    [alt]="item.product?.name"
@@ -81,7 +81,7 @@
 
       <!-- Cart Summary & Checkout -->
       <div class="lg:w-1/3">
-        <div class="card bg-base-200 shadow-md sticky top-20"> <!-- sticky top để giữ khi scroll -->
+        <div class="card shadow-md sticky top-20"> <!-- sticky top để giữ khi scroll -->
           <div class="card-body">
             <h2 class="card-title text-lg mb-4">Tóm tắt đơn hàng</h2>
             <div class="flex justify-between text-sm mb-2">

@@ -12,7 +12,7 @@
   <div *ngIf="successMessage()" class="alert alert-success shadow-lg mb-4"><span>{{ successMessage() }}</span></div>
   <div *ngIf="errorMessage()" class="alert alert-error shadow-lg mb-4"><span>Lỗi: {{ errorMessage() }}</span></div>
 
-  <form *ngIf="!isFetching()" [formGroup]="profileForm" (ngSubmit)="onSubmit()" class="card bg-base-100 shadow-xl">
+  <form *ngIf="!isFetching()" [formGroup]="profileForm" (ngSubmit)="onSubmit()" class="card  shadow-xl">
     <div class="card-body">
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <!-- Farm Name -->

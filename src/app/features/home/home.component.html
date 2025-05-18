@@ -4,11 +4,17 @@
   <div class="hero-content text-center text-neutral-content z-10">
     <div class="max-w-lg animate-fade-in-up">
       <h1 class="mb-6 text-5xl md:text-6xl font-extrabold tracking-tight">Nông Sản Sạch </h1>
-      <p class="mb-8 text-lg md:text-xl opacity-90">Khám phá hương vị tươi ngon từ những trang trại bền vững . Giao hàng tận nơi, chất lượng đảm bảo.</p>
+      <p class="mb-8 text-lg md:text-xl opacity-90">Khám phá hương vị tươi ngon từ những trang trại bền vững. Giao hàng tận nơi, chất lượng đảm bảo.</p>
       <div class="form-control mb-8 max-w-md mx-auto">
         <div class="relative">
-          <input type="text" placeholder="Tìm kiếm rau củ, trái cây..." class="input input-bordered w-full pr-12 rounded-full shadow-lg focus:ring-2 focus:ring-primary transition-all" />
-          <button class="absolute right-2 top-1/2 transform -translate-y-1/2 btn btn-primary btn-circle btn-sm">
+          <!-- THÊM #heroSearchInput VÀ (keyup.enter) -->
+          <input #heroSearchInput
+                 type="text"
+                 placeholder="Tìm kiếm rau củ, trái cây..."
+                 class="input input-bordered w-full pr-12 rounded-full shadow-lg focus:ring-2 focus:ring-primary transition-all"
+                 (keyup.enter)="performHeroSearch(heroSearchInput.value)" />
+          <!-- THÊM (click) CHO NÚT -->
+          <button class="absolute right-2 top-1/2 transform -translate-y-1/2 btn btn-primary btn-circle btn-sm" (click)="performHeroSearch(heroSearchInput.value)">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
           </button>
         </div>
@@ -20,12 +26,12 @@
 
 <!-- Featured Categories -->
 <section class="mb-16 container mx-auto px-4">
-  <h2 class="text-3xl font-bold text-center mb-8 animate-fade-in">Danh mục nổi bật</h2>
+  <h2 class="text-3xl font-bold text-center mb-8 animate-fade-in dark:text-white">Danh mục nổi bật</h2>
   <div *ngIf="isLoadingCategories()" class="text-center py-8"><app-loading-spinner></app-loading-spinner></div>
   <div *ngIf="!isLoadingCategories() && featuredCategories().length > 0" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
     <a *ngFor="let category of featuredCategories(); trackBy: trackCategoryById"
        [routerLink]="['/categories', category.slug]"
-       class="card bg-base-100 shadow-md hover:shadow-xl transition-all duration-300 rounded-lg p-4 text-center transform hover:-translate-y-1">
+       class="card shadow-md hover:shadow-xl transition-all duration-300 rounded-lg p-4 text-center transform hover:-translate-y-1">
       <figure class="w-20 h-20 mb-3 mx-auto">
         <img [src]="category.imageUrl || 'assets/images/placeholder-category.png'" [alt]="category.name" class="rounded-full object-cover border-2 border-primary/20">
       </figure>
@@ -37,7 +43,7 @@
 <!-- Newest Products -->
 <section class="mb-16 container mx-auto px-4">
   <div class="flex justify-between items-center mb-8">
-    <h2 class="text-3xl font-bold animate-fade-in">Sản phẩm mới nhất</h2>
+    <h2 class="text-3xl font-bold animate-fade-in dark:text-white">Sản phẩm mới nhất</h2>
     <a routerLink="/products" class="btn btn-ghost btn-sm hover:bg-primary/10">Xem tất cả <span class="ml-1">→</span></a>
   </div>
   <div *ngIf="isLoadingProducts()" class="text-center py-12"><app-loading-spinner></app-loading-spinner></div>
@@ -52,12 +58,12 @@
 <!-- Featured Farmers -->
 <section class="mb-16 container mx-auto px-4">
   <div class="flex justify-between items-center mb-8">
-    <h2 class="text-3xl font-bold animate-fade-in">Nông dân tiêu biểu</h2>
+    <h2 class="text-3xl font-bold animate-fade-in dark:text-white">Nông dân tiêu biểu</h2>
     <a routerLink="/farmers" class="btn btn-ghost btn-sm hover:bg-primary/10">Xem tất cả <span class="ml-1">→</span></a>
   </div>
   <div *ngIf="isLoadingFarmers()" class="text-center py-12"><app-loading-spinner></app-loading-spinner></div>
   <div *ngIf="!isLoadingFarmers() && featuredFarmers().length > 0" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-    <div *ngFor="let farmer of featuredFarmers()" class="card bg-base-100 shadow-lg hover:shadow-xl transition-all duration-300 rounded-lg overflow-hidden">
+    <div *ngFor="let farmer of featuredFarmers(); trackBy: trackFarmerById" class="card shadow-lg hover:shadow-xl transition-all duration-300 rounded-lg overflow-hidden">
       <div class="card-body items-center text-center p-6">
         <div class="avatar mb-3">
           <div class="w-20 rounded-full ring ring-primary ring-offset-base-100 ring-offset-2">
@@ -78,13 +84,13 @@
 <section class="py-20 px-6 bg-gradient-to-br from-primary/10 via-emerald-50 to-teal-50 rounded-3xl mb-12 text-center shadow-inner">
   <div class="container mx-auto max-w-4xl">
     <h2 class="text-4xl md:text-5xl font-extrabold mb-6 text-primary animate-fade-in" style="text-shadow: 1px 1px 2px rgba(0, 128, 0, 0.1);">
-      Nguồn Gốc Rõ Ràng - Chất Lượng Đảm Bảo
+      <span class="dark:text-white">Nguồn Gốc Rõ Ràng - Chất Lượng Đảm Bảo</span>
     </h2>
-    <p class="mb-10 text-lg md:text-xl text-gray-700 leading-relaxed max-w-3xl mx-auto">
+    <p class="mb-10 text-lg md:text-xl text-gray-700 leading-relaxed max-w-3xl mx-auto dark:text-gray-300">
       AgriTrade tự hào kết nối bạn trực tiếp với những người nông dân tâm huyết. Chúng tôi mang đến nông sản tươi ngon, an toàn, được canh tác theo quy trình bền vững, minh bạch nguồn gốc.
     </p>
     <a routerLink="/about-us" class="btn btn-primary btn-lg rounded-full shadow-lg px-8 py-3 text-lg font-semibold btn-hover-effect">
-      Tìm Hiểu Thêm Về Chúng Tôi
+      <span class="dark:text-white">Tìm Hiểu Thêm Về Chúng Tôi</span>
     </a>
   </div>
 </section>

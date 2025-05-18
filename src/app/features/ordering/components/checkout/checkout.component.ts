@@ -398,17 +398,23 @@ export class CheckoutComponent implements OnInit {
       )
       .subscribe({
         next: (response) => {
-          if (response.success && response.data) {
-            console.log('Checkout successful, orders created:', response.data);
-            this.toastr.success('Đặt hàng thành công!');
-            this.cartService.loadCart().subscribe(); // Cập nhật lại giỏ hàng (sẽ trống)
-            // Điều hướng đến trang lịch sử đơn hàng hoặc trang cảm ơn
-            // Lấy ID đơn hàng đầu tiên để điều hướng đến chi tiết (ví dụ)
-            const firstOrderId = response.data[0]?.id;
-            if (firstOrderId) {
-              this.router.navigate(['/user/orders', firstOrderId]);
-            } else {
-              this.router.navigate(['/user/orders']);
+          if (response.success && response.data && response.data.length > 0) {
+            const createdOrders = response.data;
+            // Giả sử chúng ta xử lý từng đơn hàng một nếu có nhiều farmer
+            // Hoặc nếu bạn đảm bảo checkout chỉ tạo 1 order cho tất cả (ít khả thi với nhiều farmer)
+            const firstOrder = createdOrders[0];
+
+            if (firstOrder.paymentMethod === PaymentMethod.BANK_TRANSFER) {
+              this.toastr.success('Đơn hàng đã được tạo. Vui lòng thực hiện chuyển khoản theo hướng dẫn.', 'Đặt hàng thành công');
+              this.cartService.loadCart().subscribe(); // Làm mới giỏ hàng
+              this.router.navigate(['/user/orders', firstOrder.id]); // Điều hướng đến chi tiết đơn hàng
+            } else if (firstOrder.paymentMethod === PaymentMethod.COD) {
+              this.toastr.success('Đặt hàng thành công! Bạn sẽ thanh toán khi nhận hàng.');
+              this.cartService.loadCart().subscribe();
+              this.router.navigate(['/user/orders', firstOrder.id]);
+            } else { // Trường hợp VNPay, MoMo (cần tạo payment URL)
+              this.toastr.info('Đơn hàng đã được tạo. Đang chuyển đến trang thanh toán...');
+              this.createAndRedirectToPaymentGateway(firstOrder.id, firstOrder.paymentMethod);
             }
           } else {
             this.handleError(response, 'Đặt hàng thất bại.');
@@ -436,6 +442,24 @@ export class CheckoutComponent implements OnInit {
             });
           }
         }
+      });
+  }
+  // Hàm mới để xử lý redirect cho cổng thanh toán
+  private createAndRedirectToPaymentGateway(orderId: number, paymentMethod: PaymentMethod): void {
+    this.orderService.createPaymentUrl(orderId, paymentMethod) // Gọi API tạo URL
+      .pipe(
+        takeUntil(this.destroy$),
+        finalize(() => this.isLoadingCheckout.set(false)) // Tắt loading ở đây
+      )
+      .subscribe({
+        next: (paymentUrlRes) => {
+          if (paymentUrlRes.success && paymentUrlRes.data?.paymentUrl) {
+            window.location.href = paymentUrlRes.data.paymentUrl;
+          } else {
+            this.handleError(paymentUrlRes, 'Không thể tạo URL thanh toán.');
+          }
+        },
+        error: (err) => this.handleError(err, 'Lỗi khi tạo URL thanh toán.')
       });
   }
 

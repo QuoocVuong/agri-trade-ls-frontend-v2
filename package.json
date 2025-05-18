@@ -25,6 +25,7 @@
     "@stomp/stompjs": "^7.1.1",
     "@swimlane/ngx-charts": "^22.0.0-alpha.1",
     "@types/file-saver": "^2.0.7",
+    "angularx-qrcode": "^19.0.0",
     "chart.js": "^4.4.9",
     "file-saver": "^2.0.5",
     "js-big-decimal": "^2.2.0",

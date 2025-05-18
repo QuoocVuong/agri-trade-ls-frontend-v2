@@ -1,7 +1,7 @@
 <!-- src/app/features/interaction/components/review-form/review-form.component.html -->
 <div *ngIf="isAuthenticated(); else loginRequired">
   <!-- Sử dụng card để bao bọc form -->
-  <div class="card bg-base-100 shadow-lg border border-base-300">
+  <div class="card  shadow-lg border border-base-300">
     <form [formGroup]="reviewForm" (ngSubmit)="onSubmit()" class="card-body p-5 sm:p-6"> <!-- Thêm padding -->
       <h3 class="card-title text-lg mb-4">Viết đánh giá của bạn</h3>
 

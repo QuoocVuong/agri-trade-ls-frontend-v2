@@ -11,7 +11,7 @@
   <!-- Error Loading Data -->
   <app-alert *ngIf="errorMessage() && isFetchingData()" type="error" [message]="errorMessage()" class="mb-6"></app-alert>
 
-  <form *ngIf="!isFetchingData()" [formGroup]="productForm" (ngSubmit)="onSubmit()" class="card bg-base-100 shadow-xl">
+  <form *ngIf="!isFetchingData()" [formGroup]="productForm" (ngSubmit)="onSubmit()" class="card  shadow-xl">
     <div class="card-body space-y-6">
       <!-- Error Message khi submit -->
       <app-alert *ngIf="errorMessage() && !isLoading()" type="error" [message]="errorMessage()" class="mb-4"></app-alert>
@@ -109,27 +109,32 @@
       </div>
 
       <!-- Status -->
-      <div class="form-control w-full max-w-xs">
+      <div *ngIf="isEditMode()" class="form-control w-full max-w-xs">
         <label class="label">
-          <span class="label-text font-medium">Trạng thái <span class="text-error" *ngIf="!isEditMode()">*</span></span>
+          <span class="label-text font-medium">Trạng thái</span>
+          <!-- Bỏ dấu * yêu cầu vì khi edit, farmer chỉ có thể chọn một số trạng thái nhất định -->
         </label>
         <select
           class="select select-bordered w-full"
           formControlName="status"
           [ngClass]="{'select-error': productForm.controls['status'].invalid && productForm.controls['status'].touched}">
-          <option [ngValue]="null" disabled selected>Chọn trạng thái</option>
-          <option *ngFor="let status of availableStatuses" [value]="status">{{ getStatusText(status) }}</option>
+          <!-- Option mặc định có thể không cần nếu isEditMode() luôn có giá trị status -->
+          <!-- <option [ngValue]="null" disabled>Chọn trạng thái</option> -->
+          <option *ngFor="let status of availableStatusesForFarmerWhenEditing()" [value]="status"> <!-- Sửa thành hàm mới -->
+            {{ getStatusText(status) }}
+          </option>
+          <!-- Hiển thị trạng thái hiện tại nếu nó không nằm trong danh sách được phép thay đổi -->
           <option
-            *ngIf="isEditMode() && productForm.value.status && !availableStatuses.includes(productForm.value.status)"
+            *ngIf="productForm.value.status && !availableStatusesForFarmerWhenEditing().includes(productForm.value.status)"
             [value]="productForm.value.status"
             disabled>
             {{ getStatusText(productForm.value.status) }} (Không thể thay đổi)
           </option>
         </select>
-        <label *ngIf="productForm.controls['status'].invalid && productForm.controls['status'].touched" class="label py-1">
-          <span class="label-text-alt text-error text-xs">Vui lòng chọn trạng thái.</span>
-        </label>
+        <!-- Không cần hiển thị lỗi required ở đây nữa nếu chỉ hiện khi edit -->
       </div>
+      <!-- ************************************************* -->
+
 
       <!-- B2B Options -->
       <div class="pt-4 border-t border-base-300">
@@ -190,7 +195,7 @@
           <div>
             <h4 class="text-sm font-semibold mb-2">Bậc giá B2B (Tùy chọn)</h4>
             <div formArrayName="pricingTiers" class="space-y-2">
-              <div *ngFor="let tier of pricingTiersArray.controls; let i=index" [formGroupName]="i" class="flex items-center gap-2 p-2 border rounded-md bg-base-200">
+              <div *ngFor="let tier of pricingTiersArray.controls; let i=index" [formGroupName]="i" class="flex items-center gap-2 p-2 border rounded-md ">
                 <div class="form-control flex-grow">
                   <label class="label py-0"><span class="label-text text-xs">Số lượng từ</span></label>
                   <input

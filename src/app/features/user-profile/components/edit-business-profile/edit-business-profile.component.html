@@ -8,7 +8,7 @@
   <app-alert *ngIf="errorMessage() && isFetching()" type="error" [message]="errorMessage()"></app-alert>
 
   <form *ngIf="!isFetching()" [formGroup]="profileForm" (ngSubmit)="onSubmit()">
-    <div class="card bg-base-100 shadow-xl">
+    <div class="card  shadow-xl">
       <div class="card-body space-y-1">
         <!-- Error/Success Messages -->
         <app-alert *ngIf="errorMessage() && !isLoading()" type="error" [message]="errorMessage()" class="mb-4"></app-alert>

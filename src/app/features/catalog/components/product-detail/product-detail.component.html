@@ -212,7 +212,7 @@
              class="tab text-lg font-medium"
              aria-label="Đánh giá"
              checked />
-      <div role="tabpanel" class="tab-content bg-base-100 border-base-300 rounded-box p-6">
+      <div role="tabpanel" class="tab-content border-base-300 rounded-box p-6">
         <h3 class="text-xl font-semibold mb-4">Đánh giá sản phẩm ({{ p.ratingCount }})</h3>
         <app-review-form [productId]="p.id"
                          (reviewSubmitted)="onReviewSubmitted($event)"
@@ -225,7 +225,7 @@
              role="tab"
              class="tab text-lg font-medium"
              aria-label="Sản phẩm liên quan" />
-      <div role="tabpanel" class="tab-content bg-base-100 border-base-300 rounded-box p-6">
+      <div role="tabpanel" class="tab-content border-base-300 rounded-box p-6">
         <h3 class="text-xl font-semibold mb-4">Sản phẩm liên quan</h3>
         <div *ngIf="p.relatedProducts && p.relatedProducts.length > 0"
              class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 lg:gap-6">

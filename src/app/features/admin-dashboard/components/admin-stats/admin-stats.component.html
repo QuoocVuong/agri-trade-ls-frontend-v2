@@ -10,7 +10,7 @@
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
 
       <!-- Doanh thu Tháng này -->
-      <div class="stat bg-base-100 shadow rounded-box">
+      <div class="stat shadow rounded-box">
         <div class="stat-figure text-primary">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="inline-block w-8 h-8 stroke-current"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
         </div>
@@ -20,7 +20,7 @@
       </div>
 
       <!-- Đơn hàng Tháng này -->
-      <div class="stat bg-base-100 shadow rounded-box">
+      <div class="stat  shadow rounded-box">
         <div class="stat-figure text-secondary">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="inline-block w-8 h-8 stroke-current"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
         </div>
@@ -30,7 +30,7 @@
       </div>
 
       <!-- Tổng Người dùng -->
-      <div class="stat bg-base-100 shadow rounded-box">
+      <div class="stat  shadow rounded-box">
         <div class="stat-figure text-info">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="inline-block w-8 h-8 stroke-current"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
         </div>
@@ -40,7 +40,7 @@
       </div>
 
       <!-- Chờ duyệt -->
-      <div class="stat bg-base-100 shadow rounded-box">
+      <div class="stat  shadow rounded-box">
         <div class="stat-figure text-warning">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="inline-block w-8 h-8 stroke-current"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
         </div>
@@ -57,14 +57,14 @@
 
     <!-- Thêm các khu vực khác cho biểu đồ, hoạt động gần đây -->
     <div class="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <div class="card bg-base-100 shadow">
+      <div class="card  shadow">
         <div class="card-body">
           <h3 class="card-title text-lg">Doanh thu gần đây</h3>
           <!-- TODO: Thêm biểu đồ doanh thu (gọi API getDailyRevenueForAdminChart) -->
           <canvas baseChart [data]="lineChartData" [options]="lineChartOptions" [type]="lineChartType"></canvas>
         </div>
       </div>
-      <div class="card bg-base-100 shadow">
+      <div class="card  shadow">
         <div class="card-body">
           <h3 class="card-title text-lg">Hoạt động gần đây</h3>
           <!-- TODO: Thêm danh sách hoạt động (gọi API getRecentActivitiesForAdmin) -->

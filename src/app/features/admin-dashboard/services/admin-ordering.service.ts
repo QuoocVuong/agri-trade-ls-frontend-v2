@@ -7,6 +7,7 @@ import { OrderResponse } from '../../ordering/dto/response/OrderResponse';
 import { OrderSummaryResponse } from '../../ordering/dto/response/OrderSummaryResponse';
 import { OrderStatusUpdateRequest } from '../../ordering/dto/request/OrderStatusUpdateRequest';
 import { OrderStatus } from '../../ordering/domain/order-status.enum';
+import {PaymentMethod} from '../../ordering/domain/payment-method.enum';
 
 @Injectable({
   providedIn: 'root'
@@ -40,8 +41,12 @@ export class AdminOrderingService {
   }
 
   // Ví dụ API xác nhận thanh toán chuyển khoản
-  confirmBankTransferPayment(orderId: number): Observable<ApiResponse<OrderResponse>> {
-    return this.http.post<ApiResponse<OrderResponse>>(`${this.adminOrderApiUrl}/${orderId}/confirm-payment`, { paymentMethod: 'BANK_TRANSFER' }); // Ví dụ body
+  // confirmBankTransferPayment(orderId: number): Observable<ApiResponse<OrderResponse>> {
+  //   return this.http.post<ApiResponse<OrderResponse>>(`${this.adminOrderApiUrl}/${orderId}/confirm-payment`, { paymentMethod: 'BANK_TRANSFER' }); // Ví dụ body
+  // }
+
+  confirmOrderPayment(orderId: number, paymentMethod: PaymentMethod, payload?: { notes?: string | null, transactionReference?: string | null }): Observable<ApiResponse<OrderResponse>> {
+    return this.http.post<ApiResponse<OrderResponse>>(`${this.adminOrderApiUrl}/${orderId}/confirm-payment?paymentMethod=${paymentMethod}`, payload || {});
   }
 
 

@@ -8,7 +8,10 @@ import { OrderSummaryResponse } from '../dto/response/OrderSummaryResponse';
 import { CheckoutRequest } from '../dto/request/CheckoutRequest';
 import { OrderStatusUpdateRequest } from '../dto/request/OrderStatusUpdateRequest';
 import { OrderStatus } from '../domain/order-status.enum';
-import {OrderCalculationResponse} from '../dto/response/OrderCalculationResponse'; // Import Enum
+import {OrderCalculationResponse} from '../dto/response/OrderCalculationResponse';
+import {PaymentMethod} from '../domain/payment-method.enum';
+import {PaymentUrlResponse} from '../dto/response/PaymentUrlResponse';
+import {BankTransferInfoResponse} from '../dto/response/BankTransferInfoResponse'; // Import Enum
 
 @Injectable({
   providedIn: 'root' // Cung cấp ở root vì nhiều nơi có thể cần xem đơn hàng
@@ -45,6 +48,25 @@ export class OrderService {
 
   cancelMyOrder(orderId: number): Observable<ApiResponse<OrderResponse>> {
     return this.http.post<ApiResponse<OrderResponse>>(`${this.orderApiUrl}/${orderId}/cancel`, {});
+  }
+
+  // ****** THÊM PHƯƠNG THỨC NÀY ******
+  /**
+   * Gọi API backend để tạo URL thanh toán cho một đơn hàng với phương thức thanh toán cụ thể.
+   * @param orderId ID của đơn hàng
+   * @param paymentMethod Phương thức thanh toán (VNPAY, MOMO, ...)
+   * @returns Observable chứa ApiResponse với PaymentUrlResponse
+   */
+  createPaymentUrl(orderId: number, paymentMethod: PaymentMethod): Observable<ApiResponse<PaymentUrlResponse>> {
+    let params = new HttpParams().set('paymentMethod', paymentMethod); // Gửi paymentMethod làm query param
+    // Backend endpoint là: POST /api/orders/{orderId}/create-payment-url
+    return this.http.post<ApiResponse<PaymentUrlResponse>>(`${this.orderApiUrl}/${orderId}/create-payment-url`, null, { params });
+    // Truyền null cho body nếu API POST không yêu cầu body, chỉ cần query param
+  }
+  // **********************************
+
+  getBankTransferInfo(orderId: number): Observable<ApiResponse<BankTransferInfoResponse>> {
+    return this.http.get<ApiResponse<BankTransferInfoResponse>>(`${this.orderApiUrl}/${orderId}/bank-transfer-info`);
   }
 
   // --- Farmer APIs ---
