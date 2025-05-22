@@ -96,7 +96,7 @@ export class ChatService {
     }
     console.log("Activating WS connection and subscribing...");
     // Cập nhật lại header trước khi activate (mặc dù đã dùng getter)
-    // this.rxStomp.configure({ connectHeaders: { Authorization: `Bearer ${this.authService.getToken() || ''}` } });
+    // this.rxStomp.configure({ connectHeaders: { Authorization: `Bearer ${this.authService.getAccessToken() || ''}` } });
     this.rxStomp.activate();
 
     // Subscribe vào các kênh cần thiết
@@ -117,7 +117,7 @@ export class ChatService {
       // Headers để gửi khi connect (quan trọng cho xác thực JWT)
       connectHeaders: {
         // Backend sẽ cần interceptor để đọc header này và xác thực
-        Authorization: `Bearer ${this.authService.getToken() || ''}`
+        Authorization: `Bearer ${this.authService.getAccessToken() || ''}`
       },
 
       // Heartbeat (giữ kết nối)
@@ -135,55 +135,55 @@ export class ChatService {
     this.rxStomp.configure(stompConfig);
   }
 
-  private connectWebSocket(): void {
-    if (this.rxStomp.connected()) {
-      console.log("WebSocket already connected.");
-      return;
-    }
-    // Cập nhật lại connectHeaders với token mới nhất trước khi connect
-    this.rxStomp.configure({ connectHeaders: { Authorization: `Bearer ${this.authService.getToken() || ''}` } });
-    this.rxStomp.activate(); // Bắt đầu kết nối
-
-    // Lắng nghe các message từ server gửi về private queue của user
-    this.rxStomp.watch(`/user/queue/messages`)
-      .pipe(takeUntil(this.destroy$)) // Cần destroy$ để unsubscribe
-      .subscribe((message: IMessage) => {
-        try {
-          const chatMessage: ChatMessageResponse = JSON.parse(message.body);
-          console.log("Received new message via WS:", chatMessage);
-          // TODO: Cập nhật UI (thêm vào danh sách tin nhắn nếu phòng đang mở, cập nhật unread count...)
-          this.handleIncomingMessage(chatMessage);
-        } catch (e) {
-          console.error("Error parsing incoming WS message:", e);
-        }
-      });
-
-    // Lắng nghe thông báo đã đọc
-    this.rxStomp.watch(`/user/queue/read`)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe((message: IMessage) => {
-        try {
-          const readEvent = JSON.parse(message.body); // Giả sử là MessageReadEvent
-          console.log("Received read notification via WS:", readEvent);
-          // TODO: Cập nhật trạng thái 'đã xem' trên UI của tin nhắn tương ứng
-        } catch (e) {
-          console.error("Error parsing read notification:", e);
-        }
-      });
-
-    // Lắng nghe lỗi từ server (nếu có)
-    this.rxStomp.watch(`/user/queue/errors`)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe((message: IMessage) => {
-        try {
-          const errorEvent = JSON.parse(message.body); // Giả sử là WebSocketErrorEvent
-          console.log("Received error via WS:", errorEvent);
-          this.toastr.error(`Lỗi chat: ${errorEvent.message || 'Lỗi không xác định'}`);
-        } catch (e) {
-          console.error("Error parsing error event:", e);
-        }
-      });
-  }
+  // private connectWebSocket(): void {
+  //   if (this.rxStomp.connected()) {
+  //     console.log("WebSocket already connected.");
+  //     return;
+  //   }
+  //   // Cập nhật lại connectHeaders với token mới nhất trước khi connect
+  //   this.rxStomp.configure({ connectHeaders: { Authorization: `Bearer ${this.authService.connectWebSocket() || ''}` } });
+  //   this.rxStomp.activate(); // Bắt đầu kết nối
+  //
+  //   // Lắng nghe các message từ server gửi về private queue của user
+  //   this.rxStomp.watch(`/user/queue/messages`)
+  //     .pipe(takeUntil(this.destroy$)) // Cần destroy$ để unsubscribe
+  //     .subscribe((message: IMessage) => {
+  //       try {
+  //         const chatMessage: ChatMessageResponse = JSON.parse(message.body);
+  //         console.log("Received new message via WS:", chatMessage);
+  //         // TODO: Cập nhật UI (thêm vào danh sách tin nhắn nếu phòng đang mở, cập nhật unread count...)
+  //         this.handleIncomingMessage(chatMessage);
+  //       } catch (e) {
+  //         console.error("Error parsing incoming WS message:", e);
+  //       }
+  //     });
+  //
+  //   // Lắng nghe thông báo đã đọc
+  //   this.rxStomp.watch(`/user/queue/read`)
+  //     .pipe(takeUntil(this.destroy$))
+  //     .subscribe((message: IMessage) => {
+  //       try {
+  //         const readEvent = JSON.parse(message.body); // Giả sử là MessageReadEvent
+  //         console.log("Received read notification via WS:", readEvent);
+  //         // TODO: Cập nhật trạng thái 'đã xem' trên UI của tin nhắn tương ứng
+  //       } catch (e) {
+  //         console.error("Error parsing read notification:", e);
+  //       }
+  //     });
+  //
+  //   // Lắng nghe lỗi từ server (nếu có)
+  //   this.rxStomp.watch(`/user/queue/errors`)
+  //     .pipe(takeUntil(this.destroy$))
+  //     .subscribe((message: IMessage) => {
+  //       try {
+  //         const errorEvent = JSON.parse(message.body); // Giả sử là WebSocketErrorEvent
+  //         console.log("Received error via WS:", errorEvent);
+  //         this.toastr.error(`Lỗi chat: ${errorEvent.message || 'Lỗi không xác định'}`);
+  //       } catch (e) {
+  //         console.error("Error parsing error event:", e);
+  //       }
+  //     });
+  // }
 
   private disconnectWebSocket(): void {
     if (this.rxStomp.active) {
@@ -533,7 +533,7 @@ export class ChatService {
   markMessagesAsRead(roomId: number): Observable<ApiResponse<void>> {
     // Kiểm tra xem có tin nhắn chưa đọc trong phòng này không trước khi gọi API
     const room = this.chatRoomsSubject.value?.find(r => r.id === roomId);
-    const myId = this.authService.getCurrentUser()?.id;
+    const myId = this.authService.currentUser()?.id;
     let myUnreadCount = 0;
     if(room && myId) {
       myUnreadCount = room.user1?.id === myId ? room.user1UnreadCount : room.user2UnreadCount;

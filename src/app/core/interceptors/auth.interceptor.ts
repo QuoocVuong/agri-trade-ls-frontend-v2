@@ -1,9 +1,15 @@
 import { HttpInterceptorFn, HttpRequest, HttpHandlerFn, HttpEvent, HttpErrorResponse } from '@angular/common/http';
 import { inject } from '@angular/core';
-import { Observable, throwError } from 'rxjs';
-import { catchError } from 'rxjs/operators';
+import {BehaviorSubject, Observable, take, throwError} from 'rxjs';
+import {catchError, filter, switchMap} from 'rxjs/operators';
 import { AuthService } from '../services/auth.service';
 import { Router } from '@angular/router';
+import {ApiResponse} from '../models/api-response.model';
+import {LoginResponse} from '../../features/user-profile/dto/response/LoginResponse';
+
+// Biến và Subject cho logic refresh token, đặt bên ngoài hàm interceptor chính
+let refreshTokenInProgress = false;
+const refreshTokenSubject: BehaviorSubject<string | null> = new BehaviorSubject<string | null>(null); // Kiểu string | null
 
 export const authInterceptor: HttpInterceptorFn = (
   req: HttpRequest<unknown>,
@@ -11,41 +17,123 @@ export const authInterceptor: HttpInterceptorFn = (
 ): Observable<HttpEvent<unknown>> => {
 
   const authService = inject(AuthService);
-  const router = inject(Router);
-  const authToken = authService.getToken();
+  //const router = inject(Router);
+  const authToken = authService.getAccessToken();
 
   // Clone the request and add the authorization header if token exists
   // and the request is not for the auth endpoints themselves
   let authReq = req;
-  if (authToken && !req.url.includes('/api/auth/')) {
-    authReq = req.clone({
-      setHeaders: {
-        Authorization: `Bearer ${authToken}`
-      }
-    });
-    // console.debug("AuthInterceptor: Added Bearer token to request for", req.url);
+
+
+  // Danh sách các URL không cần đính kèm access token
+  const urlsNotRequiringToken = [
+    '/api/auth/login',
+    '/api/auth/register',
+    '/api/auth/refresh-token',
+    '/api/auth/verify',
+    '/api/auth/forgot-password',
+    '/api/auth/reset-password',
+    '/api/auth/oauth2/google/verify' // << QUAN TRỌNG: Thêm URL này
+  ];
+
+
+  // Kiểm tra xem URL hiện tại có nằm trong danh sách không cần token không
+  const requiresTokenAttachment = authToken && !urlsNotRequiringToken.some(url => req.url.includes(url));
+
+  if (requiresTokenAttachment) {
+    authReq = addTokenHeader(req, authToken);
   }
 
-  // Pass the cloned request instead of the original request to the next handle
   return next(authReq).pipe(
     catchError((error: HttpErrorResponse) => {
-      // Handle 401 Unauthorized specifically (e.g., invalid/expired token)
-      if (error.status === 401 && !router.url.includes('/auth/login')) { // Avoid logout loop on login page
-        console.error('AuthInterceptor: Unauthorized (401) error detected. Logging out.', error);
-        // Use the injected AuthService to logout and redirect
-        authService.logout();
-        // Return an observable error to stop further processing in the component
-        // Pass the original error or a custom one
-        return throwError(() => new Error('Session expired or invalid. Please login again.'));
+      if (error.status === 401 &&
+        !urlsNotRequiringToken.some(url => authReq.url.includes(url)) && // Không refresh cho các URL này
+        !authService.isLoggingOut()) { // Kiểm tra cờ isLoggingOut từ AuthService
+        return handleTokenRefresh(authReq, next, authService);
       }
-      // Handle 403 Forbidden (optional, could redirect to unauthorized page)
-      else if (error.status === 403) {
-        console.error('AuthInterceptor: Forbidden (403) error detected.', error);
-        // router.navigate(['/unauthorized']); // Optional redirect
-      }
-
-      // Re-throw the error to be caught by other error handlers or the component
-      return throwError(() => error); // Ném lại lỗi gốc để AuthService hoặc component xử lý tiếp
+      // Đối với các lỗi khác hoặc nếu không phải 401, ném lỗi để component xử lý
+      return throwError(() => error);
     })
   );
 };
+
+// Tách hàm thêm token ra ngoài để dễ sử dụng lại
+function addTokenHeader(request: HttpRequest<any>, token: string) {
+  return request.clone({ headers: request.headers.set('Authorization', 'Bearer ' + token) });
+}
+
+function handleTokenRefresh(request: HttpRequest<any>, next: HttpHandlerFn, authService: AuthService): Observable<HttpEvent<any>> {
+  if (authService.isLoggingOut()) { // Kiểm tra lại cờ isLoggingOut
+    console.log("AuthInterceptor: Logout in progress, aborting token refresh for 401 error.");
+    return throwError(() => new HttpErrorResponse({ error: { message: "Logout in progress." }, status: 401, statusText: "Unauthorized" }));
+  }
+
+  if (!refreshTokenInProgress) {
+    refreshTokenInProgress = true;
+    refreshTokenSubject.next(null);
+
+    return authService.attemptRefreshToken().pipe(
+      switchMap((tokenResponse: ApiResponse<LoginResponse>) => {
+        refreshTokenInProgress = false;
+        if (tokenResponse.success && tokenResponse.data?.accessToken) {
+          refreshTokenSubject.next(tokenResponse.data.accessToken);
+          return next(addTokenHeader(request, tokenResponse.data.accessToken));
+        } else {
+          // authService.logout(); // AuthService.attemptRefreshToken đã xử lý logout nếu cần
+          const errorMessage = tokenResponse.message || "Session expired or refresh failed. Please login again.";
+          // Ném lỗi 401 để AuthService.handleError có thể bắt và xử lý (ví dụ: hiển thị toastr)
+          return throwError(() => new HttpErrorResponse({ error: { message: errorMessage }, status: 401, statusText: "Unauthorized" }));
+        }
+      }),
+      catchError((refreshError) => {
+        refreshTokenInProgress = false;
+        // authService.logout(); // AuthService.attemptRefreshToken đã xử lý logout nếu cần
+        return throwError(() => refreshError); // Ném lỗi gốc từ attemptRefreshToken
+      })
+    );
+  } else {
+    return refreshTokenSubject.pipe(
+      filter(token => token != null),
+      take(1),
+      switchMap(newAccessToken => next(addTokenHeader(request, newAccessToken!))) // Thêm ! vì filter đã đảm bảo không null
+    );
+  }
+}
+
+
+
+function handle401Error(request: HttpRequest<any>, next: HttpHandlerFn, authService: AuthService): Observable<HttpEvent<any>> {
+
+
+
+  if (!refreshTokenInProgress) {
+    refreshTokenInProgress = true;
+    refreshTokenSubject.next(null); // Đặt lại subject
+
+    return authService.attemptRefreshToken().pipe(
+      switchMap((tokenResponse: ApiResponse<LoginResponse>) => {
+        refreshTokenInProgress = false;
+        if (tokenResponse.success && tokenResponse.data?.accessToken) {
+          refreshTokenSubject.next(tokenResponse.data.accessToken);
+          return next(addTokenHeader(request, tokenResponse.data.accessToken)); // Thử lại request gốc với token mới
+        } else {
+          // Nếu attemptRefreshToken không thành công (ví dụ: refresh token cũng hết hạn)
+          authService.logout(); // Logout người dùng
+          return throwError(() => new Error("Session expired. Please login again.")); // Ném lỗi mới
+        }
+      }),
+      catchError((err) => {
+        refreshTokenInProgress = false;
+        authService.logout(); // Logout nếu có lỗi trong quá trình refresh
+        return throwError(() => err); // Ném lỗi gốc từ attemptRefreshToken
+      })
+    );
+  } else {
+    // Nếu đang có một quá trình refresh token khác diễn ra, đợi nó hoàn thành
+    return refreshTokenSubject.pipe(
+      filter(token => token != null), // Chờ đến khi refreshTokenSubject có giá trị token mới
+      take(1), // Chỉ lấy giá trị đầu tiên
+      switchMap(jwt => next(addTokenHeader(request, jwt))) // Thử lại request với token mới
+    );
+  }
+}

@@ -23,7 +23,7 @@ export const roleGuard: CanActivateFn = (
     return false;
   }
 
-  const userRoles = authService.getCurrentUser()?.roles || []; // Lấy roles của user hiện tại
+  const userRoles = authService.currentUser()?.roles || []; // Lấy roles của user hiện tại
 
   // Kiểm tra xem user có ít nhất một trong các role mong muốn không
   let hasRequiredRole = false;

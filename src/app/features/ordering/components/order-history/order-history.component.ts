@@ -3,7 +3,7 @@ import { CommonModule, DatePipe, DecimalPipe } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { Page } from '../../../../core/models/page.model'; // Tạo interface Page nếu cần
 import { OrderSummaryResponse } from '../../dto/response/OrderSummaryResponse';
-import { OrderService } from '../../services/order.service';
+import {FarmerOrderSearchParams, OrderService} from '../../services/order.service';
 import { AuthService } from '../../../../core/services/auth.service';
 import { PaginatorComponent } from '../../../../shared/components/paginator/paginator.component';
 import { LoadingSpinnerComponent } from '../../../../shared/components/loading-spinner/loading-spinner.component';
@@ -67,7 +67,14 @@ export class OrderHistoryComponent implements OnInit {
     let apiCall: Observable<PagedApiResponse<OrderSummaryResponse>>;
 
     if (this.isFarmer()) {
-      apiCall = this.orderService.getMyOrdersAsFarmer(page, size, sort);
+      // TẠO OBJECT PARAMS CHO FARMER
+      const farmerParams: FarmerOrderSearchParams = {
+        page: page,
+        size: size,
+        sort: sort
+        // keyword và status sẽ là undefined, nên không được gửi đi (đúng như mong đợi cho trang này)
+      };
+      apiCall = this.orderService.getMyOrdersAsFarmer(farmerParams);
     } else {
       // Mặc định là Buyer (Consumer hoặc Business Buyer)
       apiCall = this.orderService.getMyOrdersAsBuyer(page, size, sort);

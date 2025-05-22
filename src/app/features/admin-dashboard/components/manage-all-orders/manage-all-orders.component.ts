@@ -59,7 +59,7 @@ export class ManageAllOrdersComponent implements OnInit, OnDestroy {
     // Lắng nghe thay đổi filter để load lại
     this.filterForm.valueChanges.pipe(
       debounceTime(500),
-      distinctUntilChanged(),
+      distinctUntilChanged((prev, curr) => JSON.stringify(prev) === JSON.stringify(curr)),
       takeUntil(this.destroy$)
     ).subscribe(() => {
       this.currentPage.set(0);
@@ -143,6 +143,17 @@ export class ManageAllOrdersComponent implements OnInit, OnDestroy {
         }
       });
     }
+  }
+
+  // Thêm hàm reset bộ lọc
+  resetFilters(): void {
+    this.filterForm.reset({
+      keyword: '',
+      status: '',
+      buyerId: '',
+      farmerId: ''
+    });
+    // valueChanges sẽ tự động trigger loadOrders() với giá trị rỗng
   }
 
   // Helper xử lý lỗi

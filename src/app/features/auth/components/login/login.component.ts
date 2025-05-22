@@ -13,7 +13,7 @@ import {
   SocialAuthService,
   SocialUser
 } from '@abacritt/angularx-social-login';
-import {takeUntil} from 'rxjs/operators';
+import {filter, takeUntil} from 'rxjs/operators';
 import {ToastrService} from 'ngx-toastr'; // Đổi đường dẫn nếu cần
 
 @Component({
@@ -56,9 +56,12 @@ export class LoginComponent implements OnInit, OnDestroy  {
     }
     // ****** LẮNG NGHE TRẠNG THÁI SOCIAL AUTH ******
     this.authSubscription = this.socialAuthService.authState
-      .pipe(takeUntil(this.destroy$)) // Sử dụng takeUntil để tự hủy khi component destroy
+      .pipe(
+        takeUntil(this.destroy$),
+        filter(() => !this.authService.isLoggingOut()) // << THÊM DÒNG NÀY
+      )
       .subscribe((user: SocialUser) => {
-        console.log("Social User State Changed:", user);
+        console.log("Social User State Changed (not during logout):", user);
         if (user && user.provider === GoogleLoginProvider.PROVIDER_ID && user.idToken) {
           this.handleGoogleSignIn(user.idToken);
           // Không cần signOut ở đây nữa vì autoLogin=false

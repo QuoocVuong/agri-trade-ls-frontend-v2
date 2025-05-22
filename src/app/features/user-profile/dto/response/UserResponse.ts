@@ -5,7 +5,8 @@ export interface UserResponse {
   fullName: string;
   phoneNumber: string | null;
   avatarUrl: string | null;
-  isActive: boolean;
+  active: boolean;
   roles: string[]; // Danh sách tên role (vd: ["ROLE_CONSUMER", "ROLE_FARMER"])
+
   createdAt: string; // ISO date string
 }

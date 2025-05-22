@@ -5,7 +5,7 @@ import { Router, RouterLink } from '@angular/router';
 import { Page } from '../../../../core/models/page.model';
 import { OrderSummaryResponse } from '../../../ordering/dto/response/OrderSummaryResponse';
 import { OrderResponse } from '../../../ordering/dto/response/OrderResponse'; // Import OrderResponse
-import { OrderService } from '../../../ordering/services/order.service';
+import {FarmerOrderSearchParams, OrderService} from '../../../ordering/services/order.service';
 import { OrderStatusUpdateRequest } from '../../../ordering/dto/request/OrderStatusUpdateRequest'; // Import DTO
 import { ApiResponse, PagedApiResponse } from '../../../../core/models/api-response.model';
 import { LoadingSpinnerComponent } from '../../../../shared/components/loading-spinner/loading-spinner.component';
@@ -95,13 +95,21 @@ export class ManageOrdersComponent implements OnInit, OnDestroy {
     this.isLoading.set(true);
     this.errorMessage.set(null);
     const formValue = this.filterForm.value;
-    const page = this.currentPage();
-    const size = this.pageSize();
-    const sort = this.sort();
-    // TODO: API getMyOrdersAsFarmer cần hỗ trợ filter theo status và keyword
-    // Hiện tại ProductService chưa có, cần bổ sung ở backend và service frontend
+    const params: FarmerOrderSearchParams = { // Sử dụng interface đã định nghĩa
+      page: this.currentPage(),
+      size: this.pageSize(),
+      sort: this.sort(),
+      keyword: formValue.keyword?.trim() || undefined, // undefined nếu rỗng để HttpParams bỏ qua
+      status: formValue.status || undefined          // undefined nếu rỗng
+    };
 
-    this.orderService.getMyOrdersAsFarmer(page, size, sort)
+
+    // Xóa các thuộc tính undefined để không gửi lên API nếu không cần thiết
+    if (!params.keyword) delete params.keyword;
+    if (!params.status) delete params.status;
+
+
+    this.orderService.getMyOrdersAsFarmer(params)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (res) => {

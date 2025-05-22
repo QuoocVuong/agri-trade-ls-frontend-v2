@@ -58,6 +58,12 @@ export const ADMIN_ROUTES: Routes = [
     loadComponent: () => import('./components/manage-roles/manage-roles.component').then(m => m.ManageRolesComponent),
     title: 'Admin - Quản lý Phân quyền'
   },
+
+  {
+    path: 'invoices', // Path: /admin/invoices
+    loadComponent: () => import('./components/manage-invoice-list/manage-invoice-list.component').then(m => m.ManageInvoiceListComponent),
+    title: 'Quản lý Hóa đơn Công nợ'
+  },
   // Redirect mặc định của /admin về /admin/dashboard
   {
     path: '',

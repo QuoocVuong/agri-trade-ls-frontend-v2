@@ -67,16 +67,65 @@
           </div>
           <div>
             <p class="text-base-content/70">Địa chỉ:</p>
-            <p class="font-medium">{{ farmerProfile.address || 'Chưa cập nhật' }}</p>
+            <p class="font-medium">
+              {{ farmerProfile.addressDetail || 'Chưa cập nhật' }}
+              <ng-container *ngIf="farmerProfile.addressDetail">
+                <span *ngIf="wardName()">, {{ wardName() }}</span>
+                <span *ngIf="districtName()">, {{ districtName() }}</span>
+                <span *ngIf="provinceName()">, {{ provinceName() }}</span>
+              </ng-container>
+            </p>
           </div>
           <div>
-            <p class="text-base-content/70">Tỉnh/Thành:</p>
+            <p class="text-base-content/70">Tỉnh/Thành (Mã):</p>
             <p class="font-medium">{{ farmerProfile.provinceCode || 'Chưa cập nhật' }}</p>
           </div>
           <div>
-            <p class="text-base-content/70">Trạng thái:</p>
-            <p class="font-medium">{{ farmerProfile.status || 'Chưa cập nhật' }}</p>
+            <p class="text-base-content/70">Trạng thái hồ sơ:</p>
+            <!-- Sử dụng verificationStatus từ farmerProfile -->
+            <p class="font-medium">{{ getVerificationStatusText(farmerProfile.verificationStatus) || 'Chưa cập nhật' }}</p>
           </div>
+          <div>
+            <p class="text-base-content/70">Mô tả gian hàng:</p>
+            <p class="font-medium whitespace-pre-wrap">{{ farmerProfile.description || 'Chưa cập nhật' }}</p>
+          </div>
+
+          <!-- Hiển thị các trường từ User (nếu bạn muốn lấy từ farmerProfile thay vì profile()) -->
+          <!-- Tuy nhiên, profile() đã có các thông tin này do kế thừa UserResponse -->
+<!--           Ví dụ:-->
+          <div>
+            <p class="text-base-content/70">Họ tên (Nông dân):</p>
+            <p class="font-medium">{{ farmerProfile.fullName || profile()?.fullName || 'Chưa cập nhật' }}</p>
+          </div>
+          <div>
+            <p class="text-base-content/70">Số điện thoại (Nông dân):</p>
+            <p class="font-medium">{{ farmerProfile.phoneNumber || profile()?.phoneNumber || 'Chưa cập nhật' }}</p>
+          </div>
+
+          <div *ngIf="farmerProfile.canSupplyB2b">
+            <p class="text-base-content/70">Có cung cấp B2B:</p>
+            <p class="font-medium">Có</p>
+          </div>
+          <div *ngIf="farmerProfile.canSupplyB2b">
+            <p class="text-base-content/70">Chứng nhận B2B:</p>
+            <p class="font-medium">{{ farmerProfile.b2bCertifications || 'Chưa cập nhật' }}</p>
+          </div>
+          <div *ngIf="farmerProfile.canSupplyB2b && farmerProfile.minB2bOrderValue">
+            <p class="text-base-content/70">Giá trị đơn hàng B2B tối thiểu:</p>
+            <p class="font-medium">{{ farmerProfile.minB2bOrderValue | formatBigDecimal }}</p> <!-- Giả sử là số -->
+          </div>
+
+          <div>
+            <p class="text-base-content/70">Ngày xác minh:</p>
+            <p class="font-medium">
+              {{ farmerProfile.verifiedAt ? (farmerProfile.verifiedAt | date:'dd/MM/yyyy HH:mm') : 'Chưa xác minh' }}
+            </p>
+          </div>
+          <div *ngIf="farmerProfile.verifiedByAdminName">
+            <p class="text-base-content/70">Người duyệt:</p>
+            <p class="font-medium">{{ farmerProfile.verifiedByAdminName }}</p>
+          </div>
+
         </div>
         <div class="mt-4 flex flex-col sm:flex-row gap-2">
           <a
@@ -95,12 +144,14 @@
       </div>
 
       <!-- Business Profile -->
+      <!-- Business Profile -->
       <div *ngIf="profile()?.businessProfile as businessProfile" class="mt-6 pt-6 border-t border-base-300">
         <h3 class="text-lg font-semibold mb-3">Thông tin Doanh nghiệp</h3>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
           <div>
             <p class="text-base-content/70">Tên doanh nghiệp:</p>
-            <p class="font-medium">{{ businessProfile.companyName || 'Chưa cập nhật' }}</p>
+            <!-- SỬA Ở ĐÂY: Sử dụng businessName -->
+            <p class="font-medium">{{ businessProfile.businessName || 'Chưa cập nhật' }}</p>
           </div>
           <div>
             <p class="text-base-content/70">Mã số thuế:</p>
@@ -108,19 +159,46 @@
           </div>
           <div>
             <p class="text-base-content/70">Địa chỉ:</p>
-            <p class="font-medium">{{ businessProfile.address || 'Chưa cập nhật' }}</p>
+            <p class="font-medium">
+              {{ businessProfile.businessAddressDetail || 'Chưa cập nhật' }}
+              <ng-container *ngIf="businessProfile.businessAddressDetail">
+                <!-- Gọi các hàm lấy tên xã/phường, quận/huyện, tỉnh/thành nếu có và cần thiết -->
+                <!-- Giả sử bạn đã có các hàm này trong component hoặc LocationService -->
+                <span *ngIf="businessProfile.wardCode && getWardName(businessProfile.wardCode)">, {{ getWardName(businessProfile.wardCode) }}</span>
+                <span *ngIf="businessProfile.districtCode && getDistrictName(businessProfile.districtCode)">, {{ getDistrictName(businessProfile.districtCode) }}</span>
+                <span *ngIf="businessProfile.businessProvinceCode && getProvinceName(businessProfile.businessProvinceCode)">, {{ getProvinceName(businessProfile.businessProvinceCode) }}</span>
+              </ng-container>
+            </p>
           </div>
           <div>
-            <p class="text-base-content/70">Trạng thái:</p>
-            <p class="font-medium">{{ businessProfile.status || 'Chưa cập nhật' }}</p>
+            <p class="text-base-content/70">Ngành nghề:</p>
+            <p class="font-medium">{{ businessProfile.industry || 'Chưa cập nhật' }}</p>
+          </div>
+          <div>
+            <p class="text-base-content/70">Số điện thoại DN:</p>
+            <p class="font-medium">{{ businessProfile.businessPhone || 'Chưa cập nhật' }}</p>
+          </div>
+          <div>
+            <p class="text-base-content/70">Người liên hệ:</p>
+            <p class="font-medium">{{ businessProfile.contactPerson || 'Chưa cập nhật' }}</p>
+          </div>
+          <div>
+            <p class="text-base-content/70">Ngày đăng ký:</p>
+            <p class="font-medium">{{ businessProfile.createdAt ? (businessProfile.createdAt | date:'dd/MM/yyyy HH:mm') : 'Chưa cập nhật' }}</p>
+
+          </div>
+          <div>
+            <p class="text-base-content/70">Trạng thái hồ sơ:</p>
+            <!-- Trường status không có trong JSON, bạn có thể bỏ qua hoặc hiển thị mặc định -->
+            <p class="font-medium">{{ businessProfile.status || 'Đã Duyệt' }}</p>
           </div>
         </div>
         <div class="mt-4">
           <a
             routerLink="/user/profile/business-profile"
-            class="btn btn-sm btn-link text-primary hover:text-primary-dark transition-colors"
-            aria-label="Xem hoặc sửa hồ sơ doanh nghiệp">
-            Xem/Sửa hồ sơ Doanh nghiệp
+          class="btn btn-sm btn-link text-primary hover:text-primary-dark transition-colors"
+          aria-label="Xem hoặc sửa hồ sơ doanh nghiệp">
+          Xem/Sửa hồ sơ Doanh nghiệp
           </a>
         </div>
       </div>

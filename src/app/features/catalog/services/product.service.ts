@@ -70,11 +70,20 @@ export class ProductService {
 
   // --- Farmer APIs ---
 
-  getMyProducts(pageableParams: { page?: number, size?: number, sort?: string }): Observable<PagedApiResponse<ProductSummaryResponse>> {
+  getMyProducts(params: ProductSearchParams): Observable<PagedApiResponse<ProductSummaryResponse>> {
     let httpParams = new HttpParams();
-    if (pageableParams.page !== undefined) httpParams = httpParams.set('page', pageableParams.page.toString());
-    if (pageableParams.size !== undefined) httpParams = httpParams.set('size', pageableParams.size.toString());
-    if (pageableParams.sort) httpParams = httpParams.set('sort', pageableParams.sort);
+    if (params.page !== undefined) httpParams = httpParams.set('page', params.page.toString());
+    if (params.size !== undefined) httpParams = httpParams.set('size', params.size.toString());
+    if (params.sort) httpParams = httpParams.set('sort', params.sort);
+
+    // THÊM XỬ LÝ CHO KEYWORD VÀ STATUS
+    if (params.keyword) {
+      httpParams = httpParams.set('keyword', params.keyword);
+    }
+    if (params.status) {
+      httpParams = httpParams.set('status', params.status); // Gửi status dưới dạng string
+    }
+
     return this.http.get<PagedApiResponse<ProductSummaryResponse>>(`${this.farmerApiUrl}/me`, { params: httpParams });
   }
 

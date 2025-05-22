@@ -367,31 +367,43 @@ export class OrderDetailComponent implements OnInit, OnDestroy {
   }
   // ************************************
 
-  confirmPaymentByAdmin(orderId: number, method: string): void {
-    if (!this.isAdmin()) return;
-    // Lấy ghi chú hoặc mã giao dịch từ một form/input nếu cần
-    const notes = prompt("Ghi chú xác nhận (tùy chọn):");
-    const transactionRef = prompt("Mã giao dịch ngân hàng (nếu có):");
+  confirmPaymentByAdmin(orderId: number, methodSelectedByAdmin: string, transactionRef?: string, notes?: string): void {
+    if (!this.isAdmin() || !this.order()) return;
 
-    this.isActionLoading.set(true);
-    this.adminOrderingService.confirmOrderPayment(orderId, method as PaymentMethod, { notes, transactionReference: transactionRef })
-      .pipe(
-        takeUntil(this.destroy$),
-        finalize(() => this.isActionLoading.set(false))
-      )
-      .subscribe({
-        next: (res) => {
-          if (res.success && res.data) {
-            this.order.set(res.data);
-            this.toastr.success("Đã xác nhận thanh toán cho đơn hàng!");
-          } else {
-            this.toastr.error(res.message || "Lỗi xác nhận thanh toán.");
+    const order = this.order()!;
+    const paymentMethodConfirmed = methodSelectedByAdmin as PaymentMethod;
+
+    // Thông báo xác nhận
+    let confirmMessage = `Bạn có chắc chắn muốn xác nhận đã nhận thanh toán cho đơn hàng #${order.orderCode} bằng phương thức ${this.getPaymentMethodText(paymentMethodConfirmed)}?`;
+    if (order.paymentMethod === PaymentMethod.INVOICE) {
+      confirmMessage = `Xác nhận khách hàng đã thanh toán công nợ cho đơn hàng #${order.orderCode} bằng ${this.getPaymentMethodText(paymentMethodConfirmed)}?`;
+    }
+
+    if (confirm(confirmMessage)) {
+      this.isActionLoading.set(true);
+      this.adminOrderingService.confirmOrderPayment(orderId, paymentMethodConfirmed, { notes, transactionReference: transactionRef })
+        .pipe(
+          takeUntil(this.destroy$),
+          finalize(() => this.isActionLoading.set(false))
+        )
+        .subscribe({
+          next: (res) => {
+            if (res.success && res.data) {
+              this.order.set(res.data); // Cập nhật lại order với thông tin mới
+              this.toastr.success("Đã xác nhận thanh toán cho đơn hàng!");
+              // Nếu có thông tin bank transfer, có thể cần load lại hoặc ẩn đi
+              if (res.data.paymentStatus === PaymentStatus.PAID) {
+                this.bankTransferInfo.set(null);
+              }
+            } else {
+              this.toastr.error(res.message || "Lỗi xác nhận thanh toán.");
+            }
+          },
+          error: (err) => {
+            this.toastr.error(err.error?.message || "Lỗi kết nối khi xác nhận thanh toán.");
           }
-        },
-        error: (err) => {
-          this.toastr.error(err.error?.message || "Lỗi kết nối khi xác nhận thanh toán.");
-        }
-      });
+        });
+    }
   }
 
   // ****** THÊM CÁC HÀM XỬ LÝ ZOOM ******
@@ -452,6 +464,15 @@ export class OrderDetailComponent implements OnInit, OnDestroy {
           this.toastr.error('Lỗi khi tải hóa đơn.');
         }
       });
+  }
+
+  promptAndConfirmPayment(orderId: number, paymentMethodConfirmedStr: string): void {
+    const paymentMethodConfirmed = paymentMethodConfirmedStr as PaymentMethod;
+    const transactionRef = prompt(`Nhập mã giao dịch/tham chiếu (nếu có) cho phương thức ${this.getPaymentMethodText(paymentMethodConfirmed)}:`);
+    const notes = prompt(`Ghi chú thêm của Admin (tùy chọn):`);
+
+    // Gọi hàm confirmPaymentByAdmin đã có, nhưng truyền paymentMethodConfirmed từ lựa chọn của Admin
+    this.confirmPaymentByAdmin(orderId, paymentMethodConfirmed, transactionRef ?? undefined, notes ?? undefined);
   }
 
   protected readonly HTMLInputElement = HTMLInputElement;

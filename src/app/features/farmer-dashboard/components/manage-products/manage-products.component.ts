@@ -4,7 +4,7 @@ import { ReactiveFormsModule, FormBuilder } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { Page } from '../../../../core/models/page.model';
 import { ProductSummaryResponse } from '../../../catalog/dto/response/ProductSummaryResponse';
-import { ProductService } from '../../../catalog/services/product.service';
+import {ProductSearchParams, ProductService} from '../../../catalog/services/product.service';
 import { ProductStatus, getProductStatusText, getProductStatusCssClass } from '../../../catalog/domain/product-status.enum';
 import { ApiResponse, PagedApiResponse } from '../../../../core/models/api-response.model';
 import { LoadingSpinnerComponent } from '../../../../shared/components/loading-spinner/loading-spinner.component';
@@ -75,7 +75,7 @@ export class ManageProductsComponent implements OnInit, OnDestroy {
     this.isLoading.set(true);
     this.errorMessage.set(null);
     const formValue = this.filterForm.value;
-    const params = {
+    const params: any  = {
       page: this.currentPage(),
       size: this.pageSize(),
       sort: this.sort(),
@@ -83,6 +83,14 @@ export class ManageProductsComponent implements OnInit, OnDestroy {
       // keyword: formValue.keyword || undefined,
       // status: formValue.status || undefined
     };
+    if (formValue.keyword?.trim()) {
+      params.keyword = formValue.keyword.trim();
+    }
+    if (formValue.status) {
+      params.status = formValue.status;
+    }
+
+    this.productService.getMyProducts(params as ProductSearchParams)
 
     // Gọi API lấy sản phẩm CỦA TÔI
     this.productService.getMyProducts(params)

@@ -43,14 +43,38 @@
           Tải hóa đơn (PDF)
         </button>
         <!-- Ví dụ trong order-detail.component.html, khi isAdmin() là true -->
-        <div *ngIf="isAdmin() && o.paymentMethod === 'BANK_TRANSFER' && o.paymentStatus === 'PENDING'">
-          <button class="btn btn-sm btn-success"
-                  (click)="confirmPaymentByAdmin(o.id, 'BANK_TRANSFER')"
-                  [disabled]="isActionLoading()">
-            <span *ngIf="isActionLoading()" class="loading loading-spinner loading-xs"></span>
-            Xác nhận đã nhận Chuyển khoản
-          </button>
-          <!-- (Tùy chọn) Thêm input cho admin ghi chú hoặc mã giao dịch -->
+        <!-- Trong order-detail.component.html -->
+        <div *ngIf="isAdmin() && o.status !== OrderStatusEnum.CANCELLED && o.paymentStatus !== PaymentStatusEnum.PAID">
+          <!-- Nút xác nhận cho BANK_TRANSFER -->
+          <ng-container *ngIf="o.paymentMethod === PaymentMethodEnum.BANK_TRANSFER && (o.paymentStatus === PaymentStatusEnum.PENDING || o.paymentStatus === PaymentStatusEnum.AWAITING_PAYMENT_TERM)">
+            <h4 class="text-sm font-semibold mt-4 mb-2">Xác nhận thanh toán (Chuyển khoản)</h4>
+            <button class="btn btn-sm btn-success"
+                    (click)="promptAndConfirmPayment(o.id, PaymentMethodEnum.BANK_TRANSFER)"
+                    [disabled]="isActionLoading()">
+              <span *ngIf="isActionLoading()" class="loading loading-spinner loading-xs"></span>
+              Xác nhận đã nhận Chuyển khoản
+            </button>
+          </ng-container>
+
+          <!-- Nút xác nhận cho INVOICE (Công nợ) -->
+          <ng-container *ngIf="o.paymentMethod === PaymentMethodEnum.INVOICE && o.paymentStatus === PaymentStatusEnum.AWAITING_PAYMENT_TERM">
+            <h4 class="text-sm font-semibold mt-4 mb-2">Xác nhận thanh toán (Công nợ)</h4>
+            <!-- Cho phép Admin chọn phương thức KH thực trả cho công nợ -->
+            <div class="flex gap-2 items-center">
+              <select #invoicePaymentMethod class="select select-bordered select-sm">
+                <option [value]="PaymentMethodEnum.BANK_TRANSFER">Trả bằng Chuyển khoản</option>
+                <option [value]="PaymentMethodEnum.COD">Trả bằng Tiền mặt</option>
+                <option [value]="PaymentMethodEnum.OTHER">Khác</option>
+              </select>
+              <button class="btn btn-sm btn-success"
+                      (click)="promptAndConfirmPayment(o.id, invoicePaymentMethod.value)"
+                      [disabled]="isActionLoading()">
+                <span *ngIf="isActionLoading()" class="loading loading-spinner loading-xs"></span>
+                Xác nhận trả Công nợ
+              </button>
+            </div>
+          </ng-container>
+          <!-- Bạn có thể thêm các trường hợp khác nếu Admin cần xác nhận cho các phương thức khác -->
         </div>
       </div>
     </div>
@@ -132,6 +156,27 @@
                 <span>Phương thức:</span>
                 <span class="font-medium">{{ getPaymentMethodText(o.paymentMethod) }}</span>
               </div>
+
+              <div class="flex justify-between"> <!-- Thêm dòng này -->
+                <span>Trạng thái TT:</span>
+                <span class="badge badge-sm font-medium" [ngClass]="getPaymentStatusClass(o.paymentStatus)">
+                  {{ getPaymentStatusText(o.paymentStatus) }}
+                </span>
+              </div>
+
+
+              <ng-container *ngIf="o.paymentMethod === PaymentMethodEnum.INVOICE && o.invoiceInfo && o.paymentStatus === PaymentStatusEnum.AWAITING_PAYMENT_TERM">
+                <div class="divider my-1"></div>
+                <div class="p-3 bg-warning/10 rounded-md text-sm">
+                  <p class="font-semibold text-warning">Thông tin Công nợ (Hóa đơn: {{ o.invoiceInfo.invoiceNumber }}):</p>
+                  <p *ngIf="o.invoiceInfo.issueDate">Ngày phát hành HĐ: {{ o.invoiceInfo.issueDate | date:'dd/MM/yyyy' }}</p>
+                  <p *ngIf="o.invoiceInfo.dueDate">Ngày đáo hạn thanh toán: <strong class="text-error">{{ o.invoiceInfo.dueDate | date:'dd/MM/yyyy' }}</strong></p>
+                  <p *ngIf="!o.invoiceInfo.dueDate">Vui lòng thanh toán theo thỏa thuận.</p>
+                  <p class="mt-1">Trạng thái HĐ: <span class="font-medium">{{ o.invoiceInfo.status }}</span></p>
+                  <p class="mt-1">Trạng thái TT Đơn hàng: <span class="font-medium">Chờ thanh toán công nợ</span></p>
+                </div>
+              </ng-container>
+              <!-- Kết thúc hiển thị thông tin công nợ -->
 
 
 

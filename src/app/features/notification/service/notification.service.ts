@@ -71,7 +71,7 @@ export class NotificationService implements OnDestroy {
 
     this.rxStomp.configure({
       brokerURL: this.wsUrl,
-      connectHeaders: { Authorization: `Bearer ${this.authService.getToken() || ''}` },
+      connectHeaders: { Authorization: `Bearer ${this.authService.getAccessToken() || ''}` },
       heartbeatIncoming: 4000,
       heartbeatOutgoing: 4000,
       reconnectDelay: 5000,

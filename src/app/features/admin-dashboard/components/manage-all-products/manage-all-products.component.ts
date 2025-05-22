@@ -80,7 +80,7 @@ export class ManageAllProductsComponent implements OnInit, OnDestroy {
     // Lắng nghe thay đổi filter để load lại
     this.filterForm.valueChanges.pipe(
       debounceTime(500),
-      distinctUntilChanged(),
+      distinctUntilChanged((prev, curr) => JSON.stringify(prev) === JSON.stringify(curr)), // So sánh sâu hơn
       takeUntil(this.destroy$)
     ).subscribe(() => {
       this.currentPage.set(0);
@@ -258,6 +258,18 @@ export class ManageAllProductsComponent implements OnInit, OnDestroy {
     this.isLoading.set(false);
     console.error(err);
   }
+
+  // Thêm hàm reset bộ lọc
+  resetFilters(): void {
+    this.filterForm.reset({
+      keyword: '',
+      status: '',
+      categoryId: '',
+      farmerId: ''
+    });
+    // valueChanges sẽ tự động trigger loadProducts() với giá trị rỗng
+  }
+
 
   trackProductById(index: number, item: ProductSummaryResponse): number {
     return item.id;

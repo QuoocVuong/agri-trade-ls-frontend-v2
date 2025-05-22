@@ -5,7 +5,6 @@ import { Page } from '../../../../core/models/page.model';
 import { UserResponse } from '../../../user-profile/dto/response/UserResponse';
 import { UserProfileResponse } from '../../../user-profile/dto/response/UserProfileResponse'; // Import UserProfileResponse
 import { AdminUserService } from '../../services/admin-user.service'; // Import AdminUserService
-import { ApiResponse, PagedApiResponse } from '../../../../core/models/api-response.model';
 import { LoadingSpinnerComponent } from '../../../../shared/components/loading-spinner/loading-spinner.component';
 import { AlertComponent } from '../../../../shared/components/alert/alert.component';
 import { PaginatorComponent } from '../../../../shared/components/paginator/paginator.component';
@@ -34,7 +33,8 @@ export class ManageUsersComponent implements OnInit {
   // Filter form
   filterForm = this.fb.group({
     keyword: [''],
-    role: [''] // Giá trị rỗng nghĩa là không lọc theo role
+    role: [''], // Giá trị rỗng nghĩa là không lọc theo role
+    isActive: ['']
   });
 
   // Phân trang & Sắp xếp
@@ -76,15 +76,33 @@ export class ManageUsersComponent implements OnInit {
   loadUsers(): void {
     this.isLoading.set(true);
     this.errorMessage.set(null);
+    const formValue = this.filterForm.value;
+
+    let isActiveValue: boolean | undefined = undefined;
+    if (formValue.isActive === 'true') {
+      isActiveValue = true;
+    } else if (formValue.isActive === 'false') {
+      isActiveValue = false;
+    }
+    // Nếu formValue.isActive là chuỗi rỗng '', isActiveValue sẽ là undefined (không lọc)
+
     const params = {
       page: this.currentPage(),
       size: this.pageSize(),
       sort: this.sort(),
-      keyword: this.filterForm.value.keyword || undefined,
-      role: this.filterForm.value.role || undefined // Gửi undefined nếu không chọn role
+      keyword: formValue.keyword?.trim() || undefined,
+      role: formValue.role || undefined, // RoleType hoặc string
+      isActive: isActiveValue  // Truyền giá trị boolean hoặc undefined
     };
 
-    this.adminUserService.getAllUsers(params.page, params.size, params.sort, params.role, params.keyword)
+    this.adminUserService.getAllUsers(
+      params.page,
+      params.size,
+      params.sort,
+      params.role as RoleType | string, // Ép kiểu nếu cần
+      params.keyword,
+      params.isActive // Truyền isActive
+    )
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (res) => {
@@ -184,7 +202,7 @@ export class ManageUsersComponent implements OnInit {
 
   // Cập nhật trạng thái Active/Inactive
   toggleUserStatus(user: UserResponse): void {
-    const newStatus = !user.isActive; // Đảo ngược trạng thái hiện tại
+    const newStatus = !user.active; // Đảo ngược trạng thái hiện tại
     const actionText = newStatus ? 'Kích hoạt' : 'Vô hiệu hóa';
     if (confirm(`Bạn có chắc muốn ${actionText} người dùng "${user.fullName}"?`)) {
       this.isLoading.set(true); // Dùng loading chung

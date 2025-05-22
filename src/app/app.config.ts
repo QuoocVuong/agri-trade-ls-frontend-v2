@@ -40,12 +40,12 @@ export const appConfig: ApplicationConfig = {
             {
               id: GoogleLoginProvider.PROVIDER_ID,
               provider: new GoogleLoginProvider(
-                '1078646222149-c5k0i6kq80cm24ttoq2rjt4er44ao1if.apps.googleusercontent.com' // <<< THAY BẰNG CLIENT ID CỦA BẠN
+                '1078646222149-c5k0i6kq80cm24ttoq2rjt4er44ao1if.apps.googleusercontent.com', // <<< THAY BẰNG CLIENT ID CỦA BẠN
                 // Thêm các tùy chọn khác nếu cần
-                // {
-                //   oneTapEnabled: false, // Tắt One Tap nếu muốn dùng nút bấm truyền thống
-                //   scopes: 'openid profile email'
-                // }
+                {
+                  oneTapEnabled: false, // Tắt One Tap nếu muốn dùng nút bấm truyền thống
+                 // scopes: 'openid profile email'
+                }
               )
             },
             // Thêm các provider khác (Facebook, etc.) ở đây nếu muốn

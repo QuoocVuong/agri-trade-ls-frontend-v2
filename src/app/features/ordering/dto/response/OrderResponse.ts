@@ -7,7 +7,8 @@ import { PaymentMethod } from '../../domain/payment-method.enum';
 import { PaymentStatus } from '../../domain/payment-status.enum';
 import { OrderItemResponse } from './OrderItemResponse';
 import { PaymentResponse } from './PaymentResponse';
-import  BigDecimal  from 'js-big-decimal'; // Hoặc dùng number/string
+import  BigDecimal  from 'js-big-decimal';
+import {InvoiceInfoResponse} from './InvoiceInfoResponse'; // Hoặc dùng number/string
 
 export interface OrderResponse {
   id: number;
@@ -40,6 +41,7 @@ export interface OrderResponse {
   // Details
   orderItems: OrderItemResponse[];
   payments?: PaymentResponse[] | null; // Lịch sử thanh toán (có thể optional)
+  invoiceInfo?: InvoiceInfoResponse | null;
 
   createdAt: string; // ISO date string
   updatedAt: string;

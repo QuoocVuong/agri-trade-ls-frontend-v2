@@ -102,7 +102,7 @@ export const routes: Routes = [
       {
         path: '', // Trang chủ
         loadComponent: () => import('./features/home/home.component').then(m => m.HomeComponent),
-        title: 'AgriTradeLS - Nông sản sạch Lạng Sơn'
+        title: 'AgriTrade - Nông sản sạch Lạng Sơn'
       },
 
       {
@@ -158,6 +158,12 @@ export const routes: Routes = [
       },
       // Thêm các trang public khác nếu có (About, Contact...)
     ]
+  },
+
+  {
+    path: 'payment/vnpay/result', // ĐÚNG: Route này sẽ được VNPAY gọi
+    loadComponent: () => import('./features/ordering/components/vnpay-result/vnpay-result.component').then(m => m.VnpayResultComponent),
+    title: 'Kết quả thanh toán VNPAY'
   },
 
   // --- Not Found & Unauthorized Routes ---

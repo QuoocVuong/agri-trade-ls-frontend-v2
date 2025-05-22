@@ -1,0 +1,44 @@
+<div class="container mx-auto px-4 py-10 text-center min-h-[60vh] flex flex-col items-center justify-center">
+  <div *ngIf="isLoading()" class="animate-pulse">
+    <app-loading-spinner></app-loading-spinner>
+    <p class="mt-4 text-lg">Đang tải kết quả thanh toán...</p>
+  </div>
+
+  <div *ngIf="!isLoading()" class="max-w-md w-full animate-fade-in">
+    <ng-container *ngIf="isSuccess() === true">
+      <div class="text-success mb-6">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      </div>
+      <h1 class="text-2xl font-bold mb-3 text-success">Thanh toán thành công!</h1>
+    </ng-container>
+
+    <ng-container *ngIf="isSuccess() === false">
+      <div class="text-error mb-6">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      </div>
+      <h1 class="text-2xl font-bold mb-3 text-error">Thanh toán thất bại</h1>
+    </ng-container>
+
+    <p class="text-base-content/80 mb-4">{{ paymentStatusMessage() }}</p>
+
+    <div *ngIf="orderCode()" class="text-sm text-base-content/70 mb-2">
+      Mã đơn hàng: <strong>{{ orderCode() }}</strong>
+    </div>
+    <div *ngIf="transactionNo()" class="text-sm text-base-content/70 mb-6">
+      Mã giao dịch VNPAY: <strong>{{ transactionNo() }}</strong>
+    </div>
+
+    <div class="mt-8 space-y-3">
+      <button class="btn btn-primary w-full sm:w-auto" (click)="navigateToOrderDetails()">
+        Xem lịch sử đơn hàng
+      </button>
+      <a routerLink="/" class="btn btn-ghost w-full sm:w-auto block sm:inline-block mt-2 sm:mt-0 sm:ml-2">
+        Về trang chủ
+      </a>
+    </div>
+  </div>
+</div>

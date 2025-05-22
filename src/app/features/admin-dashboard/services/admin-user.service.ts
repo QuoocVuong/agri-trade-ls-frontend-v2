@@ -14,13 +14,16 @@ export class AdminUserService {
   private http = inject(HttpClient);
   private adminUserApiUrl = `${environment.apiUrl}/users`; // API quản lý user của Admin
 
-  getAllUsers(page: number, size: number, sort?: string, role?: RoleType | string, keyword?: string): Observable<PagedApiResponse<UserResponse>> {
+  getAllUsers(page: number, size: number, sort?: string, role?: RoleType | string, keyword?: string, isActive?: boolean): Observable<PagedApiResponse<UserResponse>> {
     let params = new HttpParams()
       .set('page', page.toString())
       .set('size', size.toString());
     if (sort) params = params.set('sort', sort);
     if (role) params = params.set('role', role.toString()); // Thêm filter theo role
     if (keyword) params = params.set('keyword', keyword); // Thêm filter theo keyword
+    if (isActive !== undefined) params = params.set('isActive', isActive.toString()); // Thêm isActive
+    // Đảm bảo URL đúng, có thể là this.adminApiUrl (nếu bạn định nghĩa riêng cho admin)
+    // Hoặc environment.apiUrl + '/admin/users'
     return this.http.get<PagedApiResponse<UserResponse>>(this.adminUserApiUrl, { params });
   }
 

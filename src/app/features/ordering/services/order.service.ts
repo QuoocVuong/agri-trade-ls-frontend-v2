@@ -13,6 +13,16 @@ import {PaymentMethod} from '../domain/payment-method.enum';
 import {PaymentUrlResponse} from '../dto/response/PaymentUrlResponse';
 import {BankTransferInfoResponse} from '../dto/response/BankTransferInfoResponse'; // Import Enum
 
+// Interface cho tham số tìm kiếm đơn hàng của Farmer
+export interface FarmerOrderSearchParams {
+  page?: number;
+  size?: number;
+  sort?: string;
+  keyword?: string | null; // Tìm theo mã đơn hàng, tên người mua
+  status?: OrderStatus | string | null; // Lọc theo OrderStatus
+}
+
+
 @Injectable({
   providedIn: 'root' // Cung cấp ở root vì nhiều nơi có thể cần xem đơn hàng
 })
@@ -70,14 +80,21 @@ export class OrderService {
   }
 
   // --- Farmer APIs ---
-  getMyOrdersAsFarmer(page: number, size: number, sort?: string): Observable<PagedApiResponse<OrderSummaryResponse>> {
-    let params = new HttpParams()
-      .set('page', page.toString())
-      .set('size', size.toString());
-    if (sort) {
-      params = params.set('sort', sort);
+  getMyOrdersAsFarmer(params: FarmerOrderSearchParams): Observable<PagedApiResponse<OrderSummaryResponse>> {
+    let httpParams  = new HttpParams()
+    if (params.page !== undefined) httpParams = httpParams.set('page', params.page.toString());
+    if (params.size !== undefined) httpParams = httpParams.set('size', params.size.toString());
+    if (params.sort) httpParams = httpParams.set('sort', params.sort);
+
+    // THÊM XỬ LÝ CHO KEYWORD VÀ STATUS
+    if (params.keyword?.trim()) { // Kiểm tra trim() để không gửi chuỗi rỗng
+      httpParams = httpParams.set('keyword', params.keyword.trim());
     }
-    return this.http.get<PagedApiResponse<OrderSummaryResponse>>(`${this.farmerOrderApiUrl}/my`, { params });
+    if (params.status) {
+      httpParams = httpParams.set('status', params.status.toString()); // Gửi status dưới dạng string
+    }
+
+    return this.http.get<PagedApiResponse<OrderSummaryResponse>>(`${this.farmerOrderApiUrl}/my`, { params: httpParams });
   }
 
   getFarmerOrderDetails(orderId: number): Observable<ApiResponse<OrderResponse>> {

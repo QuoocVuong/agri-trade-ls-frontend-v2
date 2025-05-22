@@ -2,7 +2,7 @@
   <h1 class="text-3xl font-bold mb-6">Quản lý Sản phẩm</h1>
 
   <!-- Filter Form -->
-  <form [formGroup]="filterForm" class="mb-6 p-4  rounded-box grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+  <form [formGroup]="filterForm" class="mb-6 p-4  rounded-box grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
     <div class="form-control w-full">
       <label class="label"><span class="label-text">Tìm kiếm (Tên, Mô tả)</span></label>
       <input type="text" placeholder="Nhập từ khóa..." class="input input-sm input-bordered w-full" formControlName="keyword" />
@@ -25,7 +25,16 @@
       <label class="label"><span class="label-text">ID Nông dân</span></label>
       <input type="number" placeholder="Nhập ID nông dân" class="input input-sm input-bordered w-full" formControlName="farmerId" />
     </div>
-    <!-- Nút reset có thể thêm ở đây -->
+    <!-- ****** THÊM NÚT XÓA BỘ LỌC ****** -->
+    <div class="form-control w-full">
+      <button type="button" class="btn btn-sm btn-ghost w-full md:w-auto" (click)="resetFilters()">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 mr-1">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+        Xóa bộ lọc
+      </button>
+    </div>
+    <!-- ********************************** -->
   </form>
 
   <!-- Loading / Error / Empty -->

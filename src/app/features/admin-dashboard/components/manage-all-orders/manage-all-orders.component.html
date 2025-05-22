@@ -2,7 +2,7 @@
   <h1 class="text-3xl font-bold mb-6">Quản lý Đơn hàng</h1>
 
   <!-- Filter Form -->
-  <form [formGroup]="filterForm" class="mb-6 p-4  rounded-box grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+  <form [formGroup]="filterForm" class="mb-6 p-4  rounded-box grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
     <div class="form-control w-full">
       <label class="label"><span class="label-text">Tìm kiếm (Mã ĐH, Tên...)</span></label>
       <input type="text" placeholder="Nhập từ khóa..." class="input input-sm input-bordered w-full" formControlName="keyword" />
@@ -22,6 +22,16 @@
       <label class="label"><span class="label-text">ID Nông dân</span></label>
       <input type="number" placeholder="Nhập ID nông dân" class="input input-sm input-bordered w-full" formControlName="farmerId" />
     </div>
+    <!-- ****** THÊM NÚT XÓA BỘ LỌC ****** -->
+    <div class="form-control w-full">
+      <button type="button" class="btn btn-sm btn-ghost w-full md:w-auto" (click)="resetFilters()">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 mr-1">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+        Xóa bộ lọc
+      </button>
+    </div>
+    <!-- ********************************** -->
   </form>
 
   <!-- Loading / Error / Empty -->
@@ -56,8 +66,22 @@
         <td class="text-xs">{{ order.buyerName || 'N/A' }}</td>
         <td class="text-xs">{{ order.farmerName || 'N/A' }}</td>
         <td class="text-right text-xs font-semibold">{{ order.totalAmount | formatBigDecimal:'1.0-0' }} đ</td>
-        <td><span class="badge badge-sm" [ngClass]="getStatusClass(order.status)">{{ getStatusText(order.status) }}</span></td>
-        <td><span class="badge badge-sm" [ngClass]="getPaymentStatusClass(order.paymentStatus)">{{ getPaymentStatusText(order.paymentStatus) }}</span></td>
+        <!-- ... các cột khác ... -->
+        <td>
+  <span
+    class="badge badge-sm whitespace-normal text-xs sm:text-sm px-1.5 sm:px-2.5"
+    [ngClass]="getStatusClass(order.status)">
+    {{ getStatusText(order.status) }}
+  </span>
+        </td>
+        <td>
+  <span
+    class="badge badge-sm whitespace-normal text-xs sm:text-sm px-1.5 sm:px-2.5"
+    [ngClass]="getPaymentStatusClass(order.paymentStatus)">
+    {{ getPaymentStatusText(order.paymentStatus) }}
+  </span>
+        </td>
+        <!-- ... cột hành động ... -->
         <td>
           <div class="dropdown dropdown-left">
             <label tabindex="0" class="btn btn-ghost btn-xs">...</label>

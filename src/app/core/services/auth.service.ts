@@ -16,8 +16,11 @@ import { ResetPasswordRequest } from '../../features/user-profile/dto/request/Re
 import {UserProfileResponse} from '../../features/user-profile/dto/response/UserProfileResponse';
 import {AuthResponse} from '../models/auth-response.model';
 import {SocialAuthService} from '@abacritt/angularx-social-login';
+import {ToastrService} from 'ngx-toastr';
+import {RoleType} from '../../common/model/role-type.enum';
 
 const AUTH_TOKEN_KEY = 'authToken';
+const REFRESH_TOKEN_KEY = 'refreshToken'; // Key cho refresh token
 const CURRENT_USER_KEY = 'currentUser';
 
 // Định nghĩa kiểu cho HttpStatus để dễ sử dụng hơn
@@ -39,31 +42,50 @@ export class AuthService {
   private router = inject(Router);
 
   private socialAuthService = inject(SocialAuthService);
+  private toastr = inject(ToastrService); // Inject ToastrService
+
 
   private apiUrl = `${environment.apiUrl}/auth`;
   private userApiUrl = `${environment.apiUrl}/users`;
 
   // --- State Management với Signals ---
-  private authTokenSignal = signal<string | null>(this.getTokenFromStorage());
+  private authTokenSignal = signal<string | null>(this.getTokenFromStorage(AUTH_TOKEN_KEY));
+  private refreshTokenSignal = signal<string | null>(this.getTokenFromStorage(REFRESH_TOKEN_KEY)); // Signal cho refresh token
   private currentUserSignal = signal<UserResponse | null>(this.getUserFromStorage());
   private loadingSignal = signal<boolean>(false); // Signal cho trạng thái loading
+
+  private rolesSignal = signal<Set<RoleType>>(new Set(this.getUserFromStorage()?.roles as RoleType[] || [])); // << THÊM SIGNAL CHO ROLES
 
   // Public signals
   public readonly currentToken = this.authTokenSignal.asReadonly();
   public readonly currentUser = this.currentUserSignal.asReadonly();
   public readonly isAuthenticated = computed(() => !!this.authTokenSignal());
   public readonly isLoading = this.loadingSignal.asReadonly(); // Signal loading public
+  public readonly roles = this.rolesSignal.asReadonly(); // << PUBLIC READONLY SIGNAL CHO ROLES
+
+  // --- REFRESH TOKEN LOGIC ---
+  private refreshTokenInProgress = false;
+  private refreshTokenSubject: BehaviorSubject<any> = new BehaviorSubject<any>(null);
+  // ---------------------------
+
+  public readonly isLoggingOut = signal(false);
 
   constructor() {
     // Effect để lưu vào localStorage
     effect(() => {
-      const token = this.authTokenSignal();
+      const accessToken = this.authTokenSignal();
+      const refreshToken = this.refreshTokenSignal(); // Lấy refresh token
       const user = this.currentUserSignal();
       if (typeof localStorage !== 'undefined') {
-        if (token) {
-          localStorage.setItem(AUTH_TOKEN_KEY, token);
+        if (accessToken) {
+          localStorage.setItem(AUTH_TOKEN_KEY, accessToken);
         } else {
           localStorage.removeItem(AUTH_TOKEN_KEY);
+        }
+        if (refreshToken) { // LƯU REFRESH TOKEN
+          localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
+        } else {
+          localStorage.removeItem(REFRESH_TOKEN_KEY);
         }
         if (user) {
           localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(user));
@@ -75,10 +97,9 @@ export class AuthService {
   }
 
   // --- Lấy dữ liệu từ localStorage ---
-  private getTokenFromStorage(): string | null {
-    // Kiểm tra window tồn tại cho universal/SSR
+  private getTokenFromStorage(key: string): string | null {
     if (typeof window !== 'undefined' && window.localStorage) {
-      return localStorage.getItem(AUTH_TOKEN_KEY);
+      return localStorage.getItem(key);
     }
     return null;
   }
@@ -122,9 +143,9 @@ export class AuthService {
     return this.http.post<ApiResponse<LoginResponse>>(`${this.apiUrl}/login`, data)
       .pipe(
         tap(response => {
-          if (response.success && response.data?.accessToken) {
+          if (response.success && response.data) {
             // ****** GỌI setSession THAY VÌ SET TRỰC TIẾP ******
-            this.setSession(response.data.accessToken);
+            this.setSession(response.data);
             // Không cần set currentUserSignal ở đây nữa, refreshUserProfile sẽ làm
             // this.currentUserSignal.set(response.data.user);
             // *************************************************
@@ -157,40 +178,64 @@ export class AuthService {
         finalize(() => this.loadingSignal.set(false))
       );
   }
-
+  // --- SỬA HÀM LOGOUT ---
   logout(): void {
-    // Tùy chọn: Gọi API logout của backend nếu có (để blacklist token chẳng hạn)
-    // const logoutUrl = `${environment.apiUrl}/auth/logout`;
-    // this.http.post(logoutUrl, {}).pipe(
-    //   finalize(() => { // Luôn clear data dù API logout thành công hay không
-    //     this.clearAuthData();
-    //     this.router.navigate(['/auth/login']);
-    //   })
-    // ).subscribe();
 
-    // Nếu không có API logout backend:
-// Nếu không có API logout backend, thực hiện logout frontend ngay
-    this.performFrontendLogout();
+    if (this.isLoggingOut()) return; // Tránh gọi logout nhiều lần nếu đang trong quá trình
+
+    this.isLoggingOut.set(true); // Đặt cờ báo đang logout
+    this.loadingSignal.set(true);
+
+    const logoutUrl = `${this.apiUrl}/logout`; // API logout của backend
+    const accessToken = this.getAccessToken();
+    this.loadingSignal.set(true);
+
+    // Gọi API logout của backend trước khi xóa dữ liệu ở client
+    this.http.post<ApiResponse<void>>(logoutUrl, {})
+      .pipe(
+        finalize(() => { // Luôn clear data và điều hướng dù API logout thành công hay không
+        this.performFrontendLogout(); // Gọi hàm logout frontend
+        this.loadingSignal.set(false);
+        this.isLoggingOut.set(false); // Reset cờ sau khi hoàn tất
+      })
+    ).subscribe({
+      next: (res) => {
+        if (res.success) {
+          this.toastr.info('Bạn đã đăng xuất thành công.');
+          console.log('Server confirmed logout, token blacklisted.');
+        } else {
+          // API có thể trả về success=false nếu có lỗi nhẹ, nhưng vẫn nên logout ở client
+          this.toastr.warning(res.message || 'Đăng xuất khỏi server không hoàn toàn thành công, nhưng bạn đã được đăng xuất khỏi ứng dụng.');
+          console.warn('Server logout issue:', res.message);
+        }
+      },
+      error: (err) => {
+        // Lỗi mạng hoặc lỗi server nghiêm trọng, nhưng vẫn logout ở client
+        this.toastr.error('Có lỗi xảy ra khi đăng xuất khỏi server, nhưng bạn đã được đăng xuất khỏi ứng dụng.');
+        console.error('Error during server logout:', err);
+      }
+    });
   }
 
-  // Tách logic logout frontend ra hàm riêng
   private performFrontendLogout(): void {
-    // 1. Đăng xuất khỏi SocialAuthService trước
-    this.socialAuthService.signOut()
-      .then(() => {
-        console.log('User signed out from social provider');
+    this.socialAuthService.signOut(true) // Thêm true để revoke token nếu có thể
+      .then(() => { // Sử dụng .then() để đảm bảo signOut hoàn tất
+        console.log('Social sign out successful.');
       })
       .catch(err => {
-        console.error('Error signing out from social provider:', err);
+        console.warn('Error signing out from social provider:', err);
       })
       .finally(() => {
-        // 2. Luôn xóa dữ liệu ứng dụng và điều hướng sau khi thử signOut
         this.clearAuthData();
-        this.router.navigate(['/auth/login']);
-        console.log('Local auth data cleared and navigated to login');
+        // Chỉ điều hướng nếu không phải đang ở trang login rồi
+        if (!this.router.url.includes('/auth/login')) {
+          this.router.navigate(['/auth/login']);
+        }
+        console.log('Local auth data cleared.');
       });
   }
-  // ****************************
+  // ----------------------
+
 
   // --- Phương thức mới để làm mới thông tin user profile ---
   refreshUserProfile(): Observable<UserResponse | null> {
@@ -213,7 +258,7 @@ export class AuthService {
               phoneNumber: response.data.phoneNumber,
               avatarUrl: response.data.avatarUrl,
               roles: response.data.roles,
-              isActive: response.data.isActive,
+              active: response.data.active,
               createdAt: response.data.createdAt
             };
             this.currentUserSignal.set(basicUserInfo); // Cập nhật signal
@@ -235,14 +280,14 @@ export class AuthService {
   }
 
   // ****** THÊM HÀM LOGIN GOOGLE ******
-  loginWithGoogle(idToken: string): Observable<ApiResponse<AuthResponse>> {
+  loginWithGoogle(idToken: string): Observable<ApiResponse<LoginResponse>> {
     const requestBody = { idToken };
     // Gọi API backend mới tạo
-    return this.http.post<ApiResponse<AuthResponse>>(`${this.apiUrl}/oauth2/google/verify`, requestBody)
+    return this.http.post<ApiResponse<LoginResponse>>(`${this.apiUrl}/oauth2/google/verify`, requestBody)
       .pipe(
         tap(response => {
-          if (response.success && response.data?.accessToken) {
-            this.setSession(response.data.accessToken); // Lưu token JWT trả về
+          if (response.success && response.data) {
+            this.setSession(response.data); // Lưu token JWT trả về
             // Không cần load profile ở đây nữa, setSession sẽ làm nếu cần
             // this.loadUserProfile().subscribe();
           } else {
@@ -256,23 +301,16 @@ export class AuthService {
   // **********************************
 
   // ****** THÊM PHƯƠNG THỨC NÀY ******
-  private setSession(token: string | null): void {
-    if (token) {
-      this.authTokenSignal.set(token);
-      // Tự động tải/làm mới thông tin người dùng sau khi có token
-      this.refreshUserProfile().subscribe({
-        error: (err) => {
-          // Xử lý lỗi nếu không thể tải profile sau khi đăng nhập
-          console.error("Failed to load user profile after setting session:", err);
-          // Có thể cân nhắc logout nếu không lấy được profile
-          // this.logout();
-        }
-      });
+  private setSession(authResult: LoginResponse): void {
+    if (authResult.accessToken && authResult.refreshToken && authResult.user) {
+      this.authTokenSignal.set(authResult.accessToken);
+      this.refreshTokenSignal.set(authResult.refreshToken); // LƯU REFRESH TOKEN
+      this.currentUserSignal.set(authResult.user);
+      // this.isAuthenticated.set(true); // KHÔNG CẦN, computed sẽ tự cập nhật
+      this.rolesSignal.set(new Set(authResult.user.roles as RoleType[])); // << CẬP NHẬT ROLES SIGNAL
     } else {
-      // Nếu token là null (ví dụ: logout), xóa dữ liệu
       this.clearAuthData();
     }
-    // Effect trong constructor sẽ tự động xử lý việc lưu/xóa localStorage
   }
   // **********************************
 
@@ -280,23 +318,81 @@ export class AuthService {
 
   private clearAuthData(): void {
     this.authTokenSignal.set(null);
+    this.refreshTokenSignal.set(null); // XÓA REFRESH TOKEN
     this.currentUserSignal.set(null);
-    // Xóa khỏi localStorage sẽ được thực hiện bởi effect
+    // this.isAuthenticated.set(false); // KHÔNG CẦN
+    this.rolesSignal.set(new Set()); // << RESET ROLES SIGNAL
+    // localStorage sẽ được xóa bởi effect
   }
 
-  getToken(): string | null {
+  getAccessToken(): string | null { // Đổi tên cho rõ ràng
     return this.authTokenSignal();
   }
-
-  getCurrentUser(): UserResponse | null {
-    return this.currentUserSignal();
+  getRefreshToken(): string | null {
+    return this.refreshTokenSignal();
   }
+
+  // --- PHƯƠNG THỨC REFRESH TOKEN ---
+  attemptRefreshToken(): Observable<ApiResponse<LoginResponse>> {
+
+    if (this.isLoggingOut()) { // << NẾU ĐANG LOGOUT, KHÔNG THỬ REFRESH
+      return throwError(() => new Error("Logout in progress, refresh token attempt aborted."));
+    }
+
+    const rToken = this.getRefreshToken();
+    if (!rToken) {
+      // Không gọi logout() trực tiếp ở đây nữa để tránh vòng lặp nếu isLoggingOut chưa kịp set
+      // Interceptor sẽ xử lý việc logout nếu refresh token không có sẵn
+      this.clearAuthData(); // Xóa dữ liệu và để interceptor điều hướng nếu cần
+      this.router.navigate(['/auth/login'], { queryParams: { reason: 'no_refresh_token' } });
+      return throwError(() => new Error("No refresh token available. Please login."));
+    }
+
+    this.refreshTokenInProgress = true; // Đánh dấu đang refresh
+    this.loadingSignal.set(true); // Có thể bật loading chung
+
+    // Gửi refresh token dưới dạng plain text string trong body
+    // Hoặc nếu backend nhận JSON: return this.http.post<ApiResponse<LoginResponse>>(`${this.apiUrl}/refresh-token`, { refreshToken: rToken })
+    return this.http.post<ApiResponse<LoginResponse>>(`${this.apiUrl}/refresh-token`, rToken, {
+      headers: new HttpHeaders({ 'Content-Type': 'text/plain' }) // Nếu backend nhận plain text
+    }).pipe(
+      tap((response: ApiResponse<LoginResponse>) => {
+        if (response.success && response.data) {
+          this.setSession(response.data); // Lưu token mới
+          this.refreshTokenSubject.next(response.data.accessToken); // Thông báo cho các request đang chờ
+        } else {
+          // Refresh thất bại, logout sẽ được gọi bởi interceptor hoặc handleError
+          // Không gọi logout() trực tiếp ở đây để tránh vòng lặp
+          console.warn("Refresh token attempt failed with success=false or no data.");
+          this.clearAuthData(); // Xóa token để lần sau không thử refresh nữa
+          this.router.navigate(['/auth/login'], { queryParams: { reason: 'refresh_failed' } });
+        }
+      }),
+      catchError(error => {
+        // Lỗi khi refresh, logout sẽ được gọi bởi interceptor hoặc handleError
+        console.error("Error during attemptRefreshToken API call:", error);
+        this.clearAuthData();
+        this.router.navigate(['/auth/login'], { queryParams: { reason: 'refresh_error' } });
+        return throwError(() => error);
+      }),
+      finalize(() => {
+        this.refreshTokenInProgress = false;
+        this.loadingSignal.set(false);
+      })
+    );
+  }
+  // -----------------------------
+
+
+  // getCurrentUser(): UserResponse | null {
+  //   return this.currentUserSignal();
+  // }
 
   // Kiểm tra role (dùng cho guard và component logic)
   hasRole(role: string): boolean {
     const user = this.currentUserSignal();
     // Thêm kiểm tra null an toàn
-    return !!user && Array.isArray(user.roles) && user.roles.includes(role);
+    return this.rolesSignal().has(role as RoleType); // Ép kiểu nếu cần, hoặc đảm bảo role truyền vào là RoleType
   }
 
   // Signal kiểm tra role (dùng trong template)
@@ -330,11 +426,16 @@ export class AuthService {
         apiError = { success: false, message: displayMessage, status: error.status, timestamp: new Date().toISOString() };
       }
 
-      // Tự động logout nếu lỗi 401/403 (trừ khi đang ở trang login?)
-      if ((error.status === 401 || error.status === 403) && !this.router.url.includes('/auth/login')) {
-        console.log(`Unauthorized (401) or Forbidden (403) error detected on ${this.router.url}. Logging out.`);
-        this.logout(); // Gọi logout để xóa token và điều hướng
-        // Trả về lỗi để observable dừng lại
+      // Tự động logout nếu lỗi 401/403 (trừ khi đang ở trang login hoặc đang trong quá trình logout)
+      if ((error.status === HttpStatus.UNAUTHORIZED || error.status === HttpStatus.FORBIDDEN) &&
+        !this.router.url.includes('/auth/login') &&
+        !this.isLoggingOut() && // << KHÔNG LOGOUT NẾU ĐANG TRONG QUÁ TRÌNH LOGOUT
+        !error.url?.includes('/api/auth/refresh-token') && // Không logout nếu lỗi từ chính API refresh
+        !error.url?.includes('/api/auth/logout') // << THÊM: Không logout nếu lỗi từ chính API logout
+      ) {
+        console.log(`AuthService.handleError: ${error.status} error on ${this.router.url}. Triggering logout.`);
+        this.logout(); // Gọi logout
+        // Ném lại lỗi để observable dừng lại, nhưng logout đã được trigger
         return throwError(() => apiError);
       }
     }
