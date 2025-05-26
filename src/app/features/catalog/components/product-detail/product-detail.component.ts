@@ -28,6 +28,7 @@ import {
   animate
 } from '@angular/animations';
 import { ChatService } from '../../../interaction/service/ChatService';
+import {AlertComponent} from '../../../../shared/components/alert/alert.component';
 
 @Component({
   selector: 'app-product-detail',
@@ -43,7 +44,8 @@ import { ChatService } from '../../../interaction/service/ChatService';
     ReviewListComponent, // Component danh sách review
     ReviewFormComponent,
     FormatBigDecimalPipe,
-    SafeHtmlPipe
+    SafeHtmlPipe,
+    AlertComponent,
     // Component form review
   ],
   templateUrl: './product-detail.component.html',
@@ -53,9 +55,7 @@ import { ChatService } from '../../../interaction/service/ChatService';
         style({ opacity: 0 }),
         animate('300ms ease-in-out', style({ opacity: 1 }))
       ]),
-      transition(':leave', [
-        animate('300ms ease-in-out', style({ opacity: 0 }))
-      ])
+
     ])
   ]
 })

@@ -11,7 +11,10 @@ import { LoadingSpinnerComponent } from '../../shared/components/loading-spinner
 import { AlertComponent } from '../../shared/components/alert/alert.component';
 import { ProductCardComponent } from '../catalog/components/product-card/product-card.component';
 import {FarmerService} from '../user-profile/services/farmer.service';
-import {FarmerSummaryResponse} from '../user-profile/dto/response/FarmerSummaryResponse'; // Import ProductCard
+import {FarmerSummaryResponse} from '../user-profile/dto/response/FarmerSummaryResponse';
+import {takeUntil} from 'rxjs/operators';
+import {LocationService} from '../../core/services/location.service';
+import {Subject} from 'rxjs'; // Import ProductCard
 
 @Component({
   selector: 'app-home',
@@ -31,6 +34,8 @@ export class HomeComponent implements OnInit {
   private productService = inject(ProductService);
   private farmerService = inject(FarmerService);
   private router = inject(Router);
+  private locationService = inject(LocationService);
+  private destroy$ = new Subject<void>();
 
   // Signals để lưu trữ dữ liệu
   featuredCategories = signal<CategoryResponse[]>([]);
@@ -42,6 +47,10 @@ export class HomeComponent implements OnInit {
   isLoadingProducts = signal(true);
    isLoadingFarmers = signal(true);
   errorMessage = signal<string | null>(null);
+
+
+
+  provinceName = signal<string | null>(null);
 
   // Tham chiếu đến input tìm kiếm trong hero section
   @ViewChild('heroSearchInput') heroSearchInputRef?: ElementRef<HTMLInputElement>;
@@ -148,6 +157,16 @@ export class HomeComponent implements OnInit {
   // Thêm trackBy cho farmer nếu cần
   trackFarmerById(index: number, item: FarmerSummaryResponse): number { // Sửa any thành DTO phù hợp
     return item.userId; // Hoặc item.userId tùy theo DTO
+  }
+
+  loadProvinceName(provinceCode: string | null | undefined): void {
+    if (!provinceCode) {
+      this.provinceName.set('Không xác định');
+      return;
+    }
+    this.locationService.findProvinceName(provinceCode ?? undefined)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(name => this.provinceName.set(name || `Mã ${provinceCode}`));
   }
 
 }

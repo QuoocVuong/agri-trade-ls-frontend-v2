@@ -8,12 +8,14 @@ import { AuthService } from '../../../../core/services/auth.service';
 import {AlertComponent} from '../../../../shared/components/alert/alert.component';
 import {LocationService} from '../../../../core/services/location.service';
 import {switchMap} from 'rxjs/operators';
-import {FormatBigDecimalPipe} from '../../../../shared/pipes/format-big-decimal.pipe'; // Import AuthService
+import {FormatBigDecimalPipe} from '../../../../shared/pipes/format-big-decimal.pipe';
+import {LoadingSpinnerComponent} from '../../../../shared/components/loading-spinner/loading-spinner.component'; // Import AuthService
+import { getVerificationStatusText, getVerificationStatusCssClass } from '../../../../common/model/verification-status.enum';
 
 @Component({
   selector: 'app-profile-view',
   standalone: true,
-  imports: [CommonModule, RouterLink, AlertComponent, FormatBigDecimalPipe],
+  imports: [CommonModule, RouterLink, AlertComponent, FormatBigDecimalPipe, LoadingSpinnerComponent],
   templateUrl: './profile-view.component.html',
 })
 export class ProfileViewComponent implements OnInit {
@@ -30,6 +32,11 @@ export class ProfileViewComponent implements OnInit {
   provinceName = signal<string | null>(null);
   districtName = signal<string | null>(null);
   wardName = signal<string | null>(null);
+
+
+
+
+  getVerificationStatusCssClass = getVerificationStatusCssClass;
 
   // Lấy các signal kiểm tra role từ AuthService
   isFarmer = this.authService.hasRoleSignal('ROLE_FARMER');

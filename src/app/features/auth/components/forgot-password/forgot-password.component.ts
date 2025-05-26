@@ -5,11 +5,12 @@ import { RouterLink } from '@angular/router';
 import { AuthService } from '../../../../core/services/auth.service';
 import { ForgotPasswordRequest } from '../../../user-profile/dto/request//ForgotPasswordRequest';
 import { ApiResponse } from '../../../../core/models/api-response.model';
+import {AlertComponent} from '../../../../shared/components/alert/alert.component';
 
 @Component({
   selector: 'app-forgot-password',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, AlertComponent],
   templateUrl: './forgot-password.component.html',
 })
 export class ForgotPasswordComponent implements OnInit {

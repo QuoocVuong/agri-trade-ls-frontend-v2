@@ -6,11 +6,12 @@ import { AuthService } from '../../../../core/services/auth.service';
 import { UserRegistrationRequest } from '../../../user-profile/dto/request/UserRegistrationRequest';
 import { ApiResponse } from '../../../../core/models/api-response.model';
 import { UserResponse } from '../../../user-profile/dto/response/UserResponse';
+import {AlertComponent} from '../../../../shared/components/alert/alert.component';
 
 @Component({
   selector: 'app-register',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, AlertComponent],
   templateUrl: './register.component.html',
 })
 export class RegisterComponent implements OnInit {

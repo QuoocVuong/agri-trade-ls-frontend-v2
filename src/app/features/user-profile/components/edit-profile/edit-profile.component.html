@@ -1,66 +1,91 @@
-<div class="container mx-auto px-4 py-8 max-w-lg"> <!-- Giới hạn chiều rộng form -->
-  <h1 class="text-3xl font-bold mb-6">Chỉnh sửa hồ sơ</h1>
+<!-- src/app/features/user-profile/components/edit-profile/edit-profile.component.html -->
+<div class="container mx-auto px-4 py-8 md:py-10 lg:py-12 max-w-xl">
+  <header class="text-center mb-10">
+    <h1 class="text-3xl md:text-4xl font-bold text-base-content dark:text-white">
+      Chỉnh Sửa Thông Tin Cá Nhân
+    </h1>
+    <p class="mt-2 text-base-content/70 dark:text-gray-400">
+      Cập nhật thông tin của bạn để mọi người dễ dàng nhận ra bạn hơn.
+    </p>
+  </header>
 
-  <!-- Success Message -->
-  <div *ngIf="successMessage()" class="alert alert-success shadow-lg mb-4">
-    <span>{{ successMessage() }}</span>
-  </div>
-  <!-- Error Message -->
-  <div *ngIf="errorMessage()" class="alert alert-error shadow-lg mb-4">
-    <span>Lỗi: {{ errorMessage() }}</span>
-  </div>
+  <!-- Success/Error Messages -->
+  <app-alert *ngIf="successMessage()" type="success" [message]="successMessage()" class="mb-6"></app-alert>
+  <app-alert *ngIf="errorMessage()" type="error" [message]="errorMessage()" class="mb-6"></app-alert>
 
-  <form [formGroup]="profileForm" (ngSubmit)="onSubmit()" class="card shadow-xl">
-    <div class="card-body">
+  <form [formGroup]="profileForm" (ngSubmit)="onSubmit()"
+        class="card bg-base-100 dark:bg-gray-800 shadow-2xl rounded-xl border border-base-300/30 dark:border-gray-700/30">
+    <div class="card-body p-6 md:p-8 space-y-5">
+
+      <!-- Avatar Preview and Input -->
+      <div class="form-control w-full items-center">
+        <label class="label pb-1 self-start"><span class="label-text font-medium">Ảnh đại diện</span></label>
+        <div class="avatar mb-3">
+          <div class="w-28 h-28 md:w-32 md:h-32 rounded-full ring ring-primary dark:ring-green-400 ring-offset-base-100 dark:ring-offset-gray-800 ring-offset-2 shadow-md">
+            <img [src]="profileForm.get('avatarUrl')?.value || currentUser()?.avatarUrl || 'assets/images/default-avatar.png'"
+                 [alt]="profileForm.get('fullName')?.value || 'Avatar'"
+                 class="object-cover" />
+          </div>
+        </div>
+        <input type="url" placeholder="Nhập URL ảnh đại diện mới"
+               class="input input-bordered w-full max-w-xs text-sm dark:bg-gray-700 dark:border-gray-600"
+               formControlName="avatarUrl"
+               [ngClass]="{'input-error': profileForm.controls['avatarUrl'].invalid && profileForm.controls['avatarUrl'].touched}" />
+        <label class="label h-5 py-0 text-xs text-error self-start" *ngIf="profileForm.controls['avatarUrl'].invalid && profileForm.controls['avatarUrl'].touched">
+          <span *ngIf="profileForm.controls['avatarUrl'].errors?.['maxlength']">URL quá dài.</span>
+          <span *ngIf="profileForm.controls['avatarUrl'].errors?.['pattern']">URL không hợp lệ.</span>
+        </label>
+        <p class="text-xs text-base-content/60 dark:text-gray-500 mt-1 text-center">
+          Dán URL hình ảnh bạn muốn sử dụng. <br class="sm:hidden"/>(Để trống nếu không muốn thay đổi)
+        </p>
+        <!-- TODO: Cân nhắc tích hợp FileUploaderComponent nếu muốn upload trực tiếp -->
+      </div>
+
       <!-- Full Name -->
       <div class="form-control w-full">
-        <label class="label">
-          <span class="label-text">Họ và tên</span>
-        </label>
-        <input type="text" placeholder="Nhập họ tên" class="input input-bordered w-full"
-               formControlName="fullName"
-               [ngClass]="{'input-error': profileForm.controls['fullName'].invalid && profileForm.controls['fullName'].touched}" />
-        <label class="label" *ngIf="profileForm.controls['fullName'].invalid && profileForm.controls['fullName'].touched">
-          <span class="label-text-alt text-error" *ngIf="profileForm.controls['fullName'].errors?.['required']">Họ tên là bắt buộc.</span>
-          <span class="label-text-alt text-error" *ngIf="profileForm.controls['fullName'].errors?.['maxlength']">Họ tên quá dài.</span>
+        <label class="label pb-1"><span class="label-text font-medium">Họ và tên <span class="text-error">*</span></span></label>
+        <div class="relative">
+          <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-base-content/40 dark:text-gray-500">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
+            </svg>
+          </span>
+          <input type="text" placeholder="Nhập họ và tên đầy đủ"
+                 class="input input-bordered w-full pl-10 py-2.5 dark:bg-gray-700 dark:border-gray-600"
+                 formControlName="fullName"
+                 [ngClass]="{'input-error': profileForm.controls['fullName'].invalid && profileForm.controls['fullName'].touched}" />
+        </div>
+        <label class="label h-5 py-0 text-xs text-error" *ngIf="profileForm.controls['fullName'].invalid && profileForm.controls['fullName'].touched">
+          <span *ngIf="profileForm.controls['fullName'].errors?.['required']">Họ tên không được để trống.</span>
+          <span *ngIf="profileForm.controls['fullName'].errors?.['maxlength']">Họ tên quá dài.</span>
         </label>
       </div>
 
       <!-- Phone Number -->
       <div class="form-control w-full">
-        <label class="label">
-          <span class="label-text">Số điện thoại</span>
-        </label>
-        <input type="tel" placeholder="Nhập số điện thoại" class="input input-bordered w-full"
-               formControlName="phoneNumber"
-               [ngClass]="{'input-error': profileForm.controls['phoneNumber'].invalid && profileForm.controls['phoneNumber'].touched}" />
-        <label class="label" *ngIf="profileForm.controls['phoneNumber'].invalid && profileForm.controls['phoneNumber'].touched">
-          <span class="label-text-alt text-error" *ngIf="profileForm.controls['phoneNumber'].errors?.['maxlength']">Số điện thoại quá dài.</span>
-          <!-- Thêm pattern error nếu có -->
-        </label>
-      </div>
-
-      <!-- Avatar URL -->
-      <div class="form-control w-full">
-        <label class="label">
-          <span class="label-text">URL Ảnh đại diện</span>
-        </label>
-        <input type="url" placeholder="Nhập URL ảnh" class="input input-bordered w-full"
-               formControlName="avatarUrl"
-               [ngClass]="{'input-error': profileForm.controls['avatarUrl'].invalid && profileForm.controls['avatarUrl'].touched}" />
-        <!-- Thêm component upload ảnh ở đây nếu làm chức năng upload -->
-        <label class="label" *ngIf="profileForm.controls['avatarUrl'].invalid && profileForm.controls['avatarUrl'].touched">
-          <span class="label-text-alt text-error" *ngIf="profileForm.controls['avatarUrl'].errors?.['maxlength']">URL quá dài.</span>
-          <!-- Thêm pattern error nếu có -->
+        <label class="label pb-1"><span class="label-text font-medium">Số điện thoại</span></label>
+        <div class="relative">
+          <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-base-content/40 dark:text-gray-500">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
+            </svg>
+          </span>
+          <input type="tel" placeholder="Nhập số điện thoại (VD: 09xxxxxxxx)"
+                 class="input input-bordered w-full pl-10 py-2.5 dark:bg-gray-700 dark:border-gray-600"
+                 formControlName="phoneNumber"
+                 [ngClass]="{'input-error': profileForm.controls['phoneNumber'].invalid && profileForm.controls['phoneNumber'].touched}" />
+        </div>
+        <label class="label h-5 py-0 text-xs text-error" *ngIf="profileForm.controls['phoneNumber'].invalid && profileForm.controls['phoneNumber'].touched && profileForm.controls['phoneNumber'].value">
+          <span *ngIf="profileForm.controls['phoneNumber'].errors?.['maxlength']">Số điện thoại quá dài.</span>
+          <span *ngIf="profileForm.controls['phoneNumber'].errors?.['pattern']">Số điện thoại không hợp lệ.</span>
         </label>
       </div>
 
-
-      <div class="card-actions justify-end mt-6">
-        <a routerLink="/user/profile" class="btn btn-ghost">Hủy</a>
-        <button type="submit" class="btn btn-primary" [disabled]="isLoading()">
-          <span *ngIf="isLoading()" class="loading loading-spinner loading-xs"></span>
-          {{ isLoading() ? 'Đang lưu...' : 'Lưu thay đổi' }}
+      <div class="card-actions justify-end mt-8">
+        <a routerLink="/user/profile" class="btn btn-ghost dark:hover:bg-gray-700">Hủy Bỏ</a>
+        <button type="submit" class="btn btn-primary px-8 dark:text-white" [disabled]="isLoading() || profileForm.invalid || !profileForm.dirty">
+          <span *ngIf="isLoading()" class="loading loading-spinner loading-sm"></span>
+          {{ isLoading() ? 'Đang lưu...' : 'Lưu Thay Đổi' }}
         </button>
       </div>
     </div>

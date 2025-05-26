@@ -1,32 +1,74 @@
-<div class="container mx-auto px-4 py-8">
-  <h1 class="text-3xl font-bold mb-6">Sản phẩm yêu thích</h1>
+<!-- src/app/features/interaction/components/favorite-list/favorite-list.component.html -->
+<div class="bg-base-200 dark:bg-gray-900 min-h-screen py-8 md:py-12">
+  <div class="container mx-auto px-4 max-w-6xl">
+    <header class="text-center mb-10 md:mb-12">
+      <h1 class="text-3xl md:text-4xl font-bold text-base-content dark:text-white">
+        <i class="fas fa-heart text-error dark:text-red-400 mr-2"></i>
+        Sản Phẩm Yêu Thích Của Bạn
+      </h1>
+      <p *ngIf="favoritesPage()?.totalElements && favoritesPage()!.totalElements > 0" class="text-base-content/70 dark:text-gray-400 mt-2">
+        Bạn có {{ favoritesPage()?.totalElements }} sản phẩm trong danh sách yêu thích.
+      </p>
+    </header>
 
-  <!-- Loading / Error / Empty -->
-  <div *ngIf="isLoading()" class="text-center py-20"><app-loading-spinner></app-loading-spinner></div>
-  <app-alert *ngIf="errorMessage()" type="error" [message]="errorMessage()"></app-alert>
-  <div *ngIf="!isLoading() && (!favoritesPage() || (favoritesPage()?.content?.length ?? 0) === 0) && !errorMessage()" class="text-center py-10 text-base-content/60">
-    <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-base-content/30 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1"><path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg>
-    <p class="text-lg text-base-content/60">Bạn chưa yêu thích sản phẩm nào.</p>
-    <a routerLink="/products" class="btn btn-sm btn-primary mt-4">Khám phá sản phẩm</a>
+    <!-- Loading State -->
+    <div *ngIf="isLoading()" class="flex justify-center items-center py-24">
+      <app-loading-spinner size="lg"></app-loading-spinner>
+    </div>
+    <!-- Error State -->
+    <app-alert *ngIf="errorMessage() && !isLoading()" type="error" [message]="errorMessage()" class="mb-6 animate-fade-in"></app-alert>
+
+    <!-- Favorite Products Grid / Empty State -->
+    <ng-container *ngIf="!isLoading()">
+      <div *ngIf="favoritesPage() && favoritesPage()!.content.length > 0; else emptyFavorites"
+           class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-10 md:gap-x-8 md:gap-y-12">
+        <app-product-card
+          *ngFor="let product of favoritesPage()?.content; trackBy: trackProductById"
+          [product]="product"
+          (unfavorited)="handleUnfavorited($event)"
+          class="animate-item-in">
+        </app-product-card>
+      </div>
+
+      <!-- Pagination -->
+      <div *ngIf="favoritesPage() && favoritesPage()!.totalPages > 1" class="mt-10 md:mt-12 flex justify-center">
+        <app-paginator
+          [currentPage]="favoritesPage()!.number"
+          [totalPages]="favoritesPage()!.totalPages"
+          (pageChange)="onPageChange($event)">
+        </app-paginator>
+      </div>
+    </ng-container>
+
+    <!-- Empty Favorites Template -->
+    <ng-template #emptyFavorites>
+      <div *ngIf="!isLoading() && !errorMessage()"
+           class="text-center py-20 px-4 border-2 border-dashed border-base-300 dark:border-gray-700 rounded-xl bg-base-100 dark:bg-gray-800/30 animate-fade-in">
+        <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-20 w-20 text-base-content/25 dark:text-gray-600 mb-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+        </svg>
+        <p class="text-xl font-medium text-base-content/80 dark:text-gray-300 mb-4">Danh sách yêu thích của bạn đang trống.</p>
+        <p class="text-sm text-base-content/60 dark:text-gray-400 mb-8">Hãy <i class="fas fa-heart text-error/70"></i> những sản phẩm bạn thích để xem lại sau nhé!</p>
+        <a routerLink="/products" class="btn btn-primary btn-lg rounded-full shadow-lg hover:scale-105 transition-transform px-8 dark:text-white">
+          Khám Phá Sản Phẩm
+        </a>
+      </div>
+    </ng-template>
   </div>
-
-  <!-- Favorite Products Grid -->
-  <div *ngIf="!isLoading() && favoritesPage() && favoritesPage()!.content.length > 0" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 lg:gap-6">
-    <!-- Sử dụng ProductCardComponent để hiển thị -->
-    <app-product-card
-      *ngFor="let product of favoritesPage()?.content; trackBy: trackProductById"
-      [product]="product"
-      (unfavorited)="handleUnfavorited($event)">
-    </app-product-card>
-  </div>
-
-  <!-- Pagination -->
-  <div *ngIf="favoritesPage() && favoritesPage()!.totalPages > 1" class="mt-8 flex justify-center">
-    <app-paginator
-      [currentPage]="favoritesPage()!.number"
-      [totalPages]="favoritesPage()!.totalPages"
-      (pageChange)="onPageChange($event)">
-    </app-paginator>
-  </div>
-
 </div>
+
+<!-- CSS cho animation (có thể đặt trong styles.css hoặc style của component) -->
+<style>
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  .animate-fade-in { animation: fadeIn 0.5s ease-out forwards; }
+
+  @keyframes fadeInUpItem {
+    from { opacity: 0; transform: translateY(15px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .animate-item-in {
+    opacity: 0;
+    animation: fadeInUpItem 0.4s ease-out forwards;
+    /* animation-delay: calc(var(--item-index, 0) * 70ms); /* Ví dụ delay cho từng item */
+  }
+</style>

@@ -1,201 +1,281 @@
-<div class="container mx-auto px-4 py-8">
-  <h1 class="text-3xl font-bold mb-6">Quản lý Sản phẩm</h1>
+<!-- src/app/features/admin-dashboard/components/manage-all-products/manage-all-products.component.html -->
+<div class="bg-base-200 dark:bg-gray-900 min-h-screen py-8 md:py-10">
+  <div class="container mx-auto px-4 max-w-full">
+    <header class="text-center mb-10 md:mb-12">
+      <h1 class="text-3xl md:text-4xl font-bold text-base-content dark:text-white">
+        Quản Lý Toàn Bộ Sản Phẩm
+      </h1>
+      <p class="text-base-content/70 dark:text-gray-400 mt-2">
+        Xem, duyệt, từ chối và quản lý tất cả sản phẩm trên hệ thống.
+      </p>
+    </header>
 
-  <!-- Filter Form -->
-  <form [formGroup]="filterForm" class="mb-6 p-4  rounded-box grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
-    <div class="form-control w-full">
-      <label class="label"><span class="label-text">Tìm kiếm (Tên, Mô tả)</span></label>
-      <input type="text" placeholder="Nhập từ khóa..." class="input input-sm input-bordered w-full" formControlName="keyword" />
+    <!-- Filter Form -->
+    <form [formGroup]="filterForm" class="mb-8 p-5 bg-base-100 dark:bg-gray-800 rounded-xl shadow-lg border border-base-300/30 dark:border-gray-700/30">
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-x-6 gap-y-4 items-end">
+        <div class="form-control w-full">
+          <label class="label pb-1"><span class="label-text font-medium text-base-content dark:text-gray-200">Tìm kiếm</span></label>
+          <input type="text" placeholder="Tên SP, mô tả, slug..."
+                 class="input input-bordered w-full dark:bg-gray-700 dark:border-gray-600 focus:ring-1 focus:ring-primary dark:focus:ring-green-500 rounded-lg"
+                 formControlName="keyword" />
+        </div>
+        <div class="form-control w-full">
+          <label class="label pb-1"><span class="label-text font-medium text-base-content dark:text-gray-200">Trạng thái</span></label>
+          <select class="select select-bordered w-full dark:bg-gray-700 dark:border-gray-600 focus:ring-1 focus:ring-primary dark:focus:ring-green-500 rounded-lg"
+                  formControlName="status">
+            <option value="">Tất cả trạng thái</option>
+            <option *ngFor="let status of productStatuses" [value]="status">{{ getStatusText(status) }}</option>
+          </select>
+        </div>
+        <div class="form-control w-full">
+          <label class="label pb-1"><span class="label-text font-medium text-base-content dark:text-gray-200">Danh mục</span></label>
+          <select class="select select-bordered w-full dark:bg-gray-700 dark:border-gray-600 focus:ring-1 focus:ring-primary dark:focus:ring-green-500 rounded-lg"
+                  formControlName="categoryId">
+            <option value="">Tất cả danh mục</option>
+            <option *ngFor="let cat of categories(); trackBy: trackCategoryById" [value]="cat.id">{{ cat.name }}</option>
+          </select>
+        </div>
+        <div class="form-control w-full">
+          <label class="label pb-1"><span class="label-text font-medium text-base-content dark:text-gray-200">ID Nông dân</span></label>
+          <input type="number" placeholder="Nhập ID nông dân"
+                 class="input input-bordered w-full dark:bg-gray-700 dark:border-gray-600 focus:ring-1 focus:ring-primary dark:focus:ring-green-500 rounded-lg"
+                 formControlName="farmerId" />
+        </div>
+        <button type="button" class="btn btn-ghost lg:self-end w-full lg:w-auto rounded-full text-base-content/70 dark:text-gray-400 hover:bg-base-200 dark:hover:bg-gray-700"
+                (click)="resetFilters()">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+          Xóa Bộ Lọc
+        </button>
+      </div>
+    </form>
+
+    <!-- Loading / Error / Empty States -->
+    <div *ngIf="isLoading() && !productsPage()" class="flex justify-center items-center py-24">
+      <app-loading-spinner size="lg"></app-loading-spinner>
     </div>
-    <div class="form-control w-full">
-      <label class="label"><span class="label-text">Trạng thái</span></label>
-      <select class="select select-sm select-bordered w-full" formControlName="status">
-        <option value="">Tất cả trạng thái</option>
-        <option *ngFor="let status of productStatuses" [value]="status">{{ getStatusText(status) }}</option>
-      </select>
-    </div>
-    <div class="form-control w-full">
-      <label class="label"><span class="label-text">Danh mục</span></label>
-      <select class="select select-sm select-bordered w-full" formControlName="categoryId">
-        <option value="">Tất cả danh mục</option>
-        <option *ngFor="let cat of categories(); trackBy: trackCategoryById" [value]="cat.id">{{ cat.name }}</option>
-      </select>
-    </div>
-    <div class="form-control w-full">
-      <label class="label"><span class="label-text">ID Nông dân</span></label>
-      <input type="number" placeholder="Nhập ID nông dân" class="input input-sm input-bordered w-full" formControlName="farmerId" />
-    </div>
-    <!-- ****** THÊM NÚT XÓA BỘ LỌC ****** -->
-    <div class="form-control w-full">
-      <button type="button" class="btn btn-sm btn-ghost w-full md:w-auto" (click)="resetFilters()">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 mr-1">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+    <app-alert *ngIf="errorMessage() && !isLoading()" type="error" [message]="errorMessage()" class="mb-6 animate-fade-in"></app-alert>
+
+    <ng-container *ngIf="!isLoading()">
+      <div *ngIf="productsPage() && productsPage()!.content.length > 0; else emptyProducts"
+           class="bg-base-100 dark:bg-gray-800 shadow-xl rounded-xl border border-base-300/30 dark:border-gray-700/30 overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="table w-full table-auto">
+            <thead class="bg-base-200 dark:bg-gray-700/50 text-xs uppercase text-base-content/70 dark:text-gray-400">
+            <tr>
+              <th class="p-3 md:p-4 w-[30%]">Sản phẩm</th>
+              <th class="p-3 md:p-4">Nông dân</th>
+              <th class="p-3 md:p-4">Danh mục</th>
+              <th class="p-3 md:p-4 text-right">Giá B2C</th>
+              <th class="p-3 md:p-4 text-right">Giá B2B</th>
+              <th class="p-3 md:p-4 text-right">Tồn kho</th>
+              <th class="p-3 md:p-4 text-center">Trạng thái</th>
+              <th class="p-3 md:p-4">Ngày tạo</th>
+              <th class="p-3 md:p-4 text-center">Hành động</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr *ngFor="let product of productsPage()?.content; trackBy: trackProductById"
+                class="hover:bg-base-200/50 dark:hover:bg-gray-700/50 transition-colors animate-item-in">
+              <td class="p-3 md:p-4">
+                <div class="flex items-center gap-3">
+                  <div class="avatar flex-shrink-0">
+                    <div class="mask mask-squircle w-10 h-10 md:w-12 md:h-12 shadow">
+                      <img [src]="product.thumbnailUrl || 'assets/images/placeholder-image.png'" [alt]="product.name" class="object-cover" />
+                    </div>
+                  </div>
+                  <div>
+                    <a [routerLink]="['/products', product.slug]" target="_blank"
+                       class="font-semibold text-sm md:text-base text-base-content dark:text-white hover:text-primary dark:hover:text-green-400 line-clamp-2 leading-tight"
+                       title="{{ product.name }}">
+                      {{ product.name }}
+                    </a>
+                    <div class="text-xs text-base-content/60 dark:text-gray-500">ID: {{product.id}}</div>
+                    <span *ngIf="product.b2bEnabled" class="badge badge-xs badge-info dark:badge-sky-500 mt-0.5">B2B</span>
+                  </div>
+                </div>
+              </td>
+              <td class="p-3 md:p-4 text-xs md:text-sm align-middle">
+                <a [routerLink]="['/admin/users', product.farmerInfo?.farmerId, 'profile']"
+                   class="link link-hover text-base-content/80 dark:text-gray-300 hover:text-secondary dark:hover:text-teal-400 truncate"
+                   title="Xem hồ sơ nông dân {{ product.farmerInfo?.farmerName }}">
+                  {{ product.farmerInfo?.farmName || product.farmerInfo?.farmerName || 'N/A' }}
+                  <span class="block text-gray-500 dark:text-gray-600 text-[10px]">(ID: {{product.farmerInfo?.farmerId}})</span>
+                </a>
+              </td>
+              <td class="p-3 md:p-4 text-xs md:text-sm text-base-content/80 dark:text-gray-300 align-middle">{{ product.category?.name || 'N/A' }}</td>
+              <td class="p-3 md:p-4 text-xs md:text-sm text-right font-medium text-base-content dark:text-white align-middle">
+                {{ product.price | formatBigDecimal:'1.0-0' }} ₫
+                <span class="block text-xs text-base-content/60 dark:text-gray-500">/ {{ product.unit }}</span>
+              </td>
+              <td class="p-3 md:p-4 text-xs md:text-sm text-right font-medium text-secondary dark:text-teal-400 align-middle">
+                <ng-container *ngIf="product.b2bEnabled && product.b2bBasePrice">
+                  {{ product.b2bBasePrice | formatBigDecimal:'1.0-0' }} ₫
+                  <span class="block text-xs text-base-content/60 dark:text-gray-500">/ {{ product.b2bUnit || product.unit }}</span>
+                </ng-container>
+                <span *ngIf="!product.b2bEnabled || !product.b2bBasePrice" class="text-base-content/50 dark:text-gray-600">N/A</span>
+              </td>
+              <td class="p-3 md:p-4 text-xs md:text-sm text-right font-semibold align-middle"
+                  [class.text-error]="product.stockQuantity < 5" [class.dark:text-red-400]="product.stockQuantity < 5">
+                {{ product.stockQuantity }}
+              </td>
+              <td class="p-3 md:p-4 align-middle text-center">
+                  <span class="badge badge-md font-medium whitespace-nowrap" [ngClass]="getStatusClass(product.status)">
+                    {{ getStatusText(product.status) }}
+                  </span>
+              </td>
+              <td class="p-3 md:p-4 text-xs text-base-content/70 dark:text-gray-400 align-middle">{{ product.createdAt | date:'dd/MM/yy HH:mm' }}</td>
+
+              <td class="p-3 md:p-4 align-middle text-center">
+                <div class="dropdown dropdown-left dropdown-end">
+                  <label tabindex="0" class="btn btn-xs btn-ghost btn-circle text-base-content/70 dark:text-gray-400 hover:bg-base-300 dark:hover:bg-gray-700">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" /></svg>
+                  </label>
+                  <ul tabindex="0" class="dropdown-content z-[1] menu menu-sm p-2 shadow bg-base-100 dark:bg-gray-700 rounded-box w-48 border border-base-300/50 dark:border-gray-600">
+                    <li><a (click)="viewProductDetails(product.id)" class="hover:bg-base-200 dark:hover:bg-gray-600"><i class="fas fa-eye w-4 mr-2 text-info dark:text-sky-400"></i>Xem chi tiết</a></li>
+                    <li *ngIf="product.status === 'PENDING_APPROVAL' || product.status === 'REJECTED'"><a (click)="approveProduct(product.id)" class="text-success dark:text-green-400 hover:bg-success/10 dark:hover:bg-green-500/10"><i class="fas fa-check-circle w-4 mr-2"></i>Duyệt sản phẩm</a></li>
+                    <li *ngIf="product.status === 'PENDING_APPROVAL' || product.status === 'DRAFT' || product.status === 'PUBLISHED'"><a (click)="openRejectModal(product)" class="text-warning dark:text-yellow-400 hover:bg-warning/10 dark:hover:bg-yellow-500/10"><i class="fas fa-times-circle w-4 mr-2"></i>Từ chối sản phẩm</a></li>
+                    <div class="divider my-1"></div>
+                    <li><a (click)="forceDeleteProduct(product.id, product.name)" class="text-error dark:text-red-400 hover:bg-error/10 dark:hover:bg-red-500/10"><i class="fas fa-trash-alt w-4 mr-2"></i>Xóa vĩnh viễn</a></li>
+                  </ul>
+                </div>
+              </td>
+            </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Pagination -->
+      <div *ngIf="productsPage() && productsPage()!.totalPages > 1" class="mt-10 md:mt-12 flex justify-center">
+        <app-paginator
+          [currentPage]="productsPage()!.number"
+          [totalPages]="productsPage()!.totalPages"
+          (pageChange)="onPageChange($event)">
+        </app-paginator>
+      </div>
+    </ng-container>
+
+    <!-- Empty Products Template -->
+    <ng-template #emptyProducts>
+      <div *ngIf="!isLoading() && !errorMessage()"
+           class="text-center py-20 px-4 border-2 border-dashed border-base-300 dark:border-gray-700 rounded-xl bg-base-100 dark:bg-gray-800/30 animate-fade-in">
+        <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-20 w-20 text-base-content/25 dark:text-gray-600 mb-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0v6a2 2 0 01-2 2H6a2 2 0 01-2-2V7m16 0L12 3l-8 4m0 0v6a2 2 0 002 2h12a2 2 0 002-2V7" />
         </svg>
-        Xóa bộ lọc
-      </button>
-    </div>
-    <!-- ********************************** -->
-  </form>
-
-  <!-- Loading / Error / Empty -->
-  <div *ngIf="isLoading() && !productsPage()" class="text-center py-10"><app-loading-spinner></app-loading-spinner></div>
-  <app-alert *ngIf="errorMessage()" type="error" [message]="errorMessage()"></app-alert>
-  <div *ngIf="!isLoading() && (!productsPage() || (productsPage()?.content?.length ?? 0) === 0) && !errorMessage()" class="text-center py-10 text-base-content/60">
-    Không tìm thấy sản phẩm nào phù hợp.
-  </div>
-
-  <!-- Products Table -->
-  <div *ngIf="!isLoading() && productsPage() && productsPage()!.content.length > 0" class="overflow-x-auto rounded-box shadow">
-    <table class="table table-zebra w-full table-sm">
-      <thead>
-      <tr>
-        <th>ID</th>
-        <th>Sản phẩm</th>
-        <th>Nông dân</th>
-        <th>Danh mục</th>
-        <th class="text-right">Giá (B2C)</th>
-        <th class="text-right">Giá (B2B)</th>
-        <th class="text-right">Tồn kho</th>
-        <th class="min-w-[100px]">Trạng thái</th>
-        <th>Ngày tạo</th>
-        <th>Hành động</th>
-      </tr>
-      </thead>
-      <tbody>
-      <tr *ngFor="let product of productsPage()?.content; trackBy: trackProductById" class="hover">
-        <td class="font-mono text-xs">{{ product.id }}</td>
-        <td>
-          <div class="flex items-center space-x-2">
-            <div class="avatar">
-              <div class="mask mask-squircle w-8 h-8">
-                <img [src]="product.thumbnailUrl || 'assets/images/placeholder-image.png'" [alt]="product.name" />
-              </div>
-            </div>
-            <div>
-              <a [routerLink]="['/products', product.slug]" target="_blank" class="font-bold text-xs link link-hover link-primary line-clamp-1" title="{{ product.name }}">{{ product.name }}</a>
-              <p class="text-xs opacity-70">{{ product.slug }}</p>
-              <!-- ****** (TÙY CHỌN) THÊM BADGE B2B ****** -->
-              <span *ngIf="product.b2bEnabled" class="badge badge-xs badge-secondary mt-1">B2B</span>
-              <!-- ************************************ -->
-            </div>
-          </div>
-        </td>
-        <td>
-          <a [routerLink]="['/admin/users', product.farmerInfo?.farmerId, 'profile']" class="link link-hover text-xs"> <!-- Link tới trang admin xem user -->
-            {{ product.farmerInfo?.farmName || product.farmerInfo?.farmerName || 'N/A' }} ({{product.farmerInfo?.farmerId}})
-          </a>
-        </td>
-        <td class="text-xs">{{ product.category?.name || 'N/A' }}</td> <!-- Giả sử summary có category name -->
-        <td class="text-right text-xs font-medium">{{ product.price | formatBigDecimal:'1.0-0' }} đ
-          <span class="opacity-70">/ {{ product.unit }}</span>
-        </td>
-        <!-- ****** THÊM CỘT DỮ LIỆU GIÁ B2B ****** -->
-        <td class="text-right text-xs font-medium">
-          <span *ngIf="product.b2bEnabled && product.b2bBasePrice"> <!-- Kiểm tra cả b2bEnabled và giá -->
-            {{ product.b2bBasePrice | formatBigDecimal:'1.0-0' }} đ
-            <span class="opacity-70">/ {{ product.b2bUnit }}</span>
-          </span>
-          <span *ngIf="!product.b2bEnabled">N/A</span> <!-- Hiển thị N/A nếu không bật B2B -->
-        </td>
-        <!-- *********************************** -->
-        <td class="text-right text-xs">{{ product.stockQuantity }}</td>
-        <td>
-            <span class="badge badge-sm min-w-[100px]" [ngClass]="getStatusClass(product.status)">
-              {{ getStatusText(product.status) }}
-            </span>
-        </td>
-        <td class="text-xs">{{ product.createdAt | date:'dd/MM/yy HH:mm' }}</td>
-        <td>
-          <div class="dropdown dropdown-left">
-            <label tabindex="0" class="btn btn-ghost btn-xs">...</label>
-            <ul tabindex="0" class="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-40 text-xs">
-              <li><a (click)="viewProductDetails(product.id)">Xem chi tiết</a></li>
-              <li *ngIf="product.status === 'PENDING_APPROVAL' || product.status === 'REJECTED'"><a class="text-success" (click)="approveProduct(product.id)">Duyệt</a></li>
-              <li *ngIf="product.status === 'PENDING_APPROVAL' || product.status === 'DRAFT'"><a class="text-warning" (click)="openRejectModal(product)">Từ chối</a></li>
-              <li><a class="text-error" (click)="forceDeleteProduct(product.id, product.name)">Xóa vĩnh viễn</a></li>
-            </ul>
-          </div>
-        </td>
-      </tr>
-      </tbody>
-    </table>
-  </div>
-
-  <!-- Pagination -->
-  <div *ngIf="productsPage() && productsPage()!.totalPages > 1" class="mt-6 flex justify-center">
-    <app-paginator
-      [currentPage]="productsPage()!.number"
-      [totalPages]="productsPage()!.totalPages"
-      (pageChange)="onPageChange($event)">
-    </app-paginator>
-  </div>
-
-  <!-- Modal Xem Chi Tiết Product -->
-  <app-modal title="Chi tiết sản phẩm" [isOpen]="showDetailModal()" (closed)="closeDetailModal()" modalBoxClasses="w-11/12 max-w-3xl">
-    <div *ngIf="selectedProduct() as p" class="text-sm space-y-3 max-h-[70vh] overflow-y-auto p-1">
-      <h2 class="text-xl font-bold">{{ p.name }}</h2>
-      <p><strong>ID:</strong> {{ p.id }} | <strong>Slug:</strong> {{ p.slug }}</p>
-      <p><strong>Nông dân:</strong> {{ p.farmer?.farmName }} (ID: {{ p.farmer?.farmerId }})</p>
-      <p><strong>Danh mục:</strong> {{ p.category?.name }} (ID: {{ p.category?.id }})</p>
-      <p><strong>Trạng thái:</strong> <span class="badge badge-sm"[ngClass]="getStatusClass(p.status)">
-    {{ getStatusText(p.status) }}</span></p>
-      <p *ngIf="p.status === 'REJECTED' && p.rejectReason"><strong>Lý do từ chối:</strong> {{ p.rejectReason }}</p>
-      <p><strong>Giá B2C:</strong> {{ p.price | formatBigDecimal:'1.0-0' }} đ / {{ p.unit }}</p>
-      <p><strong>Tồn kho:</strong> {{ p.stockQuantity }}</p>
-      <p><strong>Rating:</strong> {{ p.averageRating | number:'1.1-1' }} ({{ p.ratingCount }} lượt)</p>
-      <p><strong>Yêu thích:</strong> {{ p.favoriteCount }}</p>
-      <p><strong>Tỉnh:</strong> {{ p.provinceCode }}</p>
-      <p><strong>Ngày tạo:</strong> {{ p.createdAt | date:'dd/MM/yyyy HH:mm' }}</p>
-      <p><strong>Cập nhật:</strong> {{ p.updatedAt | date:'dd/MM/yyyy HH:mm' }}</p>
-      <div class="mt-2"><strong>Mô tả:</strong> <div class="prose prose-sm max-w-none" [innerHTML]="p.description | safeHtml"></div></div>
-
-      <!-- B2B Info -->
-      <div *ngIf="p.b2bEnabled" class="mt-4 pt-4 border-t">
-        <h4 class="font-semibold">Thông tin B2B:</h4>
-        <p>Đơn vị B2B: {{ p.b2bUnit || 'N/A' }}</p>
-        <p>SL tối thiểu: {{ p.minB2bQuantity }}</p>
-        <p>Giá B2B cơ bản: {{ p.b2bBasePrice | formatBigDecimal:'1.0-0' }} đ</p>
-        <div *ngIf="p.pricingTiers && p.pricingTiers.length > 0">
-          <h5 class="text-xs font-semibold mt-1">Bậc giá:</h5>
-          <ul><li *ngFor="let tier of p.pricingTiers" class="text-xs ml-2">Từ {{tier.minQuantity}}: {{tier.pricePerUnit | formatBigDecimal:'1.0-0'}} đ</li></ul>
-        </div>
-        <p *ngIf="!selectedProduct()?.pricingTiers || selectedProduct()!.pricingTiers!.length === 0" class="text-sm italic text-base-content/70 mt-1">
-          Không có bậc giá B2B nào được cấu hình.
-        </p>
+        <p class="text-xl font-medium text-base-content/80 dark:text-gray-300 mb-4">Không tìm thấy sản phẩm nào.</p>
+        <p class="text-sm text-base-content/60 dark:text-gray-400">Vui lòng thử điều chỉnh bộ lọc hoặc kiểm tra lại từ khóa tìm kiếm của bạn.</p>
       </div>
-      <div *ngIf="!selectedProduct()?.b2bEnabled" class="mt-4 pt-4 border-t">
-        <p class="text-sm italic text-base-content/70">Sản phẩm này không được cấu hình bán B2B.</p>
-      </div>
-
-      <!-- Images -->
-      <div class="mt-4 pt-4 border-t">
-        <h4 class="font-semibold mb-2">Hình ảnh:</h4>
-        <div class="flex flex-wrap gap-2">
-          <img *ngFor="let img of p.images" [src]="img.imageUrl" [alt]="p.name" class="w-20 h-20 object-cover rounded border" [class.border-primary]="img.isDefault" [title]="'Default: '+img.isDefault + ' | Order: '+img.displayOrder">
-        </div>
-      </div>
-    </div>
-    <div modal-actions>
-      <button class="btn btn-sm" (click)="closeDetailModal()">Đóng</button>
-    </div>
-  </app-modal>
-
-  <!-- Modal Nhập Lý Do Từ Chối -->
-  <app-modal title="Từ chối sản phẩm" [isOpen]="showRejectModal()" (closed)="closeRejectModal()" [showActions]="true" [hideDefaultCancel]="true">
-    <div *ngIf="productToReject() as prodInfo">
-      <p class="mb-4 text-sm">Nhập lý do từ chối cho sản phẩm: <br><strong>ID:</strong> {{ prodInfo.id }} <br><strong>Tên:</strong> {{ prodInfo.name }}</p>
-      <!-- Dòng 156 -->
-      <textarea class="textarea textarea-bordered w-full h-24"
-                placeholder="Nhập lý do..."
-                [formControl]="rejectReasonControl"></textarea> <!-- Binding bằng formControl -->
-    </div>
-    <div modal-actions>
-      <button class="btn btn-sm btn-ghost" (click)="closeRejectModal()">Hủy</button>
-      <button class="btn btn-sm btn-error" (click)="rejectProduct()" [disabled]="isLoading()">
-        <span *ngIf="isLoading()" class="loading loading-spinner loading-xs"></span>
-        Xác nhận Từ chối
-      </button>
-    </div>
-  </app-modal>
-
+    </ng-template>
+  </div>
 </div>
+
+<!-- Modal Xem Chi Tiết Product -->
+<app-modal title="Chi Tiết Sản Phẩm" [isOpen]="showDetailModal()" (closed)="closeDetailModal()"
+           modalBoxClasses="w-11/12 max-w-3xl bg-base-100 dark:bg-gray-800 rounded-xl">
+  <div *ngIf="selectedProduct() as p" class="space-y-4 text-sm text-base-content dark:text-gray-200 animate-fade-in">
+    <div class="flex items-center gap-4 pb-4 border-b border-base-300 dark:border-gray-700">
+      <div class="avatar">
+        <div class="w-24 h-24 rounded-lg shadow-md">
+          <img [src]="p.images?.[0]?.imageUrl || 'assets/images/placeholder-image.png'" [alt]="p.name" class="object-cover" />
+        </div>
+      </div>
+      <div>
+        <h2 class="text-2xl font-bold">{{ p.name }}</h2>
+        <p class="text-xs text-base-content/70 dark:text-gray-400">ID: {{ p.id }} | Slug: {{ p.slug }}</p>
+        <span class="badge badge-md mt-1" [ngClass]="getStatusClass(p.status)">{{ getStatusText(p.status) }}</span>
+        <p *ngIf="p.status === 'REJECTED' && p.rejectReason" class="text-xs text-error dark:text-red-400 mt-1">Lý do từ chối: {{ p.rejectReason }}</p>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2">
+      <p><strong class="font-medium w-32 inline-block">Nông dân:</strong> {{ p.farmer?.farmName || p.farmer?.farmerName }} (ID: {{ p.farmer?.farmerId }})</p>
+      <p><strong class="font-medium w-32 inline-block">Danh mục:</strong> {{ p.category?.name }} (ID: {{ p.category?.id }})</p>
+      <p><strong class="font-medium w-32 inline-block">Giá B2C:</strong> {{ p.price | formatBigDecimal:'1.0-0' }} ₫ / {{ p.unit }}</p>
+      <p><strong class="font-medium w-32 inline-block">Tồn kho:</strong> {{ p.stockQuantity }}</p>
+      <p><strong class="font-medium w-32 inline-block">Đánh giá:</strong> {{ p.averageRating | number:'1.1-1' }} ({{ p.ratingCount }} lượt)</p>
+      <p><strong class="font-medium w-32 inline-block">Yêu thích:</strong> {{ p.favoriteCount }}</p>
+      <p><strong class="font-medium w-32 inline-block">Tỉnh/Thành:</strong> {{ p.provinceCode || 'N/A' }}</p>
+      <p><strong class="font-medium w-32 inline-block">Ngày tạo:</strong> {{ p.createdAt | date:'dd/MM/yyyy HH:mm' }}</p>
+      <p class="md:col-span-2"><strong class="font-medium w-32 inline-block align-top">Cập nhật:</strong> {{ p.updatedAt | date:'dd/MM/yyyy HH:mm' }}</p>
+    </div>
+
+    <div class="mt-3 pt-3 border-t border-base-300 dark:border-gray-700">
+      <h4 class="font-semibold text-base mb-1">Mô tả sản phẩm:</h4>
+      <div class="prose prose-sm dark:prose-invert max-w-none text-base-content/90 dark:text-gray-300" [innerHTML]="p.description | safeHtml"></div>
+    </div>
+
+    <div *ngIf="p.b2bEnabled" class="mt-3 pt-3 border-t border-base-300 dark:border-gray-700">
+      <h4 class="font-semibold text-base text-info dark:text-sky-400 mb-2">Thông tin B2B:</h4>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1 text-sm">
+        <p><strong class="font-medium w-36 inline-block">Đơn vị B2B:</strong> {{ p.b2bUnit || 'N/A' }}</p>
+        <p><strong class="font-medium w-36 inline-block">SL B2B tối thiểu:</strong> {{ p.minB2bQuantity ?? 'N/A' }}</p>
+        <p><strong class="font-medium w-36 inline-block">Giá B2B cơ bản:</strong> {{ p.b2bBasePrice | formatBigDecimal:'1.0-0' }} ₫</p>
+      </div>
+      <div *ngIf="p.pricingTiers && p.pricingTiers.length > 0" class="mt-2">
+        <h5 class="text-xs font-semibold text-info dark:text-sky-400 mb-1">Bậc giá B2B:</h5>
+        <ul class="list-disc list-inside text-xs ml-4 space-y-0.5">
+          <li *ngFor="let tier of p.pricingTiers">
+            Từ {{tier.minQuantity}} {{p.b2bUnit || p.unit}}: <span class="font-medium">{{tier.pricePerUnit | formatBigDecimal:'1.0-0'}} ₫</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <div *ngIf="p.images && p.images.length > 0" class="mt-3 pt-3 border-t border-base-300 dark:border-gray-700">
+      <h4 class="font-semibold text-base mb-2">Hình ảnh sản phẩm:</h4>
+      <div class="flex flex-wrap gap-2">
+        <div *ngFor="let img of p.images" class="relative">
+          <img [src]="img.imageUrl" [alt]="p.name + ' image'" class="w-20 h-20 object-cover rounded-md border border-base-300 dark:border-gray-600 shadow-sm">
+          <span *ngIf="img.isDefault" class="badge badge-xs badge-primary absolute -top-1 -right-1 dark:badge-success text-white">Mặc định</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div modal-actions class="mt-6">
+    <button class="btn btn-sm btn-ghost rounded-full dark:hover:bg-gray-700" (click)="closeDetailModal()">Đóng</button>
+  </div>
+</app-modal>
+
+<!-- Modal Nhập Lý Do Từ Chối -->
+<app-modal title="Từ Chối Duyệt Sản Phẩm" [isOpen]="showRejectModal()" (closed)="closeRejectModal()"
+           [showActions]="true" [hideDefaultCancel]="true"
+           modalBoxClasses="w-11/12 max-w-lg bg-base-100 dark:bg-gray-800 rounded-xl">
+  <div *ngIf="productToReject() as prodInfo" class="space-y-4 animate-fade-in">
+    <p class="text-sm text-base-content dark:text-gray-200">
+      Nhập lý do từ chối cho sản phẩm: <br>
+      <strong class="text-base-content dark:text-white">ID: {{ prodInfo.id }}</strong> -
+      <strong class="text-base-content dark:text-white">{{ prodInfo.name }}</strong>
+    </p>
+    <textarea class="textarea textarea-bordered w-full h-28 dark:bg-gray-700 dark:border-gray-600 focus:ring-1 focus:ring-warning dark:focus:ring-yellow-500"
+              placeholder="Ví dụ: Hình ảnh không rõ ràng, mô tả thiếu thông tin, sản phẩm không phù hợp..."
+              [formControl]="rejectReasonControl"></textarea>
+    <label class="label h-5 py-0 text-xs text-error" *ngIf="rejectReasonControl.invalid && rejectReasonControl.touched">
+      Vui lòng nhập lý do (ít nhất 10 ký tự).
+    </label>
+  </div>
+  <div modal-actions class="flex gap-3 mt-6">
+    <button class="btn btn-sm btn-ghost rounded-full dark:hover:bg-gray-700" (click)="closeRejectModal()">Hủy</button>
+    <button class="btn btn-sm btn-error rounded-full px-6 text-white" (click)="rejectProduct()"
+            [disabled]="isLoading() || rejectReasonControl.invalid">
+      <span *ngIf="isLoading()" class="loading loading-spinner loading-xs"></span>
+      Xác Nhận Từ Chối
+    </button>
+  </div>
+</app-modal>
+
+<!-- CSS cho animation (có thể đặt trong styles.css hoặc style của component) -->
+<style>
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  .animate-fade-in { animation: fadeIn 0.5s ease-out forwards; }
+
+  @keyframes fadeInUpItem {
+    from { opacity: 0; transform: translateY(15px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .animate-item-in {
+    opacity: 0;
+    animation: fadeInUpItem 0.4s ease-out forwards;
+  }
+</style>

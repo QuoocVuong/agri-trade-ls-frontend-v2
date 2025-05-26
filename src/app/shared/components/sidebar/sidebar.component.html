@@ -1,202 +1,77 @@
-
-
-<aside class="fixed inset-y-0 left-0 w-64 bg-gray-100 dark:bg-gray-900 transform transition-transform duration-300 ease-in-out z-50 lg:static lg:translate-x-0 lg:shadow-none" [ngClass]="{'-translate-x-full': !isMenuOpen(), 'translate-x-0 shadow-xl': isMenuOpen() && !isDesktopView(),
-  'top-0 inset-y-0': isDesktopView(),
+<!-- src/app/shared/components/sidebar/sidebar.component.html -->
+<aside
+  class="fixed inset-y-0 left-0 z-40 w-64 bg-base-100 dark:bg-gray-800 shadow-xl transform transition-transform duration-300 ease-in-out print:hidden
+         lg:static lg:translate-x-0 lg:shadow-none lg:border-r lg:border-base-300 dark:lg:border-gray-700"
+  [ngClass]="{
+    '-translate-x-full': !isMenuOpen() && !isDesktopView(),
+    'translate-x-0': isMenuOpen() || isDesktopView(),
+    'top-0 h-screen': isDesktopView(),
     'top-16 h-[calc(100vh-4rem)]': !isDesktopView()
-                                                   }">
-  <!-- Nút toggle cho di động -->
-<!--  <div class="lg:hidden flex justify-between items-center p-4 border-b border-base-300">-->
-<!--    <span class="font-bold text-lg">Menu</span>-->
-<!--    <button (click)="toggleMenu()" class="btn btn-ghost">-->
-<!--      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">-->
-<!--        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>-->
-<!--      </svg>-->
-<!--    </button>-->
-<!--  </div>-->
+  }">
 
-  <!-- Menu content -->
-  <div class="p-4 lg:p-6 overflow-y-auto h-full">
-    <div class="font-bold text-xl mb-6 text-center lg:text-left lg:hidden"> <!-- Hiển thị chữ Menu trên mobile khi mở -->
-      Menu
+  <div class="flex flex-col h-full">
+    <!-- (Optional) Header cho Sidebar (ví dụ: Logo nhỏ hoặc tên User) -->
+    <div class="p-4 border-b border-base-200 dark:border-gray-700 lg:hidden">
+      <a routerLink="/" class="btn btn-ghost normal-case text-xl font-bold text-primary dark:text-green-400" (click)="onMenuItemClick()">
+        AgriTrade
+      </a>
     </div>
-    <div class="font-bold text-xl mb-4 hidden lg:block">Menu</div> <!-- Giữ lại cho desktop -->
-    <ul class="menu w-full space-y-1">
-      <!-- User Menu -->
-      <ng-container *ngIf="menuType === 'user'">
 
-        <li>
-          <a routerLink="/user/profile" routerLinkActive="active" (click)="onMenuItemClick()" class="flex items-center gap-3 py-3 px-4 rounded-lg hover:text-primary transition-colors">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
-            Trang cá nhân
-          </a>
-        </li>
-        <li>
-          <a routerLink="/user/orders" routerLinkActive="active" (click)="onMenuItemClick()" class="flex items-center gap-3 py-3 px-4 rounded-lg  hover:text-primary transition-colors">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
-            Đơn hàng của tôi
-          </a>
-        </li>
-        <li>
-          <a routerLink="/user/addresses" routerLinkActive="active" (click)="onMenuItemClick()" class="flex items-center gap-3 py-3 px-4 rounded-lg  hover:text-primary transition-colors">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path></svg>
-            Sổ địa chỉ
-          </a>
-        </li>
-        <li>
-          <a routerLink="/user/favorites" routerLinkActive="active" (click)="onMenuItemClick()" class="flex items-center gap-3 py-3 px-4 rounded-lg  hover:text-primary transition-colors">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
-            Sản phẩm yêu thích
-          </a>
-        </li>
-        <li>
-          <a routerLink="/user/my-reviews" routerLinkActive="active" (click)="onMenuItemClick()" class="flex items-center gap-3 py-3 px-4 rounded-lg  hover:text-primary transition-colors">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.518 4.674a1 1 0 00.95.69h4.91c.969 0 1.371 1.24.588 1.81l-3.974 2.89a1 1 0 00-.364 1.118l1.518 4.674c.3.921-.755 1.688-1.538 1.118l-3.974-2.89a1 1 0 00-1.175 0l-3.974 2.89c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.364-1.118l-3.974-2.89c-.783-.57-.38-1.81.588-1.81h4.91a1 1 0 00.95-.69l1.518-4.674z" />
-            </svg>
-            Danh Sách Review
-          </a>
-        </li>
+    <!-- Menu Content - Cho phép cuộn nếu nhiều mục -->
+    <nav class="flex-grow p-3 md:p-4 space-y-1 overflow-y-auto custom-scrollbar">
+      <ul class="menu w-full text-base-content dark:text-gray-300">
 
-        <li *ngIf="!isFarmer()">
-          <a routerLink="/user/profile/farmer-profile" (click)="onMenuItemClick()" class="flex items-center gap-3 py-3 px-4 rounded-lg  hover:text-primary transition-colors">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
-            Đăng ký bán hàng
-          </a>
-        </li>
-        <li *ngIf="!isBusinessBuyer()">
-          <a routerLink="/user/profile/business-profile" (click)="onMenuItemClick()" class="flex items-center gap-3 py-3 px-4 rounded-lg  hover:text-primary transition-colors">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
-            Đăng ký doanh nghiệp
-          </a>
-        </li>
-      </ng-container>
+        <!-- User Menu -->
+        <ng-container *ngIf="menuType === 'user'">
+          <li><app-sidebar-item icon="fas fa-user-circle" link="/user/profile" label="Trang Cá Nhân" (itemClick)="onMenuItemClick()"></app-sidebar-item></li>
+          <li><app-sidebar-item icon="fas fa-receipt" link="/user/orders" label="Đơn Hàng Của Tôi" (itemClick)="onMenuItemClick()"></app-sidebar-item></li>
+          <li><app-sidebar-item icon="fas fa-map-marker-alt" link="/user/addresses" label="Sổ Địa Chỉ" (itemClick)="onMenuItemClick()"></app-sidebar-item></li>
+          <li><app-sidebar-item icon="fas fa-heart" link="/user/favorites" label="Sản Phẩm Yêu Thích" (itemClick)="onMenuItemClick()"></app-sidebar-item></li>
+          <li><app-sidebar-item icon="fas fa-star-half-alt" link="/user/my-reviews" label="Đánh Giá Của Tôi" (itemClick)="onMenuItemClick()"></app-sidebar-item></li>
+          <li class="menu-title"><span class="text-xs text-base-content/50 dark:text-gray-500">Mở Rộng</span></li>
+          <li *ngIf="!isFarmer()"><app-sidebar-item icon="fas fa-store" link="/user/profile/farmer-profile" label="Đăng Ký Bán Hàng" (itemClick)="onMenuItemClick()" itemClass="hover:bg-success/10 text-success"></app-sidebar-item></li>
+          <li *ngIf="!isBusinessBuyer()"><app-sidebar-item icon="fas fa-briefcase" link="/user/profile/business-profile" label="Đăng Ký Doanh Nghiệp" (itemClick)="onMenuItemClick()" itemClass="hover:bg-info/10 text-info"></app-sidebar-item></li>
+        </ng-container>
 
-      <!-- Farmer Menu -->
-      <ng-container *ngIf="menuType === 'farmer'">
-        <li>
-          <a routerLink="/farmer/dashboard" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" (click)="onMenuItemClick()" class="flex items-center gap-3 py-3 px-4 rounded-lg hover:text-primary transition-colors">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2m-6 0h14m-4 4H4m0 4h16m-4 4H4"></path></svg>
-            Bảng điều khiển
-          </a>
-        </li>
-        <li>
-          <a routerLink="/farmer/products" routerLinkActive="active" (click)="onMenuItemClick()" class="flex items-center gap-3 py-3 px-4 rounded-lg  hover:text-primary transition-colors">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0v6a2 2 0 01-2 2H6a2 2 0 01-2-2V7m16 0L12 3l-8 4"></path></svg>
-            Tất cả Sản Phẩm
-          </a>
-        </li>
-        <li>
-          <a routerLink="/farmer/products/new" routerLinkActive="active" (click)="onMenuItemClick()" class="flex items-center gap-3 py-3 px-4 rounded-lg  hover:text-primary transition-colors">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0v6a2 2 0 01-2 2H6a2 2 0 01-2-2V7m16 0L12 3l-8 4"></path></svg>
-            Thêm sản phẩm mới
-          </a>
-        </li>
-        <li>
-          <a routerLink="/farmer/orders" routerLinkActive="active" (click)="onMenuItemClick()" class="flex items-center gap-3 py-3 px-4 rounded-lg  hover:text-primary transition-colors">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
-            Đơn hàng
-          </a>
-        </li>
-        <li>
-          <a routerLink="/farmer/reviews" routerLinkActive="active" (click)="onMenuItemClick()" class="flex items-center gap-3 py-3 px-4 rounded-lg  hover:text-primary transition-colors">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.783-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path></svg>
-            Đánh giá
-          </a>
-        </li>
-        <li>
-          <a routerLink="/farmer/profile" routerLinkActive="active" (click)="onMenuItemClick()" class="flex items-center gap-3 py-3 px-4 rounded-lg hover:text-primary transition-colors">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
-            Hồ sơ gian hàng
-          </a>
-        </li>
-      </ng-container>
+        <!-- Farmer Menu -->
+        <ng-container *ngIf="menuType === 'farmer'">
+          <li><app-sidebar-item icon="fas fa-tachometer-alt" link="/farmer/dashboard" label="Bảng Điều Khiển" [exactMatch]="true" (itemClick)="onMenuItemClick()"></app-sidebar-item></li>
+          <li><app-sidebar-item icon="fas fa-box-open" link="/farmer/products" label="Quản Lý Sản Phẩm" (itemClick)="onMenuItemClick()"></app-sidebar-item></li>
+          <li><app-sidebar-item icon="fas fa-plus-circle" link="/farmer/products/new" label="Thêm Sản Phẩm Mới" (itemClick)="onMenuItemClick()"></app-sidebar-item></li>
+          <li><app-sidebar-item icon="fas fa-file-invoice-dollar" link="/farmer/orders" label="Quản Lý Đơn Hàng" (itemClick)="onMenuItemClick()"></app-sidebar-item></li>
+          <li><app-sidebar-item icon="fas fa-comments" link="/farmer/reviews" label="Đánh Giá Sản Phẩm" (itemClick)="onMenuItemClick()"></app-sidebar-item></li>
+          <li><app-sidebar-item icon="fas fa-user-cog" link="/farmer/profile" label="Hồ Sơ Gian Hàng" (itemClick)="onMenuItemClick()"></app-sidebar-item></li>
+        </ng-container>
 
-      <!-- Admin Menu -->
-      <ng-container *ngIf="menuType === 'admin'">
-        <li>
-          <a routerLink="/admin/dashboard" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" (click)="onMenuItemClick()" class="flex items-center gap-3 py-3 px-4 rounded-lg  hover:text-primary transition-colors">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2m-6 0h14m-4 4H4m0 4h16m-4 4H4"></path></svg>
-            Bảng điều khiển
-          </a>
-        </li>
-        <li>
-          <a routerLink="/admin/users" routerLinkActive="active" (click)="onMenuItemClick()" class="flex items-center gap-3 py-3 px-4 rounded-lg  hover:text-primary transition-colors">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
-            Quản lý người dùng
-          </a>
-        </li>
-        <li>
-          <a routerLink="/admin/farmers/pending" routerLinkActive="active" (click)="onMenuItemClick()" class="flex items-center gap-3 py-3 px-4 rounded-lg  hover:text-primary transition-colors">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
-            Duyệt nông dân
-          </a>
-        </li>
-        <li>
-          <a routerLink="/admin/categories" routerLinkActive="active" (click)="onMenuItemClick()" class="flex items-center gap-3 py-3 px-4 rounded-lg hover:text-primary transition-colors">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
-            Quản lý danh mục
-          </a>
-        </li>
-        <li>
-          <a routerLink="/admin/products" routerLinkActive="active" (click)="onMenuItemClick()" class="flex items-center gap-3 py-3 px-4 rounded-lg  hover:text-primary transition-colors">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0v6a2 2 0 01-2 2H6a2 2 0 01-2-2V7m16 0L12 3l-8 4"></path></svg>
-            Quản lý sản phẩm
-          </a>
-        </li>
-        <li>
-          <a routerLink="/admin/orders" routerLinkActive="active" (click)="onMenuItemClick()" class="flex items-center gap-3 py-3 px-4 rounded-lg  hover:text-primary transition-colors">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
-            Quản lý đơn hàng
-          </a>
-        </li>
+        <!-- Admin Menu -->
+        <ng-container *ngIf="menuType === 'admin'">
+          <li><app-sidebar-item icon="fas fa-chart-line" link="/admin/dashboard" label="Bảng Điều Khiển" [exactMatch]="true" (itemClick)="onMenuItemClick()"></app-sidebar-item></li>
+          <li><app-sidebar-item icon="fas fa-users-cog" link="/admin/users" label="Quản Lý Người Dùng" (itemClick)="onMenuItemClick()"></app-sidebar-item></li>
+          <li><app-sidebar-item icon="fas fa-user-check" link="/admin/farmers/pending" label="Duyệt Nông Dân" (itemClick)="onMenuItemClick()"></app-sidebar-item></li>
+          <li><app-sidebar-item icon="fas fa-sitemap" link="/admin/categories" label="Quản Lý Danh Mục" (itemClick)="onMenuItemClick()"></app-sidebar-item></li>
+          <li><app-sidebar-item icon="fas fa-boxes" link="/admin/products" label="Quản Lý Sản Phẩm" (itemClick)="onMenuItemClick()"></app-sidebar-item></li>
+          <li><app-sidebar-item icon="fas fa-file-alt" link="/admin/orders" label="Quản Lý Đơn Hàng" (itemClick)="onMenuItemClick()"></app-sidebar-item></li>
+          <li><app-sidebar-item icon="fas fa-file-invoice" link="/admin/invoices" label="Quản Lý Hóa Đơn" (itemClick)="onMenuItemClick()"></app-sidebar-item></li>
+          <li><app-sidebar-item icon="fas fa-star" link="/admin/reviews/pending" label="Quản Lý Đánh Giá" (itemClick)="onMenuItemClick()"></app-sidebar-item></li>
+          <li><app-sidebar-item icon="fas fa-user-shield" link="/admin/roles" label="Quản Lý Phân Quyền" (itemClick)="onMenuItemClick()"></app-sidebar-item></li>
+        </ng-container>
 
-        <!-- ****** THÊM MỤC MENU MỚI CHO QUẢN LÝ HÓA ĐƠN ****** -->
+        <!-- Common Menu Items for all dashboard types -->
+        <div class="divider my-3 dark:border-gray-700"></div>
+        <li><app-sidebar-item icon="fas fa-comments" link="/chat" label="Tin Nhắn" (itemClick)="onMenuItemClick()"></app-sidebar-item></li>
         <li>
-          <a routerLink="/admin/invoices" routerLinkActive="active" (click)="onMenuItemClick()" class="flex items-center gap-3 py-3 px-4 rounded-lg  hover:text-primary transition-colors">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-            </svg>
-            Quản lý Hóa đơn
+          <a (click)="logout()" class="flex items-center gap-3 py-2.5 px-4 rounded-lg hover:bg-error/10 hover:text-error dark:hover:bg-red-500/20 dark:hover:text-red-400 transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+            Đăng Xuất
           </a>
         </li>
-        <!-- ****************************************************** -->
-
-        <li>
-          <a routerLink="/admin/reviews/pending" routerLinkActive="active" (click)="onMenuItemClick()" class="flex items-center gap-3 py-3 px-4 rounded-lg  hover:text-primary transition-colors">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
-            Quản lý đánh giá
-          </a>
-        </li>
-        <li>
-          <a routerLink="/admin/roles" routerLinkActive="active" (click)="onMenuItemClick()" class="flex items-center gap-3 py-3 px-4 rounded-lg  hover:text-primary transition-colors">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11c0 1.104-.896 2-2 2s-2-.896-2-2 2-4 2-4 2 2.896 2 4zm0 0c0 1.104.896 2 2 2s2-.896 2-2-2-4-2-4-2 2.896-2 4zm-6 7v-2a4 4 0 014-4h4a4 4 0 014 4v2"></path></svg>
-            Quản lý phân quyền
-          </a>
-        </li>
-      </ng-container>
-
-      <!-- Common Menu -->
-      <li>
-        <a routerLink="/chat" routerLinkActive="active" (click)="onMenuItemClick()" class="flex items-center gap-3 py-3 px-4 rounded-lg  hover:text-primary transition-colors">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path></svg>
-          Tin nhắn
-        </a>
-      </li>
-      <li>
-        <a (click)="logout()" class="flex items-center gap-3 py-3 px-4 rounded-lg hover:bg-error hover:text-error-content  transition-colors">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
-          Đăng xuất
-        </a>
-      </li>
-    </ul>
+      </ul>
+    </nav>
   </div>
 </aside>
 
-<!-- Overlay for mobile menu -->
-<!-- Sử dụng isMenuOpen() từ service -->
+<!-- Overlay for mobile menu (khi sidebar không phải static và đang mở) -->
 <div *ngIf="isMenuOpen() && !isDesktopView()"
-     class="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden
-            top-16 <!-- Overlay cũng bắt đầu từ dưới header -->
-           "
-     (click)="sidebarService.close()"></div>
+     class="fixed inset-0 bg-black/40 dark:bg-black/60 z-30 lg:hidden top-16"
+     (click)="sidebarService.close()">
+</div>

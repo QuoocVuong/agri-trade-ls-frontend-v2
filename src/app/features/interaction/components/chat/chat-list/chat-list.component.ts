@@ -16,11 +16,12 @@ import { LoadingSpinnerComponent } from '../../../../../shared/components/loadin
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import {AuthService} from '../../../../../core/services/auth.service';
+import {TimeAgoPipe} from '../../../../../shared/pipes/time-ago.pipe';
 
 @Component({
   selector: 'app-chat-list',
   standalone: true,
-  imports: [CommonModule, LoadingSpinnerComponent, DatePipe],
+  imports: [CommonModule, LoadingSpinnerComponent, DatePipe, TimeAgoPipe],
   templateUrl: './chat-list.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush
 })

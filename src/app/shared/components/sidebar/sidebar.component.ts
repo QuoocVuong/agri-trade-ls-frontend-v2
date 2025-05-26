@@ -3,11 +3,12 @@ import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { CommonModule } from '@angular/common';
 import {SidebarService} from '../../../core/services/sidebar.service';
+import {SidebarItemComponent} from '../sidebar-item/sidebar-item.component';
 
 @Component({
   selector: 'app-sidebar',
   standalone: true,
-  imports: [CommonModule, RouterLink, RouterLinkActive],
+  imports: [CommonModule, RouterLink, RouterLinkActive, SidebarItemComponent],
   templateUrl: './sidebar.component.html',
 })
 export class SidebarComponent {

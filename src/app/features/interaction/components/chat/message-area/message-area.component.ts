@@ -27,11 +27,14 @@ import {MessageType} from '../../../domain/message-type.enum';
 import {AlertComponent} from '../../../../../shared/components/alert/alert.component';
 import {PagedApiResponse} from '../../../../../core/models/api-response.model';
 import {UserInfoSimpleResponse} from '../../../../user-profile/dto/response/UserInfoSimpleResponse';
+import {TimeAgoPipe} from '../../../../../shared/pipes/time-ago.pipe';
+import {ActivatedRoute, RouterLink} from '@angular/router';
+import {routes} from '../../../../../app.routes';
 
 @Component({
   selector: 'app-message-area',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, LoadingSpinnerComponent, DatePipe, AlertComponent],
+  imports: [CommonModule, ReactiveFormsModule, LoadingSpinnerComponent, DatePipe, AlertComponent, TimeAgoPipe, RouterLink],
   templateUrl: './message-area.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush // Sử dụng OnPush
 })
@@ -46,6 +49,7 @@ export class MessageAreaComponent implements OnChanges, OnDestroy  {
   private fb = inject(FormBuilder);
   private destroy$ = new Subject<void>();
   private cdr = inject(ChangeDetectorRef);
+  private route = inject(ActivatedRoute);
 
   messages = signal<ChatMessageResponse[]>([]);
   isLoading = this.chatService.isLoadingMessages;
@@ -286,5 +290,29 @@ export class MessageAreaComponent implements OnChanges, OnDestroy  {
   trackMessageById(index: number, message: ChatMessageResponse): number | string {
     // Dùng ID thật nếu có, hoặc ID tạm thời + sentAt để đảm bảo unique key
     return message.id > 0 ? message.id : `${message.id}-${message.sentAt}`;
+  }
+  shouldShowAvatar(currentIndex: number): boolean {
+    if (currentIndex === 0) return true; // Luôn hiện avatar cho tin nhắn đầu tiên của người khác
+    const currentMessage = this.messages()[currentIndex];
+    const previousMessage = this.messages()[currentIndex - 1];
+    // Hiện avatar nếu người gửi khác với tin nhắn trước, hoặc là tin nhắn đầu tiên của người đó trong một chuỗi
+    return currentMessage.sender?.id !== previousMessage?.sender?.id;
+  }
+  autoResizeTextarea(textarea: HTMLTextAreaElement): void {
+    textarea.style.height = 'auto'; // Reset chiều cao
+    textarea.style.height = textarea.scrollHeight + 'px'; // Đặt chiều cao mới
+  }
+  sendMessageOnEnter(event: KeyboardEvent): void {
+    if (event.key === 'Enter' && !event.shiftKey) { // Gửi khi nhấn Enter (không phải Shift+Enter)
+      event.preventDefault(); // Ngăn xuống dòng mặc định
+      this.sendMessage();
+    }
+  }
+  onScroll(event: Event): void {
+    const element = event.target as HTMLElement;
+    // Nếu cuộn lên gần đầu và còn tin nhắn cũ, thì load thêm
+    if (element.scrollTop < 50 && this.hasMoreMessages() && !this.isLoadingMore() && !this.isLoading()) {
+      this.loadPreviousMessages();
+    }
   }
 }

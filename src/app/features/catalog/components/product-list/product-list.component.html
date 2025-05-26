@@ -95,15 +95,15 @@
         </span>
       </h2>
       <!-- Sắp xếp -->
-      <!--      <select class="select select-sm select-bordered w-full sm:w-48 rounded-full focus:ring-2 focus:ring-primary"-->
-      <!--              (change)="onSortChange($event)"-->
-      <!--              aria-label="Sắp xếp sản phẩm">-->
-      <!--        <option disabled selected>Sắp xếp theo</option>-->
-      <!--        <option value="createdAt,desc">Mới nhất</option>-->
-      <!--        <option value="price,asc">Giá tăng dần</option>-->
-      <!--        <option value="price,desc">Giá giảm dần</option>-->
-      <!--        <option value="averageRating,desc">Đánh giá cao</option>-->
-      <!--      </select>-->
+            <select class="select select-sm select-bordered w-full sm:w-48 rounded-full focus:ring-2 focus:ring-primary"
+                    (change)="onSortChange($event)"
+                    aria-label="Sắp xếp sản phẩm">
+              <option disabled selected>Sắp xếp theo</option>
+<!--              <option value="createdAt,desc">Mới nhất</option>-->
+              <option value="price,asc">Giá tăng dần</option>
+              <option value="price,desc">Giá giảm dần</option>
+              <option value="averageRating,desc">Đánh giá cao</option>
+            </select>
     </div>
 
     <!-- Loading/Error/Empty States -->

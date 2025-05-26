@@ -139,4 +139,9 @@ export class AddressListComponent implements OnInit {
       return cachedName$;
     }
 
+  // ... trong AddressListComponent
+  trackAddressById(index: number, item: Address): number {
+    return item.id;
+  }
+
   }

@@ -26,7 +26,7 @@ type ReviewListMode = 'product' | 'my' | 'admin_manage'| 'farmer_product_reviews
 @Component({
   selector: 'app-review-list',
   standalone: true,
-  imports: [CommonModule, LoadingSpinnerComponent, AlertComponent, PaginatorComponent, DatePipe, RouterLink],
+  imports: [CommonModule, LoadingSpinnerComponent, AlertComponent, PaginatorComponent, DatePipe, RouterLink, TimeAgoPipe],
   templateUrl: './review-list.component.html',
 })
 export class ReviewListComponent implements OnInit, OnChanges {
@@ -212,4 +212,5 @@ import { ReviewStatus } from '../../../../common/model/review-status.enum';
 import { Observable } from 'rxjs';
 import {AdminInteractionService} from '../../../admin-dashboard/services/admin-interaction.service';
 import {Router, RouterLink} from '@angular/router';
+import {TimeAgoPipe} from '../../../../shared/pipes/time-ago.pipe';
 //import { PagedApiResponse } from '../../../../core/models/api-response.model';

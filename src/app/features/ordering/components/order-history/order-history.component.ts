@@ -114,4 +114,9 @@ export class OrderHistoryComponent implements OnInit {
     this.router.navigate([basePath, orderId]);
     // Hoặc dùng order code: this.router.navigate([basePath, 'code', orderCode]);
   }
+
+  // ... trong OrderHistoryComponent
+  trackOrderById(index: number, item: OrderSummaryResponse): number {
+    return item.id;
+  }
 }

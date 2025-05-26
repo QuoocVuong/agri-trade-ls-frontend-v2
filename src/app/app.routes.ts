@@ -143,6 +143,28 @@ export const routes: Routes = [
         title: 'Danh sách Nhà bán'
       },
 
+      // THÊM CÁC ROUTE MỚI Ở ĐÂY
+      {
+        path: 'about-us', // URL: /about-us
+        loadComponent: () => import('./features/public-pages/about-us/about-us.component').then(m => m.AboutUsComponent),
+        title: 'Về chúng tôi - AgriTrade'
+      },
+      {
+        path: 'contact', // URL: /contact
+        loadComponent: () => import('./features/public-pages/contact/contact.component').then(m => m.ContactComponent),
+        title: 'Liên hệ - AgriTrade'
+      },
+      {
+        path: 'policy', // URL: /policy
+        loadComponent: () => import('./features/public-pages/policy/policy.component').then(m => m.PolicyComponent),
+        title: 'Chính sách - AgriTrade'
+      },
+      {
+        path: 'terms', // URL: /terms
+        loadComponent: () => import('./features/public-pages/terms/terms.component').then(m => m.TermsComponent),
+        title: 'Điều khoản dịch vụ - AgriTrade'
+      },
+
 
       {
         path: 'unauthorized',

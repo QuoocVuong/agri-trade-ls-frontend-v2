@@ -1,101 +1,94 @@
-<form [formGroup]="addressForm" (ngSubmit)="onSubmit()">
-  <!-- Thông báo lỗi chung của form -->
-  <app-alert *ngIf="errorMessage()" type="error" [message]="errorMessage()" class="mb-4 text-sm p-2"></app-alert>
+<!-- src/app/features/user-profile/components/address-form/address-form.component.html -->
+<form [formGroup]="addressForm" (ngSubmit)="onSubmit()" class="space-y-4">
+  <app-alert *ngIf="errorMessage()" type="error" [message]="errorMessage()" class="mb-3 text-sm p-2.5"></app-alert>
 
-  <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1"> <!-- Giảm gap-y -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3">
     <!-- Full Name -->
     <div class="form-control w-full">
-      <label class="label py-1"><span class="label-text text-xs font-medium">Họ và tên người nhận <span class="text-error">*</span></span></label>
-      <input type="text" placeholder="Nhập họ tên" class="input input-sm input-bordered w-full"
+      <label class="label pb-1"><span class="label-text font-medium text-sm">Họ và tên người nhận <span class="text-error">*</span></span></label>
+      <input type="text" placeholder="Nguyễn Văn A" class="input input-bordered w-full dark:bg-gray-700 dark:border-gray-600"
              formControlName="fullName"
              [ngClass]="{'input-error': addressForm.controls['fullName'].invalid && addressForm.controls['fullName'].touched}" />
-      <label class="label py-0 h-4" *ngIf="addressForm.controls['fullName'].invalid && addressForm.controls['fullName'].touched">
-        <span class="label-text-alt text-error text-xs" *ngIf="addressForm.controls['fullName'].errors?.['required']">Bắt buộc.</span>
-        <span class="label-text-alt text-error text-xs" *ngIf="addressForm.controls['fullName'].errors?.['maxlength']">Tên quá dài.</span>
+      <label class="label h-5 py-0 text-xs text-error" *ngIf="addressForm.controls['fullName'].invalid && addressForm.controls['fullName'].touched">
+        <span *ngIf="addressForm.controls['fullName'].errors?.['required']">Không được để trống.</span>
+        <span *ngIf="addressForm.controls['fullName'].errors?.['maxlength']">Tên quá dài.</span>
       </label>
     </div>
 
     <!-- Phone Number -->
     <div class="form-control w-full">
-      <label class="label py-1"><span class="label-text text-xs font-medium">Số điện thoại <span class="text-error">*</span></span></label>
-      <input type="tel" placeholder="Nhập số điện thoại" class="input input-sm input-bordered w-full"
+      <label class="label pb-1"><span class="label-text font-medium text-sm">Số điện thoại <span class="text-error">*</span></span></label>
+      <input type="tel" placeholder="09xxxxxxxx" class="input input-bordered w-full dark:bg-gray-700 dark:border-gray-600"
              formControlName="phoneNumber"
              [ngClass]="{'input-error': addressForm.controls['phoneNumber'].invalid && addressForm.controls['phoneNumber'].touched}" />
-      <label class="label py-0 h-4" *ngIf="addressForm.controls['phoneNumber'].invalid && addressForm.controls['phoneNumber'].touched">
-        <span class="label-text-alt text-error text-xs" *ngIf="addressForm.controls['phoneNumber'].errors?.['required']">Bắt buộc.</span>
-        <span class="label-text-alt text-error text-xs" *ngIf="addressForm.controls['phoneNumber'].errors?.['pattern']">SĐT không hợp lệ.</span>
-        <span class="label-text-alt text-error text-xs" *ngIf="addressForm.controls['phoneNumber'].errors?.['maxlength']">SĐT quá dài.</span>
+      <label class="label h-5 py-0 text-xs text-error" *ngIf="addressForm.controls['phoneNumber'].invalid && addressForm.controls['phoneNumber'].touched">
+        <span *ngIf="addressForm.controls['phoneNumber'].errors?.['required']">Không được để trống.</span>
+        <span *ngIf="addressForm.controls['phoneNumber'].errors?.['pattern']">Số điện thoại không hợp lệ.</span>
       </label>
     </div>
   </div>
 
   <!-- Province -->
-  <div class="form-control w-full mt-1">
-    <label class="label py-1"><span class="label-text text-xs font-medium">Tỉnh/Thành phố <span class="text-error">*</span></span></label>
-    <select class="select select-sm select-bordered w-full" formControlName="provinceCode"
+  <div class="form-control w-full">
+    <label class="label pb-1"><span class="label-text font-medium text-sm">Tỉnh/Thành phố <span class="text-error">*</span></span></label>
+    <select class="select select-bordered w-full dark:bg-gray-700 dark:border-gray-600" formControlName="provinceCode"
             [ngClass]="{'select-error': addressForm.controls['provinceCode'].invalid && addressForm.controls['provinceCode'].touched}">
-      <option [ngValue]="null" disabled>Chọn Tỉnh/Thành</option>
-      <option *ngFor="let province of (provinces$ | async)" [value]="province.idProvince">{{ province.name }}</option> <!-- Sử dụng idProvince -->
+      <option [ngValue]="null" disabled>-- Chọn Tỉnh/Thành --</option>
+      <option *ngFor="let province of (provinces$ | async)" [value]="province.idProvince">{{ province.name }}</option>
     </select>
-    <label class="label py-0 h-4" *ngIf="addressForm.controls['provinceCode'].invalid && addressForm.controls['provinceCode'].touched">
-      <span class="label-text-alt text-error text-xs">Vui lòng chọn tỉnh/thành.</span>
-    </label>
+    <label class="label h-5 py-0 text-xs text-error" *ngIf="addressForm.controls['provinceCode'].invalid && addressForm.controls['provinceCode'].touched">Vui lòng chọn tỉnh/thành.</label>
   </div>
 
-  <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 mt-1">
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3">
     <!-- District -->
     <div class="form-control w-full">
-      <label class="label py-1"><span class="label-text text-xs font-medium">Quận/Huyện <span class="text-error">*</span></span></label>
-      <select class="select select-sm select-bordered w-full" formControlName="districtCode"
+      <label class="label pb-1"><span class="label-text font-medium text-sm">Quận/Huyện <span class="text-error">*</span></span></label>
+      <select class="select select-bordered w-full dark:bg-gray-700 dark:border-gray-600" formControlName="districtCode"
               [ngClass]="{'select-error': addressForm.controls['districtCode'].invalid && addressForm.controls['districtCode'].touched}">
-        <option [ngValue]="null" disabled>Chọn Quận/Huyện</option>
-        <option *ngFor="let district of (districts$ | async)" [value]="district.idDistrict">{{ district.name }}</option> <!-- Sử dụng idDistrict -->
+        <option [ngValue]="null" disabled>-- Chọn Quận/Huyện --</option>
+        <option *ngFor="let district of (districts$ | async)" [value]="district.idDistrict">{{ district.name }}</option>
       </select>
-      <label class="label py-0 h-4" *ngIf="addressForm.controls['districtCode'].invalid && addressForm.controls['districtCode'].touched">
-        <span class="label-text-alt text-error text-xs">Vui lòng chọn quận/huyện.</span>
-      </label>
+      <label class="label h-5 py-0 text-xs text-error" *ngIf="addressForm.controls['districtCode'].invalid && addressForm.controls['districtCode'].touched">Vui lòng chọn quận/huyện.</label>
     </div>
 
     <!-- Ward -->
     <div class="form-control w-full">
-      <label class="label py-1"><span class="label-text text-xs font-medium">Phường/Xã <span class="text-error">*</span></span></label>
-      <select class="select select-sm select-bordered w-full" formControlName="wardCode"
+      <label class="label pb-1"><span class="label-text font-medium text-sm">Phường/Xã <span class="text-error">*</span></span></label>
+      <select class="select select-bordered w-full dark:bg-gray-700 dark:border-gray-600" formControlName="wardCode"
               [ngClass]="{'select-error': addressForm.controls['wardCode'].invalid && addressForm.controls['wardCode'].touched}">
-        <option [ngValue]="null" disabled>Chọn Phường/Xã</option>
-        <option *ngFor="let ward of (wards$ | async)" [value]="ward.idWard">{{ ward.name }}</option> <!-- Sử dụng idWard -->
+        <option [ngValue]="null" disabled>-- Chọn Phường/Xã --</option>
+        <option *ngFor="let ward of (wards$ | async)" [value]="ward.idWard">{{ ward.name }}</option>
       </select>
-      <label class="label py-0 h-4" *ngIf="addressForm.controls['wardCode'].invalid && addressForm.controls['wardCode'].touched">
-        <span class="label-text-alt text-error text-xs">Vui lòng chọn phường/xã.</span>
-      </label>
+      <label class="label h-5 py-0 text-xs text-error" *ngIf="addressForm.controls['wardCode'].invalid && addressForm.controls['wardCode'].touched">Vui lòng chọn phường/xã.</label>
     </div>
   </div>
 
   <!-- Address Detail -->
-  <div class="form-control w-full mt-1">
-    <label class="label py-1"><span class="label-text text-xs font-medium">Địa chỉ cụ thể <span class="text-error">*</span></span></label>
-    <textarea class="textarea textarea-bordered h-20 text-sm" placeholder="Số nhà, tên đường, thôn/xóm..."
+  <div class="form-control w-full">
+    <label class="label pb-1"><span class="label-text font-medium text-sm">Địa chỉ cụ thể (Số nhà, tên đường, thôn/xóm...) <span class="text-error">*</span></span></label>
+    <textarea class="textarea textarea-bordered h-24 dark:bg-gray-700 dark:border-gray-600" placeholder="Ví dụ: Số 123, Đường ABC, Thôn XYZ..."
               formControlName="addressDetail"
               [ngClass]="{'textarea-error': addressForm.controls['addressDetail'].invalid && addressForm.controls['addressDetail'].touched}"></textarea>
-    <label class="label py-0 h-4" *ngIf="addressForm.controls['addressDetail'].invalid && addressForm.controls['addressDetail'].touched">
-      <span class="label-text-alt text-error text-xs" *ngIf="addressForm.controls['addressDetail'].errors?.['required']">Bắt buộc.</span>
-      <span class="label-text-alt text-error text-xs" *ngIf="addressForm.controls['addressDetail'].errors?.['maxlength']">Địa chỉ quá dài.</span>
+    <label class="label h-5 py-0 text-xs text-error" *ngIf="addressForm.controls['addressDetail'].invalid && addressForm.controls['addressDetail'].touched">
+      <span *ngIf="addressForm.controls['addressDetail'].errors?.['required']">Không được để trống.</span>
+      <span *ngIf="addressForm.controls['addressDetail'].errors?.['maxlength']">Địa chỉ quá dài.</span>
     </label>
   </div>
 
   <!-- Is Default Checkbox -->
-  <div class="form-control mt-2">
-    <label class="label cursor-pointer justify-start gap-2 p-0">
+  <div class="form-control mt-3">
+    <label class="label cursor-pointer justify-start gap-3 p-0">
       <input type="checkbox" class="checkbox checkbox-primary checkbox-sm" formControlName="isDefault" />
-      <span class="label-text text-sm">Đặt làm địa chỉ mặc định</span>
+      <span class="label-text text-sm font-medium">Đặt làm địa chỉ mặc định</span>
     </label>
   </div>
 
   <!-- Action Buttons -->
-  <div class="mt-6 flex justify-end gap-2"> <!-- Bỏ modal-action -->
-    <button type="button" class="btn btn-sm btn-ghost" (click)="onCancel()">Hủy</button>
-    <button type="submit" class="btn btn-sm btn-primary" [disabled]="isLoading() || addressForm.invalid">
-      <span *ngIf="isLoading()" class="loading loading-spinner loading-xs"></span>
-      {{ isLoading() ? 'Đang lưu...' : (initialAddress ? 'Cập nhật' : 'Thêm mới') }}
+  <div class="mt-8 flex justify-end gap-3">
+    <button type="button" class="btn btn-ghost dark:hover:bg-gray-700" (click)="onCancel()">Hủy Bỏ</button>
+    <button type="submit" class="btn btn-primary px-6 dark:text-white" [disabled]="isLoading() || addressForm.invalid">
+      <span *ngIf="isLoading()" class="loading loading-spinner loading-sm"></span>
+      {{ isLoading() ? 'Đang lưu...' : (initialAddress ? 'Cập Nhật Địa Chỉ' : 'Thêm Địa Chỉ Mới') }}
     </button>
   </div>
 </form>

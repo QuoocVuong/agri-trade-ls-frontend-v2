@@ -15,12 +15,14 @@ import {filter, takeUntil, tap} from 'rxjs/operators';
 // @ts-ignore
 //import { Slugify } from 'diacritic-slugify';
 import {ToastrService} from 'ngx-toastr';
+import {LoadingSpinnerComponent} from '../../../../shared/components/loading-spinner/loading-spinner.component';
+import {AlertComponent} from '../../../../shared/components/alert/alert.component';
 //mport slugify from 'slug';
 
 @Component({
   selector: 'app-edit-farmer-profile',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink /*, AlertComponent */],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, LoadingSpinnerComponent, AlertComponent, /*, AlertComponent */],
   templateUrl: './edit-farmer-profile.component.html',
 })
 export class EditFarmerProfileComponent implements OnInit {

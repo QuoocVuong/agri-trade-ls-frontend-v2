@@ -1,54 +1,69 @@
-<h2 class="card-title justify-center text-2xl mb-4">Đăng nhập</h2>
+<h2 class="card-title justify-center text-2xl md:text-3xl font-semibold mb-6 text-base-content dark:text-gray-200">
+  Chào mừng trở lại!
+</h2>
 
 <!-- Error Message -->
-<div *ngIf="errorMessage()" class="alert alert-error shadow-sm mb-4 text-sm p-2">
-  <span>{{ errorMessage() }}</span>
-</div>
+<app-alert *ngIf="errorMessage()" type="error" [message]="errorMessage()" class="mb-4"></app-alert>
 
-<form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="w-full">
+<form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="w-full space-y-4">
   <!-- Email -->
   <div class="form-control w-full">
-    <label class="label"><span class="label-text">Email</span></label>
-    <input type="email" placeholder="Nhập email" class="input input-bordered w-full input-sm"
-           formControlName="email"
-           [ngClass]="{'input-error': loginForm.controls['email'].invalid && loginForm.controls['email'].touched}" />
-    <label class="label" *ngIf="loginForm.controls['email'].invalid && loginForm.controls['email'].touched">
-      <span class="label-text-alt text-error" *ngIf="loginForm.controls['email'].errors?.['required']">Email là bắt buộc.</span>
-      <span class="label-text-alt text-error" *ngIf="loginForm.controls['email'].errors?.['email']">Email không hợp lệ.</span>
+    <label class="label sr-only" for="email"><span class="label-text">Email</span></label>
+    <div class="relative">
+      <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-base-content/40 dark:text-gray-500">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+          <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
+          <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
+        </svg>
+      </span>
+      <input id="email" type="email" placeholder="Nhập địa chỉ email"
+             class="input input-bordered w-full pl-10 py-2.5 dark:bg-gray-700 dark:border-gray-600"
+             formControlName="email"
+             [ngClass]="{'input-error': loginForm.controls['email'].invalid && loginForm.controls['email'].touched}" />
+    </div>
+    <label class="label h-5" *ngIf="loginForm.controls['email'].invalid && loginForm.controls['email'].touched">
+      <span class="label-text-alt text-error text-xs" *ngIf="loginForm.controls['email'].errors?.['required']">Email không được để trống.</span>
+      <span class="label-text-alt text-error text-xs" *ngIf="loginForm.controls['email'].errors?.['email']">Email không đúng định dạng.</span>
     </label>
   </div>
 
   <!-- Password -->
-  <div class="form-control w-full mt-2">
-    <label class="label">
-      <span class="label-text">Mật khẩu</span>
-      <a routerLink="/auth/forgot-password" class="label-text-alt link link-hover text-xs">Quên mật khẩu?</a>
-    </label>
-    <input type="password" placeholder="Nhập mật khẩu" class="input input-bordered w-full input-sm"
-           formControlName="password"
-           [ngClass]="{'input-error': loginForm.controls['password'].invalid && loginForm.controls['password'].touched}" />
-    <label class="label" *ngIf="loginForm.controls['password'].invalid && loginForm.controls['password'].touched">
-      <span class="label-text-alt text-error">Mật khẩu là bắt buộc.</span>
+  <div class="form-control w-full">
+    <label class="label sr-only" for="password"><span class="label-text">Mật khẩu</span></label>
+    <div class="relative">
+       <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-base-content/40 dark:text-gray-500">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd" />
+        </svg>
+      </span>
+      <input id="password" type="password" placeholder="Nhập mật khẩu"
+             class="input input-bordered w-full pl-10 py-2.5 dark:bg-gray-700 dark:border-gray-600"
+             formControlName="password"
+             [ngClass]="{'input-error': loginForm.controls['password'].invalid && loginForm.controls['password'].touched}" />
+    </div>
+    <div class="flex justify-end mt-1">
+      <a routerLink="/auth/forgot-password" class="label-text-alt link link-hover text-xs text-primary dark:text-green-400">Quên mật khẩu?</a>
+    </div>
+    <label class="label h-5" *ngIf="loginForm.controls['password'].invalid && loginForm.controls['password'].touched">
+      <span class="label-text-alt text-error text-xs">Mật khẩu không được để trống.</span>
     </label>
   </div>
 
   <div class="form-control mt-6">
-    <button type="submit" class="btn btn-primary btn-sm" [disabled]="isLoading() || loginForm.invalid">
-      <span *ngIf="isLoading()" class="loading loading-spinner loading-xs"></span>
-      {{ isLoading() ? 'Đang xử lý...' : 'Đăng nhập' }}
+    <button type="submit" class="btn btn-primary w-full py-3 text-base font-semibold dark:text-white" [disabled]="isLoading() || loginForm.invalid">
+      <span *ngIf="isLoading()" class="loading loading-spinner loading-sm"></span>
+      {{ isLoading() ? 'Đang xử lý...' : 'Đăng Nhập' }}
     </button>
   </div>
 
+  <div class="divider text-xs my-6 dark:before:bg-gray-700 dark:after:bg-gray-700">HOẶC TIẾP TỤC VỚI</div>
 
-  <div class="divider text-xs my-4">HOẶC</div> <!-- Giảm khoảng cách divider -->
-
-  <!-- ****** NÚT ĐĂNG NHẬP GOOGLE ****** -->
-  <div class="flex justify-center mb-4"> <!-- Giảm margin bottom -->
-    <asl-google-signin-button type='standard' size='large' theme='outline' shape='rectangular' />
+  <div class="flex justify-center mb-6">
+    <asl-google-signin-button type='standard' size='large' theme='outline' shape='pill' />
   </div>
-  <!-- ********************************** -->
 
-  <div class="divider text-xs">Chưa có tài khoản?</div>
-  <a routerLink="/auth/register" class="btn btn-outline btn-sm w-full">Đăng ký ngay</a>
-
+  <p class="text-center text-sm text-base-content/80 dark:text-gray-400">
+    Chưa có tài khoản?
+    <a routerLink="/auth/register" class="font-medium text-primary dark:text-green-400 hover:underline">Đăng ký ngay</a>
+  </p>
 </form>

@@ -7,13 +7,14 @@ import { AuthService } from '../../../../core/services/auth.service';
 import { UserResponse } from '../../dto/response/UserResponse';
 import { UserUpdateRequest } from '../../dto/request/UserUpdateRequest';
 import { ApiResponse } from '../../../../core/models/api-response.model';
+import {AlertComponent} from '../../../../shared/components/alert/alert.component';
 // Import component Alert nếu có
 // import { AlertComponent } from '../../../shared/components/alert/alert.component';
 
 @Component({
   selector: 'app-edit-profile',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink /*, AlertComponent */],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, AlertComponent, /*, AlertComponent */],
   templateUrl: './edit-profile.component.html',
 })
 export class EditProfileComponent implements OnInit {

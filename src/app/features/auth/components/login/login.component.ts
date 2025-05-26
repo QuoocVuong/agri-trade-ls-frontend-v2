@@ -14,12 +14,13 @@ import {
   SocialUser
 } from '@abacritt/angularx-social-login';
 import {filter, takeUntil} from 'rxjs/operators';
-import {ToastrService} from 'ngx-toastr'; // Đổi đường dẫn nếu cần
+import {ToastrService} from 'ngx-toastr';
+import {AlertComponent} from '../../../../shared/components/alert/alert.component'; // Đổi đường dẫn nếu cần
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink, GoogleSigninButtonModule],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, GoogleSigninButtonModule, AlertComponent],
   templateUrl: './login.component.html',
 })
 export class LoginComponent implements OnInit, OnDestroy  {

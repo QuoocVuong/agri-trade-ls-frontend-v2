@@ -8,11 +8,12 @@ import { ApiResponse } from '../../../../core/models/api-response.model';
 import { AuthService } from '../../../../core/services/auth.service'; // Import AuthService
 import { ToastrService } from 'ngx-toastr';
 import {RouterLink} from '@angular/router';
+import {AlertComponent} from '../../../../shared/components/alert/alert.component';
 
 @Component({
   selector: 'app-review-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink ],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, AlertComponent],
   templateUrl: './review-form.component.html',
 })
 export class ReviewFormComponent {

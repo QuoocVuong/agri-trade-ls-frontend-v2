@@ -1,70 +1,68 @@
 <!-- src/app/features/interaction/components/review-form/review-form.component.html -->
-<div *ngIf="isAuthenticated(); else loginRequired">
-  <!-- Sử dụng card để bao bọc form -->
-  <div class="card  shadow-lg border border-base-300">
-    <form [formGroup]="reviewForm" (ngSubmit)="onSubmit()" class="card-body p-5 sm:p-6"> <!-- Thêm padding -->
-      <h3 class="card-title text-lg mb-4">Viết đánh giá của bạn</h3>
+<div *ngIf="isAuthenticated(); else loginRequired" class="animate-fade-in">
+  <div class="card bg-base-100 dark:bg-gray-800 shadow-xl rounded-xl border border-base-300/30 dark:border-gray-700/30">
+    <form [formGroup]="reviewForm" (ngSubmit)="onSubmit()" class="card-body p-6 md:p-8">
+      <h3 class="card-title text-xl font-semibold text-base-content dark:text-white mb-5">
+        Chia Sẻ Cảm Nhận Của Bạn
+      </h3>
 
       <!-- Rating Stars Section -->
-      <div class="mb-6"> <!-- Tăng khoảng cách dưới -->
-        <label class="label justify-start mb-1"> <!-- Căn trái label -->
-          <span class="label-text font-medium">Đánh giá sản phẩm <span class="text-error">*</span></span>
+      <div class="mb-6">
+        <label class="label pb-1 justify-start">
+          <span class="label-text font-medium text-base-content dark:text-gray-200">Đánh giá của bạn <span class="text-error">*</span></span>
         </label>
-        <!-- Tăng kích thước sao và khoảng cách -->
-        <div class="rating rating-lg gap-1"> <!-- rating-lg và gap-1 -->
+        <div class="rating rating-lg gap-1.5">
           <ng-container *ngFor="let i of [1, 2, 3, 4, 5]">
             <input
               type="radio"
-              name="rating"
-            class="mask mask-star-2"
-            [value]="i"
-            (change)="setRating(i)"
-            (mouseenter)="setHoverRating(i)"
-            (mouseleave)="resetHoverRating()"
-            [checked]="selectedRating() === i"
-            formControlName="rating"
-            [ngClass]="(hoverRating() >= i || selectedRating() >= i) ? 'text-yellow-400 bg-yellow-400' : 'text-base-content bg-base-content opacity-20'" />
-            <!-- Dùng màu vàng và opacity cho hiệu ứng -->
+              [name]="'rating-' + productId"
+              class="mask mask-star-2 bg-yellow-400 dark:bg-yellow-500 cursor-pointer transition-transform hover:scale-110"
+              [value]="i"
+              (change)="setRating(i)"
+              (mouseenter)="setHoverRating(i)"
+              (mouseleave)="resetHoverRating()"
+              [checked]="selectedRating() === i"
+              formControlName="rating"
+              [ngClass]="{
+                'opacity-100': (hoverRating() >= i || selectedRating() >= i),
+                'opacity-30 dark:opacity-40': !(hoverRating() >= i || selectedRating() >= i)
+              }" />
           </ng-container>
         </div>
-        <!-- Validation Message -->
-        <label class="label pt-1" *ngIf="reviewForm.controls['rating'].invalid && reviewForm.controls['rating'].touched">
+        <label class="label h-5 pt-1" *ngIf="reviewForm.controls['rating'].invalid && reviewForm.controls['rating'].touched">
           <span class="label-text-alt text-error text-xs">Vui lòng chọn số sao đánh giá.</span>
         </label>
       </div>
 
       <!-- Comment Textarea Section -->
       <div class="form-control w-full mb-4">
-        <label class="label"><span class="label-text font-medium">Viết bình luận (Tùy chọn)</span></label>
+        <label class="label pb-1"><span class="label-text font-medium text-base-content dark:text-gray-200">Bình luận chi tiết (Tùy chọn)</span></label>
         <textarea
-          class="textarea textarea-bordered h-28 text-base"
-          placeholder="Sản phẩm này như thế nào? Chia sẻ cảm nhận của bạn..."
+          class="textarea textarea-bordered h-32 text-base dark:bg-gray-700 dark:border-gray-600 focus:ring-1 focus:ring-primary dark:focus:ring-green-500"
+          placeholder="Sản phẩm này tuyệt vời như thế nào? Bạn có góp ý gì không? Hãy chia sẻ nhé..."
           formControlName="comment"
           [ngClass]="{'textarea-error': reviewForm.controls['comment'].invalid && reviewForm.controls['comment'].touched}"></textarea>
-        <label class="label pt-1" *ngIf="reviewForm.controls['comment'].invalid && reviewForm.controls['comment'].touched">
+        <label class="label h-5 pt-1" *ngIf="reviewForm.controls['comment'].invalid && reviewForm.controls['comment'].touched">
           <span class="label-text-alt text-error text-xs" *ngIf="reviewForm.controls['comment'].errors?.['maxlength']">Bình luận không được vượt quá 1000 ký tự.</span>
         </label>
       </div>
 
       <!-- Error Message -->
-      <div *ngIf="errorMessage()" class="alert alert-error shadow-sm mt-4 text-sm p-3">
-        <span>{{ errorMessage() }}</span>
-      </div>
+      <app-alert *ngIf="errorMessage()" type="error" [message]="errorMessage()" class="mt-2 mb-4"></app-alert>
 
       <!-- Submit Button -->
-      <div class="card-actions justify-end mt-6"> <!-- Dùng card-actions -->
-        <button type="submit" class="btn btn-primary" [disabled]="isLoading() || reviewForm.invalid"> <!-- Bỏ btn-sm -->
-          <span *ngIf="isLoading()" class="loading loading-spinner loading-sm"></span>
-          {{ isLoading() ? 'Đang gửi...' : 'Gửi đánh giá' }}
+      <div class="card-actions justify-end mt-4">
+        <button type="submit" class="btn btn-primary btn-md rounded-full px-8 dark:text-white" [disabled]="isLoading() || reviewForm.invalid">
+          <span *ngIf="isLoading()" class="loading loading-spinner"></span>
+          {{ isLoading() ? 'Đang gửi...' : 'Gửi Đánh Giá' }}
         </button>
       </div>
-
     </form>
   </div>
 </div>
 
 <ng-template #loginRequired>
-  <div class="text-center text-sm text-base-content/70 border rounded-md p-6 bg-base-200 shadow">
-    Vui lòng <a [routerLink]="['/auth/login']" [queryParams]="{ returnUrl: '/products/' + productId }" class="link link-primary font-medium">đăng nhập</a> để viết đánh giá cho sản phẩm này.
+  <div class="text-center text-sm text-base-content/70 dark:text-gray-400 border border-dashed border-base-300 dark:border-gray-700 rounded-lg p-6 bg-base-200 dark:bg-gray-800/30 shadow-sm">
+    Vui lòng <a [routerLink]="['/auth/login']" [queryParams]="{ returnUrl: '/products/' + productId }" class="link link-primary font-semibold hover:underline">đăng nhập</a> để viết đánh giá cho sản phẩm này.
   </div>
 </ng-template>

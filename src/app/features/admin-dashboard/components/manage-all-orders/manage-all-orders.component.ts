@@ -4,16 +4,16 @@ import { ReactiveFormsModule, FormBuilder } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { Page } from '../../../../core/models/page.model';
 import { OrderSummaryResponse } from '../../../ordering/dto/response/OrderSummaryResponse';
-import { AdminOrderingService } from '../../services/admin-ordering.service'; // Import AdminOrderingService
-import { ApiResponse, PagedApiResponse } from '../../../../core/models/api-response.model';
+import { AdminOrderingService } from '../../services/admin-ordering.service';
+
 import { LoadingSpinnerComponent } from '../../../../shared/components/loading-spinner/loading-spinner.component';
 import { AlertComponent } from '../../../../shared/components/alert/alert.component';
 import { PaginatorComponent } from '../../../../shared/components/paginator/paginator.component';
 import { OrderStatus, getOrderStatusText, getOrderStatusCssClass } from '../../../ordering/domain/order-status.enum'; // Import OrderStatus
-import { PaymentStatus, getPaymentStatusText, getPaymentStatusCssClass } from '../../../ordering/domain/payment-status.enum'; // Import PaymentStatus
+import {  getPaymentStatusText, getPaymentStatusCssClass } from '../../../ordering/domain/payment-status.enum';
 import { ToastrService } from 'ngx-toastr';
 import { Subject } from 'rxjs';
-import { debounceTime, distinctUntilChanged, takeUntil, finalize } from 'rxjs/operators';
+import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
 import {FormatBigDecimalPipe} from '../../../../shared/pipes/format-big-decimal.pipe';
 
 @Component({

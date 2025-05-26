@@ -311,5 +311,15 @@ export class ProductListComponent implements OnInit {
     const targetPath = currentSlug ? ['/categories', currentSlug] : ['/products'];
     this.router.navigate(targetPath, { queryParams: {}, replaceUrl: true });
   }
+  onSortChange(event: Event): void {
+    const selectedSort = (event.target as HTMLSelectElement).value;
+    // Cập nhật queryParam 'sort' trên URL
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { sort: selectedSort, page: null }, // Reset về trang đầu khi sort
+      queryParamsHandling: 'merge',
+      replaceUrl: true
+    });
+  }
 
 }

@@ -47,6 +47,7 @@ export class EditProductComponent implements OnInit, OnDestroy {
   isLoading = signal(false); // Loading chung khi submit/load
   isFetchingData = signal(false); // Loading khi lấy dữ liệu ban đầu (edit mode)
   errorMessage = signal<string | null>(null);
+  successMessage = signal<string | null>(null);
   productId = signal<number | null>(null); // Lưu ID sản phẩm nếu là edit mode
   isEditMode = computed(() => !!this.productId()); // Xác định mode
 
@@ -247,7 +248,7 @@ export class EditProductComponent implements OnInit, OnDestroy {
   createImageGroup(imgData?: ProductImageResponse | ProductImageRequest): FormGroup {
     return this.fb.group({
       id: [(imgData && 'id' in imgData) ? imgData.id : null],
-      imageUrl: [imgData?.imageUrl || '', Validators.required], // Dùng imageUrl từ response/request
+      imageUrl: [imgData?.imageUrl || ''], // Dùng imageUrl từ response/request
       // blobPath sẽ lấy từ imgData.blobPath nếu là ProductImageResponse,
       // hoặc từ imgData.blobPath nếu là ProductImageRequest (khi upload mới)
       blobPath: [(imgData?.blobPath) || null, Validators.required],

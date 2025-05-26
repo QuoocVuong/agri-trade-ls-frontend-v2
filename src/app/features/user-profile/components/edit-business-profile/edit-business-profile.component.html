@@ -1,108 +1,113 @@
-<div class="container mx-auto px-4 py-8 max-w-3xl">
-  <h1 class="text-3xl font-bold mb-6">{{ isEditMode() ? 'Chỉnh sửa Hồ sơ Doanh nghiệp' : 'Đăng ký Hồ sơ Doanh nghiệp' }}</h1>
-  <p *ngIf="!isEditMode()" class="mb-4 text-sm text-info">Hoàn thành hồ sơ để bắt đầu mua hàng với tư cách doanh nghiệp.</p>
+<!-- src/app/features/user-profile/components/edit-business-profile/edit-business-profile.component.html -->
+<div class="container mx-auto px-4 py-8 md:py-10 lg:py-12 max-w-4xl">
+  <header class="text-center mb-10">
+    <h1 class="text-3xl md:text-4xl font-bold text-base-content dark:text-white">
+      {{ isEditMode() ? 'Chỉnh Sửa Hồ Sơ Doanh Nghiệp' : 'Đăng Ký Hồ Sơ Doanh Nghiệp' }}
+    </h1>
+    <p *ngIf="!isEditMode()" class="mt-2 text-base-content/70 dark:text-gray-400">
+      Cung cấp thông tin doanh nghiệp của bạn để mua hàng với tư cách B2B và nhận các ưu đãi đặc biệt.
+    </p>
+    <!-- Thêm thông báo trạng thái hồ sơ nếu cần (tương tự Farmer) -->
+  </header>
 
   <!-- Loading Data -->
-  <div *ngIf="isFetching()" class="text-center py-10"><app-loading-spinner></app-loading-spinner></div>
+  <div *ngIf="isFetching()" class="flex justify-center py-16">
+    <app-loading-spinner size="lg"></app-loading-spinner>
+  </div>
   <!-- Error Loading Data -->
-  <app-alert *ngIf="errorMessage() && isFetching()" type="error" [message]="errorMessage()"></app-alert>
+  <app-alert *ngIf="errorMessage() && isFetching()" type="error" [message]="errorMessage()" class="mb-6"></app-alert>
 
-  <form *ngIf="!isFetching()" [formGroup]="profileForm" (ngSubmit)="onSubmit()">
-    <div class="card  shadow-xl">
-      <div class="card-body space-y-1">
-        <!-- Error/Success Messages -->
-        <app-alert *ngIf="errorMessage() && !isLoading()" type="error" [message]="errorMessage()" class="mb-4"></app-alert>
-        <app-alert *ngIf="successMessage()" type="success" [message]="successMessage()" class="mb-4"></app-alert>
+  <form *ngIf="!isFetching()" [formGroup]="profileForm" (ngSubmit)="onSubmit()"
+        class="card bg-base-100 dark:bg-gray-800 shadow-2xl rounded-xl border border-base-300/30 dark:border-gray-700/30">
+    <div class="card-body p-6 md:p-8 space-y-6">
+      <!-- Error/Success Messages khi submit -->
+      <app-alert *ngIf="errorMessage() && !isLoading()" type="error" [message]="errorMessage()" class="mb-4"></app-alert>
+      <app-alert *ngIf="successMessage()" type="success" [message]="successMessage()" class="mb-4"></app-alert>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-1">
-          <!-- Business Name -->
+      <!-- Section Thông tin Doanh nghiệp -->
+      <section>
+        <h2 class="text-xl font-semibold text-info dark:text-sky-400 mb-4 pb-2 border-b border-base-300 dark:border-gray-700">Thông Tin Doanh Nghiệp</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
           <div class="form-control w-full">
-            <label class="label py-1"><span class="label-text text-xs font-medium">Tên doanh nghiệp/Cửa hàng <span class="text-error">*</span></span></label>
-            <input type="text" placeholder="Nhập tên đầy đủ" class="input input-sm input-bordered w-full" formControlName="businessName" />
-            <label class="label py-0 h-4" *ngIf="profileForm.controls['businessName'].invalid && profileForm.controls['businessName'].touched">
-              <span class="label-text-alt text-error text-xs">Bắt buộc.</span>
-            </label>
+            <label class="label pb-1"><span class="label-text font-medium">Tên doanh nghiệp/Cửa hàng <span class="text-error">*</span></span></label>
+            <input type="text" placeholder="Nhập tên đầy đủ của doanh nghiệp" class="input input-bordered w-full dark:bg-gray-700 dark:border-gray-600" formControlName="businessName" />
+            <label class="label h-5 py-0 text-xs text-error" *ngIf="profileForm.controls['businessName'].invalid && profileForm.controls['businessName'].touched">Tên doanh nghiệp là bắt buộc.</label>
           </div>
 
-          <!-- Tax Code -->
           <div class="form-control w-full">
-            <label class="label py-1"><span class="label-text text-xs font-medium">Mã số thuế (Nếu có)</span></label>
-            <input type="text" placeholder="Nhập mã số thuế" class="input input-sm input-bordered w-full" formControlName="taxCode" />
+            <label class="label pb-1"><span class="label-text font-medium">Mã số thuế (Nếu có)</span></label>
+            <input type="text" placeholder="Nhập mã số thuế" class="input input-bordered w-full dark:bg-gray-700 dark:border-gray-600" formControlName="taxCode" />
           </div>
 
-          <!-- Industry -->
           <div class="form-control w-full">
-            <label class="label py-1"><span class="label-text text-xs font-medium">Ngành nghề</span></label>
-            <input type="text" placeholder="Ví dụ: Nhà hàng, Cửa hàng thực phẩm..." class="input input-sm input-bordered w-full" formControlName="industry" />
+            <label class="label pb-1"><span class="label-text font-medium">Ngành nghề kinh doanh</span></label>
+            <input type="text" placeholder="Ví dụ: Nhà hàng, Siêu thị, Chế biến thực phẩm..." class="input input-bordered w-full dark:bg-gray-700 dark:border-gray-600" formControlName="industry" />
           </div>
 
-          <!-- Business Phone -->
           <div class="form-control w-full">
-            <label class="label py-1"><span class="label-text text-xs font-medium">Số điện thoại doanh nghiệp</span></label>
-            <input type="tel" placeholder="Nhập số điện thoại" class="input input-sm input-bordered w-full" formControlName="businessPhone" />
+            <label class="label pb-1"><span class="label-text font-medium">Số điện thoại doanh nghiệp</span></label>
+            <input type="tel" placeholder="Nhập số điện thoại liên hệ" class="input input-bordered w-full dark:bg-gray-700 dark:border-gray-600" formControlName="businessPhone" />
+            <label class="label h-5 py-0 text-xs text-error" *ngIf="profileForm.controls['businessPhone'].invalid && profileForm.controls['businessPhone'].touched && profileForm.controls['businessPhone'].value">Số điện thoại không hợp lệ.</label>
           </div>
+        </div>
+      </section>
 
-          <!-- Province -->
+      <!-- Section Địa chỉ Kinh doanh -->
+      <section>
+        <h2 class="text-xl font-semibold text-info dark:text-sky-400 mb-4 pb-2 border-b border-base-300 dark:border-gray-700">Địa Chỉ Kinh Doanh</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
           <div class="form-control w-full">
-            <label class="label py-1"><span class="label-text text-xs font-medium">Tỉnh/Thành phố <span class="text-error">*</span></span></label>
-            <!-- *** Cho phép chọn tỉnh *** -->
-            <select class="select select-sm select-bordered w-full" formControlName="businessProvinceCode"
+            <label class="label pb-1"><span class="label-text font-medium">Tỉnh/Thành phố <span class="text-error">*</span></span></label>
+            <select class="select select-bordered w-full dark:bg-gray-700 dark:border-gray-600" formControlName="businessProvinceCode"
                     [ngClass]="{'select-error': profileForm.controls['businessProvinceCode'].invalid && profileForm.controls['businessProvinceCode'].touched}">
-              <option [ngValue]="null" disabled>Chọn Tỉnh/Thành</option>
+              <option [ngValue]="null" disabled>-- Chọn Tỉnh/Thành --</option>
               <option *ngFor="let province of (provinces$ | async)" [value]="province.idProvince">{{ province.name }}</option>
             </select>
-            <label class="label py-0 h-4" *ngIf="profileForm.controls['businessProvinceCode'].invalid && profileForm.controls['businessProvinceCode'].touched">
-              <span class="label-text-alt text-error text-xs">Bắt buộc.</span>
-            </label>
+            <label class="label h-5 py-0 text-xs text-error" *ngIf="profileForm.controls['businessProvinceCode'].invalid && profileForm.controls['businessProvinceCode'].touched">Vui lòng chọn tỉnh/thành.</label>
           </div>
 
-          <!-- District -->
           <div class="form-control w-full">
-            <label class="label py-1"><span class="label-text text-xs font-medium">Quận/Huyện <span class="text-error">*</span></span></label>
-            <select class="select select-sm select-bordered w-full" formControlName="businessDistrictCode"
+            <label class="label pb-1"><span class="label-text font-medium">Quận/Huyện <span class="text-error">*</span></span></label>
+            <select class="select select-bordered w-full dark:bg-gray-700 dark:border-gray-600" formControlName="businessDistrictCode"
                     [ngClass]="{'select-error': profileForm.controls['businessDistrictCode'].invalid && profileForm.controls['businessDistrictCode'].touched}">
-              <option [ngValue]="null" disabled>Chọn Quận/Huyện</option>
+              <option [ngValue]="null" disabled>-- Chọn Quận/Huyện --</option>
               <option *ngFor="let district of (districts$ | async)" [value]="district.idDistrict">{{ district.name }}</option>
             </select>
-            <label class="label py-0 h-4" *ngIf="profileForm.controls['businessDistrictCode'].invalid && profileForm.controls['businessDistrictCode'].touched">
-              <span class="label-text-alt text-error text-xs">Bắt buộc.</span>
-            </label>
+            <label class="label h-5 py-0 text-xs text-error" *ngIf="profileForm.controls['businessDistrictCode'].invalid && profileForm.controls['businessDistrictCode'].touched">Vui lòng chọn quận/huyện.</label>
           </div>
 
-          <!-- Ward -->
           <div class="form-control w-full">
-            <label class="label py-1"><span class="label-text text-xs font-medium">Phường/Xã <span class="text-error">*</span></span></label>
-            <select class="select select-sm select-bordered w-full" formControlName="businessWardCode"
+            <label class="label pb-1"><span class="label-text font-medium">Phường/Xã <span class="text-error">*</span></span></label>
+            <select class="select select-bordered w-full dark:bg-gray-700 dark:border-gray-600" formControlName="businessWardCode"
                     [ngClass]="{'select-error': profileForm.controls['businessWardCode'].invalid && profileForm.controls['businessWardCode'].touched}">
-              <option [ngValue]="null" disabled>Chọn Phường/Xã</option>
+              <option [ngValue]="null" disabled>-- Chọn Phường/Xã --</option>
               <option *ngFor="let ward of (wards$ | async)" [value]="ward.idWard">{{ ward.name }}</option>
             </select>
-            <label class="label py-0 h-4" *ngIf="profileForm.controls['businessWardCode'].invalid && profileForm.controls['businessWardCode'].touched">
-              <span class="label-text-alt text-error text-xs">Bắt buộc.</span>
-            </label>
+            <label class="label h-5 py-0 text-xs text-error" *ngIf="profileForm.controls['businessWardCode'].invalid && profileForm.controls['businessWardCode'].touched">Vui lòng chọn phường/xã.</label>
           </div>
 
-          <!-- Business Address Detail -->
           <div class="form-control w-full">
-            <label class="label py-1"><span class="label-text text-xs font-medium">Địa chỉ kinh doanh cụ thể</span></label>
-            <input type="text" placeholder="Số nhà, tên đường..." class="input input-sm input-bordered w-full" formControlName="businessAddressDetail" />
+            <label class="label pb-1"><span class="label-text font-medium">Địa chỉ cụ thể (Số nhà, tên đường...)</span></label>
+            <input type="text" placeholder="Nhập địa chỉ chi tiết" class="input input-bordered w-full dark:bg-gray-700 dark:border-gray-600" formControlName="businessAddressDetail" />
           </div>
-
-          <!-- Contact Person -->
-          <div class="form-control w-full md:col-span-2">
-            <label class="label py-1"><span class="label-text text-xs font-medium">Người liên hệ</span></label>
-            <input type="text" placeholder="Nhập tên người liên hệ" class="input input-sm input-bordered w-full" formControlName="contactPerson" />
-          </div>
-
         </div>
+      </section>
 
-        <div class="card-actions justify-end mt-6">
-          <a routerLink="/user/profile" class="btn btn-sm btn-ghost">Quay lại Profile</a>
-          <button type="submit" class="btn btn-sm btn-primary" [disabled]="isLoading() || profileForm.invalid">
-            <span *ngIf="isLoading()" class="loading loading-spinner loading-xs"></span>
-            {{ isLoading() ? 'Đang lưu...' : (isEditMode() ? 'Lưu thay đổi' : 'Đăng ký hồ sơ') }}
-          </button>
+      <!-- Section Thông tin liên hệ -->
+      <section>
+        <h2 class="text-xl font-semibold text-info dark:text-sky-400 mb-4 pb-2 border-b border-base-300 dark:border-gray-700">Thông Tin Người Liên Hệ</h2>
+        <div class="form-control w-full">
+          <label class="label pb-1"><span class="label-text font-medium">Tên người liên hệ</span></label>
+          <input type="text" placeholder="Nhập tên người chịu trách nhiệm liên hệ" class="input input-bordered w-full dark:bg-gray-700 dark:border-gray-600" formControlName="contactPerson" />
         </div>
+      </section>
+
+      <div class="card-actions justify-end mt-8">
+        <a routerLink="/user/profile" class="btn btn-ghost dark:hover:bg-gray-700">Quay lại</a>
+        <button type="submit" class="btn btn-info px-8 dark:text-white" [disabled]="isLoading() || profileForm.invalid">
+          <span *ngIf="isLoading()" class="loading loading-spinner loading-sm"></span>
+          {{ isLoading() ? 'Đang lưu...' : (isEditMode() ? 'Lưu Thay Đổi' : 'Hoàn Tất Đăng Ký') }}
+        </button>
       </div>
     </div>
   </form>

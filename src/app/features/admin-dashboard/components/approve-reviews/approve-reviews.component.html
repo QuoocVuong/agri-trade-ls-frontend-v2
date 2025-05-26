@@ -1,30 +1,55 @@
-<!-- src/app/features/admin/components/approve-reviews/approve-reviews.component.html -->
-<div class="container mx-auto px-4 py-6">
-  <h1 class="text-2xl font-bold mb-6">Quản lý Đánh giá</h1>
+<!-- src/app/features/admin-dashboard/components/approve-reviews/approve-reviews.component.html -->
+<div class="bg-base-200 dark:bg-gray-900 min-h-screen py-8 md:py-10">
+  <div class="container mx-auto px-4 max-w-5xl">
+    <header class="text-center mb-10 md:mb-12">
+      <h1 class="text-3xl md:text-4xl font-bold text-base-content dark:text-white">
+        Quản Lý Đánh Giá Sản Phẩm
+      </h1>
+      <p class="text-base-content/70 dark:text-gray-400 mt-2">
+        Xem xét, duyệt hoặc từ chối các đánh giá từ người dùng.
+      </p>
+    </header>
 
-  <!-- Tabs lọc theo trạng thái -->
-  <div role="tablist" class="tabs tabs-lifted tabs-lg mb-6">
-    <ng-container *ngFor="let status of statuses">
-      <a role="tab"
-         class="tab"
-         [class.tab-active]="selectedStatus() === status"
-         [class.text-success]="selectedStatus() === status && status === ReviewStatus.APPROVED"
-         [class.text-warning]="selectedStatus() === status && status === ReviewStatus.PENDING"
-         [class.text-error]="selectedStatus() === status && status === ReviewStatus.REJECTED"
-         (click)="selectStatus(status)">
-        {{ getStatusText(status) }}
-      </a>
-    </ng-container>
+    <!-- Tabs Lọc Theo Trạng Thái -->
+    <div role="tablist" class="tabs tabs-lifted tabs-lg mb-8 md:mb-10 shadow-md rounded-lg bg-base-100 dark:bg-gray-800 border border-base-300/30 dark:border-gray-700/30">
+      <ng-container *ngFor="let status of statuses">
+        <a role="tab"
+           class="tab h-12 md:h-14 text-sm md:text-base font-medium transition-all duration-300 ease-in-out
+                  focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-base-100 dark:focus-visible:ring-offset-gray-800"
+           [ngClass]="{
+             'tab-active text-primary dark:text-green-400 !bg-base-100 dark:!bg-gray-800 shadow-inner': selectedStatus() === status,
+             'hover:text-primary/80 dark:hover:text-green-500/80 text-base-content/70 dark:text-gray-400': selectedStatus() !== status
+           }"
+           (click)="selectStatus(status)">
+          {{ getStatusText(status) }}
+          <!-- (Tùy chọn) Hiển thị số lượng đánh giá cho mỗi tab nếu có -->
+          <!-- <span *ngIf="getCountForStatus(status) > 0" class="badge badge-sm ml-2">{{ getCountForStatus(status) }}</span> -->
+        </a>
+      </ng-container>
+    </div>
+
+    <!-- Hiển thị danh sách review sử dụng ReviewListComponent -->
+    <div class="bg-base-100 dark:bg-gray-800 shadow-xl rounded-xl border border-base-300/30 dark:border-gray-700/30 p-1 md:p-2">
+      <app-review-list
+        [mode]="'admin_manage'"
+        [statusFilter]="selectedStatus()"
+        [showAdminActions]="true"
+        (reviewApproved)="onReviewApproved($event)"
+        (reviewRejected)="onReviewRejected($event)"
+        (reviewDeleted)="onReviewDeleted($event)"
+        class="animate-fade-in">
+      </app-review-list>
+    </div>
   </div>
-
-  <!-- Hiển thị danh sách review sử dụng ReviewListComponent -->
-  <app-review-list
-    [mode]="'admin_manage'"
-    [statusFilter]="selectedStatus()"
-    [showAdminActions]="true"
-    (reviewApproved)="onReviewApproved($event)"
-    (reviewRejected)="onReviewRejected($event)"
-    (reviewDeleted)="onReviewDeleted($event)">
-  </app-review-list>
-
 </div>
+
+<!-- CSS cho animation (có thể đặt trong styles.css hoặc style của component) -->
+<style>
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  .animate-fade-in { animation: fadeIn 0.5s ease-out forwards; }
+
+  /* Tùy chỉnh thêm cho tab active nếu cần */
+  .tabs-lifted > .tab.tab-active {
+    border-bottom-color: transparent !important; /* Loại bỏ viền dưới của tab active để nó "nâng lên" */
+  }
+</style>

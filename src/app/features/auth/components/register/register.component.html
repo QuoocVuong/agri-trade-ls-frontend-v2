@@ -1,30 +1,48 @@
-<h2 class="card-title justify-center text-2xl mb-4">Đăng ký tài khoản</h2>
+<h2 class="card-title justify-center text-2xl md:text-3xl font-semibold mb-6 text-base-content dark:text-gray-200">
+  Tạo Tài Khoản Mới
+</h2>
 
 <!-- Success/Error Messages -->
-<div *ngIf="successMessage()" class="alert alert-success shadow-sm mb-4 text-sm p-2"><span>{{ successMessage() }}</span></div>
-<div *ngIf="errorMessage()" class="alert alert-error shadow-sm mb-4 text-sm p-2 whitespace-pre-line"><span>{{ errorMessage() }}</span></div>
 
+<app-alert *ngIf="errorMessage()" type="error" [message]="errorMessage()" class="mb-4 whitespace-pre-line"></app-alert>
 
-<form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="w-full space-y-1"> <!-- Giảm space-y -->
+<form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="w-full space-y-3">
   <!-- Full Name -->
   <div class="form-control w-full">
-    <label class="label py-1"><span class="label-text text-xs font-medium">Họ và tên <span class="text-error">*</span></span></label>
-    <input type="text" placeholder="Nhập họ tên" class="input input-bordered w-full input-sm"
-           formControlName="fullName"
-           [ngClass]="{'input-error': registerForm.controls['fullName'].invalid && registerForm.controls['fullName'].touched}" />
-    <label class="label py-0 h-4" *ngIf="registerForm.controls['fullName'].invalid && registerForm.controls['fullName'].touched">
+    <label class="label sr-only" for="fullName"><span class="label-text">Họ và tên</span></label>
+    <div class="relative">
+      <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-base-content/40 dark:text-gray-500">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
+        </svg>
+      </span>
+      <input id="fullName" type="text" placeholder="Nhập họ và tên"
+             class="input input-bordered w-full pl-10 py-2.5 dark:bg-gray-700 dark:border-gray-600"
+             formControlName="fullName"
+             [ngClass]="{'input-error': registerForm.controls['fullName'].invalid && registerForm.controls['fullName'].touched}" />
+    </div>
+    <label class="label h-5 py-0" *ngIf="registerForm.controls['fullName'].invalid && registerForm.controls['fullName'].touched">
       <span class="label-text-alt text-error text-xs" *ngIf="registerForm.controls['fullName'].errors?.['required']">Họ tên là bắt buộc.</span>
-      <span class="label-text-alt text-error text-xs" *ngIf="registerForm.controls['fullName'].errors?.['maxlength']">Họ tên quá dài (tối đa 100 ký tự).</span>
+      <span class="label-text-alt text-error text-xs" *ngIf="registerForm.controls['fullName'].errors?.['maxlength']">Họ tên quá dài.</span>
     </label>
   </div>
 
   <!-- Email -->
   <div class="form-control w-full">
-    <label class="label py-1"><span class="label-text text-xs font-medium">Email <span class="text-error">*</span></span></label>
-    <input type="email" placeholder="Nhập email" class="input input-bordered w-full input-sm"
-           formControlName="email"
-           [ngClass]="{'input-error': registerForm.controls['email'].invalid && registerForm.controls['email'].touched}" />
-    <label class="label py-0 h-4" *ngIf="registerForm.controls['email'].invalid && registerForm.controls['email'].touched">
+    <label class="label sr-only" for="reg-email"><span class="label-text">Email</span></label>
+    <div class="relative">
+      <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-base-content/40 dark:text-gray-500">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+          <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
+          <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
+        </svg>
+      </span>
+      <input id="reg-email" type="email" placeholder="Nhập địa chỉ email"
+             class="input input-bordered w-full pl-10 py-2.5 dark:bg-gray-700 dark:border-gray-600"
+             formControlName="email"
+             [ngClass]="{'input-error': registerForm.controls['email'].invalid && registerForm.controls['email'].touched}" />
+    </div>
+    <label class="label h-5 py-0" *ngIf="registerForm.controls['email'].invalid && registerForm.controls['email'].touched">
       <span class="label-text-alt text-error text-xs" *ngIf="registerForm.controls['email'].errors?.['required']">Email là bắt buộc.</span>
       <span class="label-text-alt text-error text-xs" *ngIf="registerForm.controls['email'].errors?.['email']">Email không đúng định dạng.</span>
       <span class="label-text-alt text-error text-xs" *ngIf="registerForm.controls['email'].errors?.['maxlength']">Email quá dài.</span>
@@ -33,26 +51,39 @@
 
   <!-- Phone Number -->
   <div class="form-control w-full">
-    <label class="label py-1"><span class="label-text text-xs font-medium">Số điện thoại (Tùy chọn)</span></label>
-    <input type="tel" placeholder="Nhập số điện thoại" class="input input-bordered w-full input-sm"
-           formControlName="phoneNumber"
-           [ngClass]="{'input-error': registerForm.controls['phoneNumber'].invalid && registerForm.controls['phoneNumber'].touched}" />
-    <label class="label py-0 h-4"
-           *ngIf="registerForm.controls['phoneNumber'].touched && registerForm.controls['phoneNumber'].value">
-  <span class="label-text-alt text-error text-xs"
-        *ngIf="registerForm.controls['phoneNumber'].errors?.['maxlength']">Số điện thoại quá dài.</span>
-      <span class="label-text-alt text-error text-xs"
-            *ngIf="registerForm.controls['phoneNumber'].errors?.['pattern']">Số điện thoại không hợp lệ.</span>
+    <label class="label sr-only" for="phoneNumber"><span class="label-text">Số điện thoại</span></label>
+    <div class="relative">
+       <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-base-content/40 dark:text-gray-500">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+          <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
+        </svg>
+      </span>
+      <input id="phoneNumber" type="tel" placeholder="Số điện thoại (Tùy chọn)"
+             class="input input-bordered w-full pl-10 py-2.5 dark:bg-gray-700 dark:border-gray-600"
+             formControlName="phoneNumber"
+             [ngClass]="{'input-error': registerForm.controls['phoneNumber'].invalid && registerForm.controls['phoneNumber'].touched}" />
+    </div>
+    <label class="label h-5 py-0" *ngIf="registerForm.controls['phoneNumber'].touched && registerForm.controls['phoneNumber'].value && registerForm.controls['phoneNumber'].invalid">
+      <span class="label-text-alt text-error text-xs" *ngIf="registerForm.controls['phoneNumber'].errors?.['maxlength']">Số điện thoại quá dài.</span>
+      <span class="label-text-alt text-error text-xs" *ngIf="registerForm.controls['phoneNumber'].errors?.['pattern']">Số điện thoại không hợp lệ.</span>
     </label>
   </div>
 
   <!-- Password -->
   <div class="form-control w-full">
-    <label class="label py-1"><span class="label-text text-xs font-medium">Mật khẩu <span class="text-error">*</span></span></label>
-    <input type="password" placeholder="Nhập mật khẩu (ít nhất 6 ký tự)" class="input input-bordered w-full input-sm"
-           formControlName="password"
-           [ngClass]="{'input-error': registerForm.controls['password'].invalid && registerForm.controls['password'].touched}" />
-    <label class="label py-0 h-4" *ngIf="registerForm.controls['password'].invalid && registerForm.controls['password'].touched">
+    <label class="label sr-only" for="reg-password"><span class="label-text">Mật khẩu</span></label>
+    <div class="relative">
+       <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-base-content/40 dark:text-gray-500">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd" />
+        </svg>
+      </span>
+      <input id="reg-password" type="password" placeholder="Mật khẩu (ít nhất 6 ký tự)"
+             class="input input-bordered w-full pl-10 py-2.5 dark:bg-gray-700 dark:border-gray-600"
+             formControlName="password"
+             [ngClass]="{'input-error': registerForm.controls['password'].invalid && registerForm.controls['password'].touched}" />
+    </div>
+    <label class="label h-5 py-0" *ngIf="registerForm.controls['password'].invalid && registerForm.controls['password'].touched">
       <span class="label-text-alt text-error text-xs" *ngIf="registerForm.controls['password'].errors?.['required']">Mật khẩu là bắt buộc.</span>
       <span class="label-text-alt text-error text-xs" *ngIf="registerForm.controls['password'].errors?.['minlength'] || registerForm.controls['password'].errors?.['maxlength']">Mật khẩu phải từ 6-100 ký tự.</span>
     </label>
@@ -60,23 +91,33 @@
 
   <!-- Confirm Password -->
   <div class="form-control w-full">
-    <label class="label py-1"><span class="label-text text-xs font-medium">Xác nhận mật khẩu <span class="text-error">*</span></span></label>
-    <input type="password" placeholder="Nhập lại mật khẩu" class="input input-bordered w-full input-sm"
-           formControlName="confirmPassword"
-           [ngClass]="{'input-error': registerForm.controls['confirmPassword'].invalid && registerForm.controls['confirmPassword'].touched || registerForm.hasError('passwordMismatch') && registerForm.controls['confirmPassword'].touched}" />
-    <label class="label py-0 h-4" *ngIf="(registerForm.controls['confirmPassword'].invalid || registerForm.hasError('passwordMismatch')) && registerForm.controls['confirmPassword'].touched">
+    <label class="label sr-only" for="confirmPassword"><span class="label-text">Xác nhận mật khẩu</span></label>
+    <div class="relative">
+       <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-base-content/40 dark:text-gray-500">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd" />
+        </svg>
+      </span>
+      <input id="confirmPassword" type="password" placeholder="Nhập lại mật khẩu"
+             class="input input-bordered w-full pl-10 py-2.5 dark:bg-gray-700 dark:border-gray-600"
+             formControlName="confirmPassword"
+             [ngClass]="{'input-error': registerForm.controls['confirmPassword'].invalid && registerForm.controls['confirmPassword'].touched || registerForm.hasError('passwordMismatch') && registerForm.controls['confirmPassword'].touched}" />
+    </div>
+    <label class="label h-5 py-0" *ngIf="(registerForm.controls['confirmPassword'].invalid || registerForm.hasError('passwordMismatch')) && registerForm.controls['confirmPassword'].touched">
       <span class="label-text-alt text-error text-xs" *ngIf="registerForm.controls['confirmPassword'].errors?.['required']">Vui lòng xác nhận mật khẩu.</span>
       <span class="label-text-alt text-error text-xs" *ngIf="registerForm.hasError('passwordMismatch')">Mật khẩu xác nhận không khớp.</span>
     </label>
   </div>
 
   <div class="form-control pt-4">
-    <button type="submit" class="btn btn-primary btn-sm" [disabled]="isLoading() || registerForm.invalid">
-      <span *ngIf="isLoading()" class="loading loading-spinner loading-xs"></span>
-      {{ isLoading() ? 'Đang xử lý...' : 'Đăng ký' }}
+    <button type="submit" class="btn btn-primary w-full py-3 text-base font-semibold dark:text-white" [disabled]="isLoading() || registerForm.invalid">
+      <span *ngIf="isLoading()" class="loading loading-spinner loading-sm"></span>
+      {{ isLoading() ? 'Đang xử lý...' : 'Đăng Ký Tài Khoản' }}
     </button>
   </div>
 
-  <div class="divider text-xs">Đã có tài khoản?</div>
-  <a routerLink="/auth/login" class="btn btn-outline btn-sm w-full">Đăng nhập</a>
+  <p class="text-center text-sm text-base-content/80 dark:text-gray-400 pt-2">
+    Đã có tài khoản?
+    <a routerLink="/auth/login" class="font-medium text-primary dark:text-green-400 hover:underline">Đăng nhập</a>
+  </p>
 </form>

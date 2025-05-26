@@ -1,118 +1,171 @@
-<div class="container mx-auto px-4 py-8">
-  <h1 class="text-3xl font-bold mb-6">Quản lý Đơn hàng</h1>
+<!-- src/app/features/admin-dashboard/components/manage-all-orders/manage-all-orders.component.html -->
+<div class="bg-base-200 dark:bg-gray-900 min-h-screen py-8 md:py-10">
+  <div class="container mx-auto px-4 max-w-full">
+    <header class="text-center mb-10 md:mb-12">
+      <h1 class="text-3xl md:text-4xl font-bold text-base-content dark:text-white">
+        Quản Lý Toàn Bộ Đơn Hàng
+      </h1>
+      <p class="text-base-content/70 dark:text-gray-400 mt-2">
+        Theo dõi, tìm kiếm và quản lý tất cả các đơn hàng trên hệ thống.
+      </p>
+    </header>
 
-  <!-- Filter Form -->
-  <form [formGroup]="filterForm" class="mb-6 p-4  rounded-box grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
-    <div class="form-control w-full">
-      <label class="label"><span class="label-text">Tìm kiếm (Mã ĐH, Tên...)</span></label>
-      <input type="text" placeholder="Nhập từ khóa..." class="input input-sm input-bordered w-full" formControlName="keyword" />
+    <!-- Filter Form -->
+    <form [formGroup]="filterForm" class="mb-8 p-5 bg-base-100 dark:bg-gray-800 rounded-xl shadow-lg border border-base-300/30 dark:border-gray-700/30">
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-x-6 gap-y-4 items-end">
+        <div class="form-control w-full">
+          <label class="label pb-1"><span class="label-text font-medium text-base-content dark:text-gray-200">Tìm kiếm</span></label>
+          <input type="text" placeholder="Mã ĐH, Tên KH/Nông dân..."
+                 class="input input-bordered w-full dark:bg-gray-700 dark:border-gray-600 focus:ring-1 focus:ring-primary dark:focus:ring-green-500 rounded-lg"
+                 formControlName="keyword" />
+        </div>
+        <div class="form-control w-full">
+          <label class="label pb-1"><span class="label-text font-medium text-base-content dark:text-gray-200">Trạng thái ĐH</span></label>
+          <select class="select select-bordered w-full dark:bg-gray-700 dark:border-gray-600 focus:ring-1 focus:ring-primary dark:focus:ring-green-500 rounded-lg"
+                  formControlName="status">
+            <option value="">Tất cả trạng thái</option>
+            <option *ngFor="let status of orderStatuses" [value]="status">{{ getStatusText(status) }}</option>
+          </select>
+        </div>
+        <div class="form-control w-full">
+          <label class="label pb-1"><span class="label-text font-medium text-base-content dark:text-gray-200">ID Người mua</span></label>
+          <input type="number" placeholder="Nhập ID người mua"
+                 class="input input-bordered w-full dark:bg-gray-700 dark:border-gray-600 focus:ring-1 focus:ring-primary dark:focus:ring-green-500 rounded-lg"
+                 formControlName="buyerId" />
+        </div>
+        <div class="form-control w-full">
+          <label class="label pb-1"><span class="label-text font-medium text-base-content dark:text-gray-200">ID Nông dân</span></label>
+          <input type="number" placeholder="Nhập ID nông dân"
+                 class="input input-bordered w-full dark:bg-gray-700 dark:border-gray-600 focus:ring-1 focus:ring-primary dark:focus:ring-green-500 rounded-lg"
+                 formControlName="farmerId" />
+        </div>
+        <button type="button" class="btn btn-ghost lg:self-end w-full lg:w-auto rounded-full text-base-content/70 dark:text-gray-400 hover:bg-base-200 dark:hover:bg-gray-700"
+                (click)="resetFilters()">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+          Xóa Bộ Lọc
+        </button>
+      </div>
+    </form>
+
+    <!-- Loading / Error / Empty States -->
+    <div *ngIf="isLoading() && !ordersPage()" class="flex justify-center items-center py-24">
+      <app-loading-spinner size="lg"></app-loading-spinner>
     </div>
-    <div class="form-control w-full">
-      <label class="label"><span class="label-text">Trạng thái ĐH</span></label>
-      <select class="select select-sm select-bordered w-full" formControlName="status">
-        <option value="">Tất cả trạng thái</option>
-        <option *ngFor="let status of orderStatuses" [value]="status">{{ getStatusText(status) }}</option>
-      </select>
-    </div>
-    <div class="form-control w-full">
-      <label class="label"><span class="label-text">ID Người mua</span></label>
-      <input type="number" placeholder="Nhập ID người mua" class="input input-sm input-bordered w-full" formControlName="buyerId" />
-    </div>
-    <div class="form-control w-full">
-      <label class="label"><span class="label-text">ID Nông dân</span></label>
-      <input type="number" placeholder="Nhập ID nông dân" class="input input-sm input-bordered w-full" formControlName="farmerId" />
-    </div>
-    <!-- ****** THÊM NÚT XÓA BỘ LỌC ****** -->
-    <div class="form-control w-full">
-      <button type="button" class="btn btn-sm btn-ghost w-full md:w-auto" (click)="resetFilters()">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 mr-1">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+    <app-alert *ngIf="errorMessage() && !isLoading()" type="error" [message]="errorMessage()" class="mb-6 animate-fade-in"></app-alert>
+
+    <ng-container *ngIf="!isLoading()">
+      <div *ngIf="ordersPage() && ordersPage()!.content.length > 0; else emptyOrders"
+           class="bg-base-100 dark:bg-gray-800 shadow-xl rounded-xl border border-base-300/30 dark:border-gray-700/30 overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="table w-full table-auto">
+            <thead class="bg-base-200 dark:bg-gray-700/50 text-xs uppercase text-base-content/70 dark:text-gray-400">
+            <tr>
+              <th class="p-3 md:p-4">Mã ĐH</th>
+              <th class="p-3 md:p-4">Ngày đặt</th>
+              <th class="p-3 md:p-4">Người mua</th>
+              <th class="p-3 md:p-4">Người bán</th>
+              <th class="p-3 md:p-4 text-right">Tổng tiền</th>
+              <th class="p-3 md:p-4 text-center">Trạng thái ĐH</th>
+              <th class="p-3 md:p-4 text-center">Thanh toán</th>
+              <th class="p-3 md:p-4 text-center">Hành động</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr *ngFor="let order of ordersPage()?.content; trackBy: trackOrderById"
+                class="hover:bg-base-200/50 dark:hover:bg-gray-700/50 transition-colors animate-item-in">
+              <td class="p-3 md:p-4">
+                <div>
+                  <a (click)="viewOrderDetails(order.id)"
+                     class="link link-hover link-primary dark:link-green-400 font-semibold text-sm md:text-base">
+                    #{{ order.orderCode }}
+                  </a>
+                  <span class="block text-xs text-base-content/60 dark:text-gray-500">{{ order.orderType }}</span>
+                </div>
+              </td>
+              <td class="p-3 md:p-4 text-xs md:text-sm text-base-content/80 dark:text-gray-300 align-middle">
+                {{ order.createdAt | date:'HH:mm dd/MM/yy' }}
+              </td>
+              <td class="p-3 md:p-4 text-xs md:text-sm text-base-content/80 dark:text-gray-300 align-middle truncate" title="{{order.buyerName}}">
+                {{ order.buyerName || 'N/A' }}
+              </td>
+              <td class="p-3 md:p-4 text-xs md:text-sm text-base-content/80 dark:text-gray-300 align-middle truncate" title="{{order.farmerName}}">
+                {{ order.farmerName || 'N/A' }}
+              </td>
+              <td class="p-3 md:p-4 text-xs md:text-sm text-right font-semibold text-base-content dark:text-white align-middle">
+                {{ order.totalAmount | formatBigDecimal:'1.0-0' }} ₫
+              </td>
+              <td class="p-3 md:p-4 align-middle text-center">
+                  <span class="badge badge-md font-medium" [ngClass]="getStatusClass(order.status)">
+                    {{ getStatusText(order.status) }}
+                  </span>
+              </td>
+              <td class="p-3 md:p-4 align-middle text-center">
+                  <span class="badge badge-md font-medium" [ngClass]="getPaymentStatusClass(order.paymentStatus)">
+                    {{ getPaymentStatusText(order.paymentStatus) }}
+                  </span>
+              </td>
+              <td class="p-3 md:p-4 align-middle text-center">
+                <div class="dropdown dropdown-top dropdown-end relative">
+                  <label tabindex="0" class="btn btn-xs btn-ghost btn-circle text-base-content/70 dark:text-gray-400 hover:bg-base-300 dark:hover:bg-gray-700">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" /></svg>
+                  </label>
+                  <ul tabindex="0"
+                      class="dropdown-content z-[50] menu menu-sm p-2 shadow bg-base-100 dark:bg-gray-700 rounded-box w-48 border border-base-300/50 dark:border-gray-600">
+                    <li><a (click)="viewOrderDetails(order.id)" class="hover:bg-base-200 dark:hover:bg-gray-600"><i class="fas fa-eye w-4 mr-2 text-info dark:text-sky-400"></i>Xem chi tiết</a></li>
+                     <li><a (click)="updateStatus(order.id)" class="hover:bg-base-200 dark:hover:bg-gray-600"><i class="fas fa-edit w-4 mr-2 text-secondary dark:text-teal-400"></i>Cập nhật trạng thái</a></li>
+                    <li *ngIf="order.status !== 'CANCELLED' && order.status !== 'DELIVERED' && order.status !== 'RETURNED'">
+                      <a (click)="cancelOrder(order)" class="text-error dark:text-red-400 hover:bg-error/10 dark:hover:bg-red-500/10"><i class="fas fa-ban w-4 mr-2"></i>Hủy đơn hàng</a>
+                    </li>
+
+                    <li *ngIf="order.paymentMethod === 'BANK_TRANSFER' && order.paymentStatus === 'PENDING'">
+                      <a class="text-success dark:text-green-400 hover:bg-success/10 dark:hover:bg-green-500/10"><i class="fas fa-check-circle w-4 mr-2"></i>Xác nhận TT</a>
+                    </li>
+                  </ul>
+                </div>
+              </td>
+            </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Pagination -->
+      <div *ngIf="ordersPage() && ordersPage()!.totalPages > 1" class="mt-10 md:mt-12 flex justify-center">
+        <app-paginator
+          [currentPage]="ordersPage()!.number"
+          [totalPages]="ordersPage()!.totalPages"
+          (pageChange)="onPageChange($event)">
+        </app-paginator>
+      </div>
+    </ng-container>
+
+    <!-- Empty Orders Template -->
+    <ng-template #emptyOrders>
+      <div *ngIf="!isLoading() && !errorMessage()"
+           class="text-center py-20 px-4 border-2 border-dashed border-base-300 dark:border-gray-700 rounded-xl bg-base-100 dark:bg-gray-800/30 animate-fade-in">
+        <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-20 w-20 text-base-content/25 dark:text-gray-600 mb-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
         </svg>
-        Xóa bộ lọc
-      </button>
-    </div>
-    <!-- ********************************** -->
-  </form>
-
-  <!-- Loading / Error / Empty -->
-  <div *ngIf="isLoading() && !ordersPage()" class="text-center py-10"><app-loading-spinner></app-loading-spinner></div>
-  <app-alert *ngIf="errorMessage()" type="error" [message]="errorMessage()"></app-alert>
-  <div *ngIf="!isLoading() && (!ordersPage() || (ordersPage()?.content?.length ?? 0) === 0) && !errorMessage()" class="text-center py-10 text-base-content/60">
-    Không tìm thấy đơn hàng nào phù hợp.
+        <p class="text-xl font-medium text-base-content/80 dark:text-gray-300 mb-4">Không tìm thấy đơn hàng nào.</p>
+        <p class="text-sm text-base-content/60 dark:text-gray-400">Vui lòng thử điều chỉnh bộ lọc hoặc kiểm tra lại từ khóa tìm kiếm của bạn.</p>
+      </div>
+    </ng-template>
   </div>
-
-  <!-- Orders Table -->
-  <div *ngIf="!isLoading() && ordersPage() && ordersPage()!.content.length > 0" class="overflow-x-auto  rounded-box shadow">
-    <table class="table table-zebra w-full table-sm">
-      <thead>
-      <tr>
-        <th>Mã ĐH</th>
-        <th>Ngày đặt</th>
-        <th>Người mua</th>
-        <th>Người bán</th>
-        <th class="text-right">Tổng tiền</th>
-        <th>Trạng thái ĐH</th>
-        <th>Trạng thái TT</th>
-        <th>Hành động</th>
-      </tr>
-      </thead>
-      <tbody>
-      <tr *ngFor="let order of ordersPage()?.content; trackBy: trackOrderById" class="hover">
-        <td class="font-mono text-xs">
-          <a (click)="viewOrderDetails(order.id)" class="link link-hover link-primary">{{ order.orderCode }}</a>
-          <span class="block text-xs opacity-70">{{ order.orderType }}</span>
-        </td>
-        <td class="text-xs">{{ order.createdAt | date:'dd/MM/yy HH:mm' }}</td>
-        <td class="text-xs">{{ order.buyerName || 'N/A' }}</td>
-        <td class="text-xs">{{ order.farmerName || 'N/A' }}</td>
-        <td class="text-right text-xs font-semibold">{{ order.totalAmount | formatBigDecimal:'1.0-0' }} đ</td>
-        <!-- ... các cột khác ... -->
-        <td>
-  <span
-    class="badge badge-sm whitespace-normal text-xs sm:text-sm px-1.5 sm:px-2.5"
-    [ngClass]="getStatusClass(order.status)">
-    {{ getStatusText(order.status) }}
-  </span>
-        </td>
-        <td>
-  <span
-    class="badge badge-sm whitespace-normal text-xs sm:text-sm px-1.5 sm:px-2.5"
-    [ngClass]="getPaymentStatusClass(order.paymentStatus)">
-    {{ getPaymentStatusText(order.paymentStatus) }}
-  </span>
-        </td>
-        <!-- ... cột hành động ... -->
-        <td>
-          <div class="dropdown dropdown-left">
-            <label tabindex="0" class="btn btn-ghost btn-xs">...</label>
-            <ul tabindex="0" class="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-48 text-xs">
-              <li><a (click)="viewOrderDetails(order.id)">Xem/Sửa chi tiết</a></li>
-              <!-- <li><a (click)="updateStatus(order.id)">Cập nhật trạng thái</a></li> -->
-              <!-- Thêm các action khác nếu cần -->
-              <li *ngIf="order.status !== 'CANCELLED' && order.status !== 'DELIVERED' && order.status !== 'RETURNED'">
-                <a class="text-error" (click)="cancelOrder(order)">Hủy đơn hàng</a>
-              </li>
-              <!-- Ví dụ nút xác nhận thanh toán CK -->
-              <!-- <li *ngIf="order.paymentMethod === 'BANK_TRANSFER' && order.paymentStatus === 'PENDING'">
-                  <a class="text-success">Xác nhận đã thanh toán</a>
-              </li> -->
-            </ul>
-          </div>
-        </td>
-      </tr>
-      </tbody>
-    </table>
-  </div>
-
-  <!-- Pagination -->
-  <div *ngIf="ordersPage() && ordersPage()!.totalPages > 1" class="mt-6 flex justify-center">
-    <app-paginator
-      [currentPage]="ordersPage()!.number"
-      [totalPages]="ordersPage()!.totalPages"
-      (pageChange)="onPageChange($event)">
-    </app-paginator>
-  </div>
-
-  <!-- TODO: Thêm Modal để cập nhật trạng thái đơn hàng nếu cần giao diện phức tạp hơn -->
-
 </div>
+
+<!-- CSS cho animation (có thể đặt trong styles.css hoặc style của component) -->
+<style>
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  .animate-fade-in { animation: fadeIn 0.5s ease-out forwards; }
+
+  @keyframes fadeInUpItem {
+    from { opacity: 0; transform: translateY(15px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .animate-item-in {
+    opacity: 0;
+    animation: fadeInUpItem 0.4s ease-out forwards;
+  }
+</style>

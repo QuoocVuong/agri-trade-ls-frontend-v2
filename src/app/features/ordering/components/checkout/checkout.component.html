@@ -1,225 +1,227 @@
-<div class="container mx-auto px-4 py-6 md:py-8 lg:py-10 max-w-6xl">
-  <!-- Header -->
-  <h1 class="text-2xl md:text-3xl font-bold mb-6 text-center">Hoàn tất Đơn hàng</h1>
+<!-- src/app/features/ordering/components/checkout/checkout.component.html -->
+<div class="bg-base-200 dark:bg-gray-900 min-h-screen py-8 md:py-12 lg:py-16">
+  <div class="container mx-auto px-4 max-w-6xl">
+    <header class="text-center mb-10 md:mb-12">
+      <h1 class="text-3xl md:text-4xl font-bold text-base-content dark:text-white">
+        Hoàn Tất Đơn Hàng
+      </h1>
+      <p class="text-base-content/70 dark:text-gray-400 mt-2">
+        Vui lòng kiểm tra thông tin và hoàn tất các bước dưới đây.
+      </p>
+    </header>
 
-  <div *ngIf="cart() && cart()!.items.length > 0; else emptyCartRedirect" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-    <!-- Cột trái: Form thông tin -->
-    <form [formGroup]="checkoutForm" (ngSubmit)="onSubmit()" class="lg:col-span-2 space-y-6">
-      <!-- Bước 1: Địa chỉ giao hàng -->
-      <div class="card  shadow-md rounded-lg">
-        <div class="card-body">
-          <div class="flex justify-between items-center mb-4">
-            <h2 class="card-title text-lg">1. Địa chỉ giao hàng</h2>
-            <button
-              type="button"
-              class="btn btn-sm btn-outline btn-secondary"
-              (click)="toggleNewAddressForm()"
-              [disabled]="isLoadingAddresses()">
-              {{ showNewAddressForm() ? 'Chọn địa chỉ đã lưu' : 'Thêm địa chỉ mới' }}
-            </button>
-          </div>
+    <div *ngIf="cart() && cart()!.items.length > 0; else emptyCartRedirect"
+         class="grid grid-cols-1 lg:grid-cols-3 gap-8 md:gap-10 items-start">
 
-          <!-- Loading Addresses -->
-          <div *ngIf="isLoadingAddresses()" class="flex justify-center py-5">
-            <app-loading-spinner size="sm"></app-loading-spinner>
-          </div>
+      <!-- Cột Trái: Form thông tin (lg:col-span-2) -->
+      <form [formGroup]="checkoutForm" (ngSubmit)="onSubmit()" class="lg:col-span-2 space-y-6 md:space-y-8">
 
-          <!-- Form thêm địa chỉ mới -->
-          <div *ngIf="showNewAddressForm()" class="space-y-4">
-            <h4 class="text-sm font-semibold">Thêm địa chỉ giao hàng mới:</h4>
-            <app-address-form
-              (addressSaved)="handleNewAddressSaved($event)"
-              (cancelled)="toggleNewAddressForm()"></app-address-form>
-            <p class="text-xs text-warning">Vui lòng lưu địa chỉ mới hoặc hủy để tiếp tục.</p>
-          </div>
-
-          <!-- Select địa chỉ đã lưu -->
-          <div *ngIf="!showNewAddressForm() && !isLoadingAddresses()">
-            <div *ngIf="addresses().length > 0; else noAddress" class="form-control">
-              <label class="label">
-                <span class="label-text font-medium text-sm">Chọn địa chỉ đã lưu:</span>
-              </label>
-              <select
-                class="select select-bordered w-full"
-                formControlName="shippingAddressId"
-                [ngClass]="{'select-error': checkoutForm.controls['shippingAddressId'].invalid && checkoutForm.controls['shippingAddressId'].touched}">
-                <!-- ****** SỬA NỘI DUNG OPTION Ở ĐÂY ****** -->
-                <option *ngFor="let addr of addresses()" [value]="addr.id">
-                  {{ addr.fullName }} - {{ addr.phoneNumber }} - {{ addr.addressDetail }}<span *ngIf="addr.addressDetail">, </span>
-                  <!-- Sử dụng async pipe để hiển thị tên địa danh -->
-                  <ng-container *ngIf="getLocationName('ward', addr.wardCode) | async as name; else wardCodeOnly">{{ name || '...' }}<span *ngIf="name">, </span></ng-container><ng-template #wardCodeOnly><span *ngIf="addr.wardCode">{{addr.wardCode}}, </span></ng-template>
-                  <ng-container *ngIf="getLocationName('district', addr.districtCode) | async as name; else districtCodeOnly">{{ name || '...' }}<span *ngIf="name">, </span></ng-container><ng-template #districtCodeOnly><span *ngIf="addr.districtCode">{{addr.districtCode}}, </span></ng-template>
-                  <ng-container *ngIf="getLocationName('province', addr.provinceCode) | async as name; else provinceCodeOnly">{{ name || '...' }}</ng-container><ng-template #provinceCodeOnly><span *ngIf="addr.provinceCode">{{addr.provinceCode}}</span></ng-template>
-                  {{ addr.isDefault ? ' (Mặc định)' : '' }}
-                </option>
-                <!-- ***************************************** -->
-              </select>
-              <label *ngIf="checkoutForm.controls['shippingAddressId'].invalid && checkoutForm.controls['shippingAddressId'].touched" class="label py-1">
-                <span class="label-text-alt text-error text-xs">Vui lòng chọn địa chỉ.</span>
-              </label>
-            </div>
-            <ng-template #noAddress>
-              <p class="text-sm text-warning">Bạn chưa có địa chỉ nào. Vui lòng thêm địa chỉ mới.</p>
-              <button
-                type="button"
-                class="btn btn-sm btn-secondary mt-2"
-                (click)="toggleNewAddressForm()">
-                Thêm địa chỉ mới
+        <!-- Bước 1: Địa chỉ giao hàng -->
+        <div class="card bg-base-100 dark:bg-gray-800 shadow-xl rounded-xl border border-base-300/30 dark:border-gray-700/30">
+          <div class="card-body p-6 md:p-8">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-5">
+              <h2 class="card-title text-xl font-semibold text-primary dark:text-green-400 mb-2 sm:mb-0">
+                <span class="bg-primary dark:bg-green-500 text-white rounded-full h-7 w-7 flex items-center justify-center text-sm mr-2">1</span>
+                Địa Chỉ Giao Hàng
+              </h2>
+              <button type="button" class="btn btn-sm btn-outline btn-secondary dark:btn-outline-teal-500 rounded-full"
+                      (click)="toggleNewAddressForm()" [disabled]="isLoadingAddresses()">
+                <svg *ngIf="!showNewAddressForm()" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
+                <svg *ngIf="showNewAddressForm()" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" /></svg>
+                {{ showNewAddressForm() ? 'Chọn Địa Chỉ Đã Lưu' : 'Thêm Địa Chỉ Mới' }}
               </button>
-            </ng-template>
+            </div>
+
+            <div *ngIf="isLoadingAddresses()" class="flex justify-center py-6"><app-loading-spinner></app-loading-spinner></div>
+
+            <div *ngIf="showNewAddressForm()" class="animate-fade-in border-t border-base-300 dark:border-gray-700 pt-5 mt-3">
+              <h4 class="text-base font-medium mb-3 text-base-content dark:text-gray-200">Nhập thông tin địa chỉ mới:</h4>
+              <app-address-form (addressSaved)="handleNewAddressSaved($event)" (cancelled)="toggleNewAddressForm()"></app-address-form>
+              <p class="text-xs text-warning dark:text-yellow-500 mt-3">Vui lòng lưu địa chỉ mới hoặc hủy để tiếp tục.</p>
+            </div>
+
+            <div *ngIf="!showNewAddressForm() && !isLoadingAddresses()" class="animate-fade-in">
+              <div *ngIf="addresses().length > 0; else noAddress" class="form-control space-y-3">
+                <label *ngFor="let addr of addresses()"
+                       class="label cursor-pointer p-4 border border-base-300 dark:border-gray-600 rounded-lg hover:border-primary dark:hover:border-green-400 transition-all has-[:checked]:border-primary has-[:checked]:ring-2 has-[:checked]:ring-primary dark:has-[:checked]:border-green-400 dark:has-[:checked]:ring-green-400"
+                       [ngClass]="{'border-primary dark:border-green-400 ring-2 ring-primary dark:ring-green-400': checkoutForm.get('shippingAddressId')?.value === addr.id}">
+                  <div class="flex-grow">
+                    <div class="flex justify-between items-start">
+                      <span class="label-text font-semibold text-base-content dark:text-white">{{ addr.fullName }} - {{ addr.phoneNumber }}</span>
+                      <span *ngIf="addr.isDefault" class="badge badge-xs badge-primary dark:badge-success text-white">Mặc định</span>
+                    </div>
+                    <p class="text-xs text-base-content/80 dark:text-gray-400 mt-0.5">
+                      {{ addr.addressDetail }}<span *ngIf="addr.addressDetail">, </span>
+                      <ng-container *ngIf="getLocationName('ward', addr.wardCode) | async as name; else wardCodeOnly">{{ name || '...' }}<span *ngIf="name">, </span></ng-container><ng-template #wardCodeOnly><span *ngIf="addr.wardCode">{{addr.wardCode}}, </span></ng-template>
+                      <ng-container *ngIf="getLocationName('district', addr.districtCode) | async as name; else districtCodeOnly">{{ name || '...' }}<span *ngIf="name">, </span></ng-container><ng-template #districtCodeOnly><span *ngIf="addr.districtCode">{{addr.districtCode}}, </span></ng-template>
+                      <ng-container *ngIf="getLocationName('province', addr.provinceCode) | async as name; else provinceCodeOnly">{{ name || '...' }}</ng-container><ng-template #provinceCodeOnly><span *ngIf="addr.provinceCode">{{addr.provinceCode}}</span></ng-template>
+                    </p>
+                  </div>
+                  <input type="radio" name="shippingAddressId" class="radio radio-primary radio-sm"
+                         [value]="addr.id" formControlName="shippingAddressId" />
+                </label>
+              </div>
+              <label *ngIf="checkoutForm.controls['shippingAddressId'].invalid && checkoutForm.controls['shippingAddressId'].touched && addresses().length > 0" class="label h-5 pt-1">
+                <span class="label-text-alt text-error text-xs">Vui lòng chọn một địa chỉ giao hàng.</span>
+              </label>
+              <ng-template #noAddress>
+                <div class="text-center p-4 border border-dashed border-warning/50 dark:border-yellow-500/50 rounded-lg bg-warning/5 dark:bg-yellow-500/5">
+                  <p class="text-sm text-warning dark:text-yellow-400">Bạn chưa có địa chỉ nào được lưu.</p>
+                  <button type="button" class="btn btn-xs btn-secondary mt-2 rounded-full dark:btn-outline-teal-500" (click)="toggleNewAddressForm()">
+                    Thêm địa chỉ ngay
+                  </button>
+                </div>
+              </ng-template>
+            </div>
           </div>
         </div>
-      </div>
 
-      <!-- Bước 2: Phương thức thanh toán -->
-      <div class="card  shadow-md rounded-lg">
-        <div class="card-body">
-          <h2 class="card-title text-lg mb-4">2. Phương thức thanh toán</h2>
-          <div class="form-control space-y-2">
-            <label
-              *ngFor="let method of availablePaymentMethods()"
-              class="label cursor-pointer border border-base-300 rounded-lg p-3 hover:bg-base-200 transition-colors flex justify-between items-center">
-              <span class="label-text font-medium">{{ getPaymentMethodText(method) }}</span>
-              <input
-                type="radio"
-                name="paymentMethod"
-                class="radio radio-primary"
-                [value]="method"
-                formControlName="paymentMethod" />
-            </label>
-            <label *ngIf="checkoutForm.controls['paymentMethod'].invalid && checkoutForm.controls['paymentMethod'].touched" class="label py-1">
+        <!-- Bước 2: Phương thức thanh toán -->
+        <div class="card bg-base-100 dark:bg-gray-800 shadow-xl rounded-xl border border-base-300/30 dark:border-gray-700/30">
+          <div class="card-body p-6 md:p-8">
+            <h2 class="card-title text-xl font-semibold text-primary dark:text-green-400 mb-5">
+              <span class="bg-primary dark:bg-green-500 text-white rounded-full h-7 w-7 flex items-center justify-center text-sm mr-2">2</span>
+              Phương Thức Thanh Toán
+            </h2>
+            <div class="form-control space-y-3">
+              <label *ngFor="let method of availablePaymentMethods()"
+                     class="label cursor-pointer p-4 border border-base-300 dark:border-gray-600 rounded-lg hover:border-primary dark:hover:border-green-400 transition-all has-[:checked]:border-primary has-[:checked]:ring-2 has-[:checked]:ring-primary dark:has-[:checked]:border-green-400 dark:has-[:checked]:ring-green-400"
+                     [ngClass]="{'border-primary dark:border-green-400 ring-2 ring-primary dark:ring-green-400': checkoutForm.get('paymentMethod')?.value === method}">
+                <span class="label-text font-medium text-base-content dark:text-white">{{ getPaymentMethodText(method) }}</span>
+                <input type="radio" name="paymentMethod" class="radio radio-primary radio-sm"
+                       [value]="method" formControlName="paymentMethod" />
+              </label>
+            </div>
+            <label *ngIf="checkoutForm.controls['paymentMethod'].invalid && checkoutForm.controls['paymentMethod'].touched" class="label h-5 pt-1">
               <span class="label-text-alt text-error text-xs">Vui lòng chọn phương thức thanh toán.</span>
             </label>
           </div>
         </div>
-      </div>
 
-      <!-- *** THÊM INPUT PO NUMBER (CHỈ CHO B2B) *** -->
-      <div *ngIf="isBusinessBuyer()" class="card  shadow">
-        <div class="card-body">
-          <h2 class="card-title text-lg mb-3">Thông tin Đơn đặt hàng (PO) - Tùy chọn</h2>
-          <div class="form-control w-full">
-            <label class="label"><span class="label-text">Số PO Number:</span></label>
-            <input type="text" placeholder="Nhập số PO nếu có" class="input input-bordered w-full" formControlName="purchaseOrderNumber" />
-          </div>
-        </div>
-      </div>
-      <!-- ****************************************** -->
-
-      <!-- Bước 3: Ghi chú -->
-      <div class="card  shadow-md rounded-lg">
-        <div class="card-body">
-          <h2 class="card-title text-lg mb-4">3. Ghi chú cho đơn hàng (Tùy chọn)</h2>
-          <textarea
-            class="textarea textarea-bordered h-24"
-            placeholder="Ví dụ: Giao hàng giờ hành chính, gọi trước khi giao..."
-            formControlName="notes"></textarea>
-        </div>
-      </div>
-
-      <!-- Thông báo lỗi chung -->
-      <app-alert *ngIf="errorMessage()" type="error" [message]="errorMessage()" class="mt-4"></app-alert>
-
-      <!-- Nút Đặt hàng -->
-      <div class="mt-6">
-        <button
-          type="submit"
-          class="btn btn-primary w-full"
-          [disabled]="isLoadingCheckout() || (checkoutForm.invalid && !showNewAddressForm())">
-          <span *ngIf="isLoadingCheckout()" class="loading loading-spinner loading-xs"></span>
-          {{ isLoadingCheckout() ? 'Đang xử lý...' : 'Đặt hàng' }}
-        </button>
-      </div>
-    </form>
-
-    <!-- Cột phải: Tóm tắt đơn hàng -->
-    <div class="lg:col-span-1">
-      <div class="card shadow-md rounded-lg sticky top-20">
-        <div class="card-body">
-          <h2 class="card-title text-lg mb-4">Tóm tắt đơn hàng</h2>
-          <!-- Danh sách sản phẩm -->
-          <div class="space-y-3 max-h-60 overflow-y-auto pr-2 mb-4">
-            <div *ngFor="let item of cart()?.items" class="flex items-center gap-3 border-b border-base-300 pb-3 last:border-b-0">
-              <img
-                [src]="item.product?.thumbnailUrl || 'assets/images/placeholder-image.png'"
-                [alt]="item.product?.name"
-                class="w-10 h-10 object-cover rounded flex-shrink-0" />
-              <div class="flex-grow">
-                <p class="text-sm font-medium line-clamp-1">{{ item.product?.name }}</p>
-                <p class="text-xs text-base-content/60">SL: {{ item.quantity }}</p>
-                <!-- (Tùy chọn) Hiển thị đơn giá đã tính -->
-                <p class="text-xs text-base-content/60">
-                  Đơn giá: {{ getDisplayInfo(item).price | formatBigDecimal:'1.0-0' }} đ / {{ getDisplayInfo(item).unit }}
-                  <!-- Chỉ hiển thị text màu xanh -->
-                  <span *ngIf="isBusinessBuyer() && item.product?.b2bEnabled" class="badge badge-xs badge-info  ml-1">B2B</span>
-                </p>
-              </div>
-              <span class="text-sm font-medium flex-shrink-0">{{ calculateItemTotal(item)  | formatBigDecimal:'1.0-0' }} đ</span>
+        <!-- PO Number (B2B) -->
+        <div *ngIf="isBusinessBuyer()" class="card bg-base-100 dark:bg-gray-800 shadow-xl rounded-xl border border-base-300/30 dark:border-gray-700/30">
+          <div class="card-body p-6 md:p-8">
+            <h2 class="card-title text-xl font-semibold text-info dark:text-sky-400 mb-3">
+              <span class="bg-info dark:bg-sky-500 text-white rounded-full h-7 w-7 flex items-center justify-center text-sm mr-2">?</span>
+              Thông Tin Đơn Đặt Hàng (PO) <span class="text-xs font-normal text-base-content/70 dark:text-gray-400">(Tùy chọn)</span>
+            </h2>
+            <div class="form-control w-full">
+              <label class="label pb-1 sr-only" for="poNumber"><span class="label-text">Số PO Number</span></label>
+              <input id="poNumber" type="text" placeholder="Nhập số PO nếu có" class="input input-bordered w-full dark:bg-gray-700 dark:border-gray-600 focus:ring-1 focus:ring-info dark:focus:ring-sky-500" formControlName="purchaseOrderNumber" />
             </div>
           </div>
-          <div class="space-y-2 text-sm border-t border-base-300 pt-4">
-            <!-- Loading -->
-            <div *ngIf="isLoadingTotals()" class="text-center text-xs py-1">
-              <span class="loading loading-dots loading-xs"></span> Đang tính toán...
+        </div>
+
+        <!-- Ghi chú -->
+        <div class="card bg-base-100 dark:bg-gray-800 shadow-xl rounded-xl border border-base-300/30 dark:border-gray-700/30">
+          <div class="card-body p-6 md:p-8">
+            <h2 class="card-title text-xl font-semibold text-base-content dark:text-gray-200 mb-3">
+              <span class="bg-base-content/10 dark:bg-gray-700 text-base-content dark:text-gray-300 rounded-full h-7 w-7 flex items-center justify-center text-sm mr-2">3</span>
+              Ghi Chú Cho Đơn Hàng <span class="text-xs font-normal text-base-content/70 dark:text-gray-400">(Tùy chọn)</span>
+            </h2>
+            <textarea class="textarea textarea-bordered h-24 dark:bg-gray-700 dark:border-gray-600 focus:ring-1 focus:ring-primary dark:focus:ring-green-500"
+                      placeholder="Ví dụ: Giao hàng giờ hành chính, gọi trước khi giao, xuất hóa đơn VAT..."
+                      formControlName="notes"></textarea>
+          </div>
+        </div>
+
+        <app-alert *ngIf="errorMessage()" type="error" [message]="errorMessage()" class="mt-5"></app-alert>
+
+        <div class="mt-8">
+          <button type="submit" class="btn btn-primary btn-lg w-full rounded-full shadow-lg hover:scale-105 transition-transform dark:text-white"
+                  [disabled]="isLoadingCheckout() || (checkoutForm.invalid && !showNewAddressForm())">
+            <span *ngIf="isLoadingCheckout()" class="loading loading-spinner"></span>
+            {{ isLoadingCheckout() ? 'Đang Xử Lý...' : 'Xác Nhận Đặt Hàng' }}
+          </button>
+        </div>
+      </form>
+
+      <!-- Cột Phải: Tóm tắt đơn hàng (lg:col-span-1) -->
+      <div class="lg:col-span-1">
+        <div class="card bg-base-100 dark:bg-gray-800 shadow-xl rounded-xl border border-base-300/30 dark:border-gray-700/30 sticky top-24">
+          <div class="card-body p-6">
+            <h2 class="card-title text-xl font-semibold text-base-content dark:text-white mb-5 border-b border-base-300 dark:border-gray-700 pb-3">
+              Tóm Tắt Đơn Hàng
+            </h2>
+            <div class="space-y-3 max-h-72 overflow-y-auto pr-2 custom-scrollbar mb-4">
+              <div *ngFor="let item of cart()?.items" class="flex items-start gap-3 py-2 border-b border-base-200 dark:border-gray-700/50 last:border-b-0">
+                <img [src]="item.product?.thumbnailUrl || 'assets/images/placeholder-image.png'" [alt]="item.product?.name"
+                     class="w-14 h-14 object-cover rounded-lg shadow-sm flex-shrink-0">
+                <div class="flex-grow">
+                  <p class="text-sm font-medium line-clamp-1 text-base-content dark:text-gray-100">{{ item.product?.name }}</p>
+                  <p class="text-xs text-base-content/70 dark:text-gray-400">SL: {{ item.quantity }} x {{ getDisplayInfo(item).price | formatBigDecimal:'1.0-0' }} ₫</p>
+                  <span *ngIf="isBusinessBuyer() && item.product?.b2bEnabled" class="badge badge-xs badge-info dark:badge-sky-500 mt-0.5">B2B</span>
+                </div>
+                <span class="text-sm font-semibold text-base-content dark:text-white flex-shrink-0">{{ calculateItemTotal(item) | formatBigDecimal:'1.0-0' }} ₫</span>
+              </div>
             </div>
-            <ng-container *ngIf="!isLoadingTotals()">
-              <div class="flex justify-between">
-                <span>Tạm tính</span>
-                <span class="font-medium">{{ calculatedSubTotal() | formatBigDecimal:'1.0-0' }} đ</span>
+
+            <div class="space-y-2 text-sm border-t border-base-300 dark:border-gray-700 pt-4">
+              <div *ngIf="isLoadingTotals()" class="text-center text-xs py-2 text-base-content/70 dark:text-gray-400">
+                <span class="loading loading-dots loading-sm"></span> Đang tính toán chi phí...
               </div>
-              <div class="flex justify-between">
-                <span>Phí vận chuyển</span>
-                <span class="font-medium">{{ calculatedShippingFee() | formatBigDecimal:'1.0-0' }} đ</span>
-              </div>
-              <div class="flex justify-between">
-                <span>Giảm giá</span>
-                <span class="font-medium text-success">- {{ calculatedDiscount() | formatBigDecimal:'1.0-0' }} đ</span>
-              </div>
-              <div class="divider my-1"></div>
-              <div class="flex justify-between font-bold text-base">
-                <span>Tổng cộng</span>
-                <span class="text-primary">{{ calculatedTotalAmount() | formatBigDecimal:'1.0-0' }} đ</span>
-              </div>
-            </ng-container>
-          </div>
-          <!-- ****** THÊM GHI CHÚ B2B/B2C ****** -->
-          <div *ngIf="!isLoadingTotals() && orderTypeUsedInCalc()"> <!-- Chỉ hiện khi đã có kết quả tính toán -->
-            <p *ngIf="isBusinessBuyer() && orderTypeUsedInCalc() === OrderType.B2B" class="text-xs text-info mt-2 text-center">
-              Giá B2B và chiết khấu (nếu có) đã được áp dụng.
+              <ng-container *ngIf="!isLoadingTotals()">
+                <div class="flex justify-between text-base-content/80 dark:text-gray-300">
+                  <span>Tạm tính:</span>
+                  <span class="font-medium">{{ calculatedSubTotal() | formatBigDecimal:'1.0-0' }} ₫</span>
+                </div>
+                <div class="flex justify-between text-base-content/80 dark:text-gray-300">
+                  <span>Phí vận chuyển:</span>
+                  <span class="font-medium">{{ calculatedShippingFee() | formatBigDecimal:'1.0-0' }} ₫</span>
+                </div>
+                <div class="flex justify-between text-base-content/80 dark:text-gray-300">
+                  <span>Giảm giá:</span>
+                  <span class="font-medium text-success dark:text-green-400">- {{ calculatedDiscount() | formatBigDecimal:'1.0-0' }} ₫</span>
+                </div>
+                <div class="divider my-2 dark:border-gray-700"></div>
+                <div class="flex justify-between font-bold text-lg md:text-xl">
+                  <span class="text-base-content dark:text-white">Tổng Cộng:</span>
+                  <span class="text-primary dark:text-green-400">{{ calculatedTotalAmount() | formatBigDecimal:'1.0-0' }} ₫</span>
+                </div>
+              </ng-container>
+            </div>
+
+            <div *ngIf="!isLoadingTotals() && orderTypeUsedInCalc()" class="mt-3 text-center">
+              <p *ngIf="isBusinessBuyer() && orderTypeUsedInCalc() === OrderType.B2B" class="text-xs text-info dark:text-sky-400 italic">
+                Giá B2B và chiết khấu (nếu có) đã được áp dụng cho đơn hàng này.
+              </p>
+              <p *ngIf="isBusinessBuyer() && orderTypeUsedInCalc() === OrderType.B2C" class="text-xs text-warning dark:text-yellow-500 italic">
+                Lưu ý: Giá bán lẻ (B2C) đang được áp dụng.
+              </p>
+            </div>
+
+            <p class="text-xs text-center mt-5 text-base-content/60 dark:text-gray-500">
+              Bằng việc nhấn "Xác Nhận Đặt Hàng", bạn đồng ý với
+              <a routerLink="/terms" target="_blank" class="link link-hover hover:text-primary dark:hover:text-green-400">Điều khoản & Điều kiện</a> của AgriTrade.
             </p>
-            <!-- (Tùy chọn) Hiển thị cảnh báo nếu B2B user nhưng lại tính giá B2C -->
-            <p *ngIf="isBusinessBuyer() && orderTypeUsedInCalc() === OrderType.B2C" class="text-xs text-warning mt-2 text-center">
-              Lưu ý: Giá bán lẻ (B2C) đang được áp dụng cho đơn hàng này.
-            </p>
-            <!-- Có thể không cần hiển thị gì đặc biệt cho user B2C -->
           </div>
-          <!-- ********************************** -->
-          <p class="text-xs text-center mt-4 text-base-content/60">
-            Nhấn "Đặt hàng" đồng nghĩa với việc bạn đồng ý với
-            <a href="#" class="link link-hover hover:text-primary">Điều khoản dịch vụ</a> của chúng tôi.
-          </p>
         </div>
       </div>
     </div>
+
+    <!-- Empty Cart Redirect Template -->
+    <ng-template #emptyCartRedirect>
+      <div class="text-center py-20">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-20 w-20 text-base-content/20 dark:text-gray-700 mx-auto mb-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+        </svg>
+        <p class="text-xl font-medium text-base-content/80 dark:text-gray-300 mb-6">Giỏ hàng của bạn đang trống.</p>
+        <a routerLink="/products" class="btn btn-primary btn-lg rounded-full shadow-lg hover:scale-105 transition-transform px-8">
+          Bắt Đầu Mua Sắm
+        </a>
+      </div>
+    </ng-template>
   </div>
-
-  <!-- Empty Cart Template -->
-  <ng-template #emptyCartRedirect>
-    <div class="text-center py-20">
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        class="h-16 w-16 text-base-content/30 mx-auto mb-4"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-        stroke-width="1">
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-      </svg>
-      <p class="text-lg text-base-content/60 mb-6">Giỏ hàng của bạn đang trống.</p>
-      <a routerLink="/products" class="btn btn-primary">Tiếp tục mua sắm</a>
-    </div>
-  </ng-template>
 </div>
+
+<!-- CSS cho animation và scrollbar (có thể đặt trong styles.css hoặc style của component) -->
+<style>
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  .animate-fade-in { animation: fadeIn 0.5s ease-out forwards; }
+
+  /* Custom scrollbar cho danh sách sản phẩm trong tóm tắt đơn hàng */
+  .custom-scrollbar::-webkit-scrollbar { width: 5px; }
+  .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+  .custom-scrollbar::-webkit-scrollbar-thumb { background-color: rgba(0,0,0,0.15); border-radius: 10px; }
+  html.dark .custom-scrollbar::-webkit-scrollbar-thumb { background-color: rgba(255,255,255,0.15); }
+</style>

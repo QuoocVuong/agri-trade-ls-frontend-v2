@@ -1,101 +1,115 @@
-<div class="flex flex-col h-full">
+<!-- src/app/features/interaction/components/chat/message-area/message-area.component.html -->
+<div class="flex flex-col h-full bg-base-100 dark:bg-gray-800">
   <!-- Header: Thông tin người chat + Nút Back (Mobile) -->
-  <div class="navbar bg-base-200 border-b border-base-300 px-4 py-2 min-h-0 h-14 sticky top-0 z-10">
+  <div class="navbar bg-base-100 dark:bg-gray-800 border-b border-base-300 dark:border-gray-700 px-3 md:px-4 py-2 min-h-0 h-16 sticky top-0 z-20 shadow-sm">
     <div class="navbar-start">
-      <!-- Nút Back chỉ hiển thị trên mobile -->
-      <button class="btn btn-ghost btn-sm btn-circle mr-2 md:hidden" (click)="backToList.emit()">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+      <button class="btn btn-ghost btn-sm btn-circle mr-1 md:hidden" (click)="backToList.emit()" aria-label="Quay lại danh sách chat">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
           <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
         </svg>
       </button>
-      <!-- Thông tin người chat -->
-      <div *ngIf="currentChatPartner() as partner" class="flex items-center space-x-2">
+      <div *ngIf="currentChatPartner() as partner" class="flex items-center space-x-2 md:space-x-3 cursor-pointer" [routerLink]="['/farmer', partner.id]">
         <div class="avatar" [class.online]="chatService.isUserOnline(partner.id)">
-          <div class="w-8 h-8 rounded-full">
-            <img [src]="partner.avatarUrl || 'assets/images/default-avatar.png'" [alt]="partner.fullName || 'User'">
+          <div class="w-9 h-9 md:w-10 md:h-10 rounded-full ring-1 ring-primary/30 dark:ring-green-500/30">
+            <img [src]="partner.avatarUrl || 'assets/images/default-avatar.png'" [alt]="partner.fullName || 'User'" class="object-cover">
           </div>
         </div>
         <div>
-          <span class="font-semibold text-sm">{{ partner.fullName || 'Người dùng' }}</span>
-          <div class="text-xs" [class.text-success]="chatService.isUserOnline(partner.id)" [class.text-base-content.50]="!chatService.isUserOnline(partner.id)">
+          <span class="font-semibold text-sm md:text-base text-base-content dark:text-white line-clamp-1">{{ partner.fullName || 'Người dùng' }}</span>
+          <div class="text-xs" [class.text-success]="chatService.isUserOnline(partner.id)" [class.text-base-content60]="!chatService.isUserOnline(partner.id)">
           {{ chatService.isUserOnline(partner.id) ? 'Đang hoạt động' : 'Ngoại tuyến' }}
         </div>
       </div>
     </div>
-    <!-- Hiển thị khi chưa chọn phòng -->
-    <div *ngIf="!selectedRoom && !currentChatPartner()" class="text-sm text-base-content/60">
-      Chọn một cuộc trò chuyện
-    </div>
   </div>
   <div class="navbar-end">
-    <!-- Các nút action khác nếu cần -->
+
   </div>
 </div>
 
 <!-- Message Container (Scrollable) -->
-<div #messageContainer class="flex-grow overflow-y-auto p-4 bg-base-100" style="max-height: calc(100vh - 14rem);">
-  <!-- Loading more indicator -->
-  <div *ngIf="isLoadingMore()" class="text-center text-xs text-base-content/50 py-2">
-    <span class="loading loading-dots loading-xs"></span>
-  </div>
-  <!-- Nút load tin nhắn cũ hơn -->
-  <div *ngIf="hasMoreMessages() && !isLoadingMore() && messages().length > 0" class="text-center">
-    <button class="btn btn-xs btn-ghost text-info" (click)="loadPreviousMessages()">Tải tin nhắn cũ hơn</button>
+<div #messageContainer class="flex-grow overflow-y-auto p-4 md:p-6 space-y-3 custom-scrollbar bg-base-200/30 dark:bg-gray-800/30"
+     (scroll)="onScroll($event)">
+  <div *ngIf="isLoading()" class="flex justify-center py-6"><app-loading-spinner size="sm"></app-loading-spinner></div>
+  <div *ngIf="hasMoreMessages() && !isLoadingMore() && messages().length > 0 && !isLoading()" class="text-center mb-3">
+    <button class="btn btn-xs btn-ghost text-primary dark:text-green-400 hover:bg-primary/10 dark:hover:bg-green-500/10 rounded-full"
+            (click)="loadPreviousMessages()" [disabled]="isLoadingMore()">
+      <span *ngIf="isLoadingMore()" class="loading loading-spinner loading-xs mr-1"></span>
+      Tải tin nhắn cũ hơn
+    </button>
   </div>
 
-  <!-- Message List -->
-  <ng-container *ngFor="let message of messages(); trackBy: trackMessageById">
-    <div class="chat" [ngClass]="message.sender?.id === currentUserId() ? 'chat-end' : 'chat-start'">
-      <!-- Avatar người gửi -->
-      <div class="chat-image avatar" *ngIf="message.sender?.id !== currentUserId()">
-        <div class="w-8 rounded-full">
-          <img [alt]="message.sender?.fullName || 'User'" [src]="message.sender?.avatarUrl || 'assets/images/default-avatar.png'" />
+  <ng-container *ngFor="let message of messages(); trackBy: trackMessageById; let i = index">
+    <div class="chat animate-message-in" [ngClass]="message.sender?.id === currentUserId() ? 'chat-end' : 'chat-start'">
+      <div class="chat-image avatar" *ngIf="message.sender?.id !== currentUserId() && shouldShowAvatar(i)">
+        <div class="w-8 h-8 rounded-full">
+          <img [alt]="message.sender?.fullName || 'User'" [src]="message.sender?.avatarUrl || 'assets/images/default-avatar.png'" class="object-cover" />
         </div>
       </div>
-      <!-- Header tin nhắn -->
-      <div class="chat-header text-xs opacity-50 mb-1" [class.text-right]="message.sender?.id === currentUserId()">
-        <span *ngIf="message.sender?.id !== currentUserId()" class="mr-1">{{ message.sender?.fullName }}</span>
-        <time class="text-xs opacity-50">{{ message.sentAt | date:'HH:mm' }}</time>
+      <div class="chat-bubble max-w-[70%] sm:max-w-[65%] md:max-w-[60%]"
+           [ngClass]="{
+               'chat-bubble-primary dark:bg-green-600 text-white dark:text-gray-100': message.sender?.id === currentUserId(),
+               'bg-base-300 dark:bg-gray-700 text-base-content dark:text-gray-200': message.sender?.id !== currentUserId()
+             }">
+        <p class="whitespace-pre-line break-words">{{ message.content }}</p>
       </div>
-      <!-- Nội dung tin nhắn -->
-      <div class="chat-bubble" [ngClass]="message.sender?.id === currentUserId() ? 'chat-bubble-primary' : 'chat-bubble-secondary'">
-        {{ message.content }}
-        <!-- TODO: Xử lý hiển thị ảnh/file -->
-      </div>
-      <!-- Footer tin nhắn (trạng thái đọc) -->
-      <div class="chat-footer opacity-50 text-xs" *ngIf="message.sender?.id === currentUserId()">
-          <span *ngIf="message.isRead">
-            Đã xem <span *ngIf="message.readAt"> lúc {{ message.readAt | date:'HH:mm' }}</span>
+      <div class="chat-footer opacity-60 text-xs mt-1"
+           [ngClass]="{'text-right': message.sender?.id === currentUserId(), 'ml-10': message.sender?.id !== currentUserId() && shouldShowAvatar(i), 'ml-0': message.sender?.id !== currentUserId() && !shouldShowAvatar(i)}">
+        <span>{{ message.sentAt | timeAgo }}</span>
+        <span *ngIf="message.sender?.id === currentUserId() && message.isRead" class="ml-1.5" title="Đã xem lúc {{ message.readAt | date:'HH:mm dd/MM' }}">
+            <i class="fas fa-check-double text-sky-500"></i>
           </span>
-        <span *ngIf="!message.isRead">Đã gửi</span>
+        <span *ngIf="message.sender?.id === currentUserId() && !message.isRead && message.id > 0" class="ml-1.5" title="Đã gửi">
+            <i class="fas fa-check text-base-content/70"></i>
+          </span>
       </div>
     </div>
   </ng-container>
-  <!-- Hiển thị khi chưa có tin nhắn -->
-  <div *ngIf="!isLoading() && messages().length === 0 && selectedRoom" class="text-center text-sm text-base-content/60 py-10">
-    Bắt đầu cuộc trò chuyện!
+  <div *ngIf="!isLoading() && messages().length === 0 && selectedRoom" class="text-center text-sm text-base-content/60 dark:text-gray-500 py-10">
+    Chưa có tin nhắn nào trong cuộc trò chuyện này.
   </div>
 </div>
 
 <!-- Input Area -->
-<div class="p-4 border-t border-base-300 bg-base-200 sticky bottom-0 z-10 min-h-[4rem]" *ngIf="selectedRoom">
-  <!-- Thông báo lỗi gửi tin -->
-  <app-alert *ngIf="errorMessage()" type="error" [message]="errorMessage()" class="mb-2 text-xs"></app-alert>
-  <form [formGroup]="messageForm" (ngSubmit)="sendMessage()" class="flex items-center space-x-2">
-    <!-- Nút đính kèm (ví dụ) -->
-    <button type="button" class="btn btn-sm btn-ghost btn-circle" title="Đính kèm file (chưa hoạt động)">
-      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="m18.375 12.739-7.693 7.693a4.5 4.5 0 0 1-6.364-6.364l10.94-10.94A3 3 0 1 1 19.5 7.372L8.552 18.32m.009-.01-.01.01m5.699-9.941-7.81 7.81a1.5 1.5 0 0 0 2.122 2.122l7.81-7.81" /></svg>
+<div class="p-3 md:p-4 border-t border-base-300 dark:border-gray-700 bg-base-100 dark:bg-gray-800 sticky bottom-0 z-10" *ngIf="selectedRoom">
+  <app-alert *ngIf="errorMessage()" type="error" [message]="errorMessage()" class="mb-2 text-xs p-2"></app-alert>
+  <form [formGroup]="messageForm" (ngSubmit)="sendMessage()" class="flex items-end space-x-2">
+    <button type="button" class="btn btn-ghost btn-sm btn-circle" title="Đính kèm file">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>
     </button>
-    <!-- Ô nhập tin nhắn -->
-    <input type="text" placeholder="Nhập tin nhắn..."
-           class="input input-sm input-bordered flex-grow"
-           formControlName="content"
-           (keydown.enter)="sendMessage(); $event.preventDefault()" />
-    <!-- Nút gửi -->
-    <button type="submit" class="btn btn-sm btn-primary btn-circle" [disabled]="messageForm.invalid || isSending()">
-      <span *ngIf="isSending()" class="loading loading-spinner loading-xs"></span>
-      <svg *ngIf="!isSending()" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5" /></svg>
+
+    <textarea #messageInput formControlName="content"
+              class="textarea textarea-bordered flex-grow resize-none dark:bg-gray-700 dark:border-gray-600 focus:ring-1 focus:ring-primary dark:focus:ring-green-500 rounded-xl"
+              placeholder="Nhập tin nhắn..."
+              rows="1"
+              (keydown.enter)="sendMessageOnEnter($any($event))"
+              (input)="autoResizeTextarea(messageInput)"></textarea>
+    <button type="submit" class="btn btn-primary btn-circle btn-md shadow-md" [disabled]="messageForm.invalid || isSending()">
+      <span *ngIf="isSending()" class="loading loading-spinner loading-sm"></span>
+      <svg *ngIf="!isSending()" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
     </button>
   </form>
 </div>
 </div>
+
+<style>
+  /* src/app/features/interaction/components/chat/message-area/message-area.component.html hoặc styles.css */
+  @keyframes messageIn {
+    from { opacity: 0; transform: translateY(10px) scale(0.95); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  .animate-message-in {
+    animation: messageIn 0.3s ease-out forwards;
+  }
+
+  /* Custom scrollbar (tùy chọn) */
+  .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+  .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+  .custom-scrollbar::-webkit-scrollbar-thumb { background-color: rgba(0,0,0,0.15); border-radius: 10px; }
+  html.dark .custom-scrollbar::-webkit-scrollbar-thumb { background-color: rgba(255,255,255,0.15); }
+
+  /* Đảm bảo textarea không có scrollbar dọc khi tự động resize */
+  .textarea.resize-none {
+    overflow-y: hidden;
+  }
+</style>

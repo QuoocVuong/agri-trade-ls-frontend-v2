@@ -23,8 +23,9 @@ export interface FarmerSummaryResponse {
   // addressString?: string | null;
 
   /** (Tùy chọn) Rating trung bình của farmer */
-  // averageRating?: number | null;
+   averageRating?: number | null;
 
   /** (Tùy chọn) Slug của farmer nếu có trang profile dùng slug */
   // slug?: string | null;
+  productCount: number | null;
 }
