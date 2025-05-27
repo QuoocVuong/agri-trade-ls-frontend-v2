@@ -10,6 +10,52 @@
       </p>
     </header>
 
+    <!-- Filters and Search -->
+    <div class="mb-6 md:mb-8 p-4 card bg-base-100 dark:bg-gray-800 shadow rounded-lg">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+        <!-- Search Input -->
+        <div>
+          <label for="searchOrder" class="label pb-1 pt-0">
+            <span class="label-text font-medium text-sm">Tìm kiếm đơn hàng</span>
+          </label>
+          <div class="relative">
+            <input
+              id="searchOrder"
+              type="text"
+              placeholder="Nhập mã đơn hàng, tên người bán/mua..."
+              class="input input-bordered input-sm md:input-md w-full pr-10"
+              [value]="searchKeyword()"
+              (input)="onSearchInput($event)"
+            />
+            <button
+              *ngIf="searchKeyword()"
+              (click)="clearSearch()"
+              class="btn btn-ghost btn-sm btn-circle absolute inset-y-0 right-0 my-auto mr-1 text-base-content/50 hover:text-error"
+              aria-label="Xóa tìm kiếm">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Status Filter -->
+        <div>
+          <label for="statusFilter" class="label pb-1 pt-0">
+            <span class="label-text font-medium text-sm">Lọc theo trạng thái</span>
+          </label>
+          <select
+            id="statusFilter"
+            class="select select-bordered select-sm md:select-md w-full"
+            [ngModel]="selectedStatus()"
+            (ngModelChange)="filterByStatus($event)">
+            <option [ngValue]="null">Tất cả trạng thái</option>
+            <option *ngFor="let statusKey of objectKeys(OrderStatusEnum)" [value]="OrderStatusEnum[statusKey]">
+              {{ getStatusText(OrderStatusEnum[statusKey]) }}
+            </option>
+          </select>
+        </div>
+      </div>
+    </div>
+
     <!-- Loading State -->
     <div *ngIf="isLoading()" class="flex justify-center items-center py-24">
       <app-loading-spinner size="lg"></app-loading-spinner>

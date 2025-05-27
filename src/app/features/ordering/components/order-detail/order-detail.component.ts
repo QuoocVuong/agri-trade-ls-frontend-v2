@@ -18,6 +18,7 @@ import { OrderStatusUpdateRequest } from '../../dto/request/OrderStatusUpdateReq
 import { ReactiveFormsModule, FormControl, Validators } from '@angular/forms'; // Import Forms
 import { ModalComponent } from '../../../../shared/components/modal/modal.component'; // Import Modal
 import { QRCodeComponent } from 'angularx-qrcode';
+import { getInvoiceStatusText } from '../../domain/invoice-status.enum';
 
 @Component({
   selector: 'app-order-detail',
@@ -114,11 +115,13 @@ export class OrderDetailComponent implements OnInit, OnDestroy {
   PaymentMethodEnum = PaymentMethod; // Expose enum cho template
   PaymentStatusEnum = PaymentStatus;
   OrderStatusEnum = OrderStatus;
+  InvoiceStatusEnum = InvoiceStatus;
   getStatusText = getOrderStatusText;
   getStatusClass = getOrderStatusCssClass;
   getPaymentStatusText = getPaymentStatusText;
   getPaymentStatusClass = getPaymentStatusCssClass;
   getPaymentMethodText = getPaymentMethodText;
+  getInvoiceStatusText = getInvoiceStatusText;
 
 
   ngOnInit(): void {
@@ -475,6 +478,20 @@ export class OrderDetailComponent implements OnInit, OnDestroy {
     this.confirmPaymentByAdmin(orderId, paymentMethodConfirmed, transactionRef ?? undefined, notes ?? undefined);
   }
 
+  isInvoiceOverdue(dueDateString: string | null | undefined, status: InvoiceStatus | string): boolean {
+    if (!dueDateString || status === InvoiceStatus.PAID || status === InvoiceStatus.VOID) {
+      return false;
+    }
+    // Chuyển đổi dueDateString (ví dụ: "2025-05-30") thành đối tượng Date
+    const dueDate = new Date(dueDateString);
+    const today = new Date();
+    // Set giờ, phút, giây, ms về 0 để so sánh chỉ ngày
+    today.setHours(0, 0, 0, 0);
+    dueDate.setHours(0, 0, 0, 0);
+
+    return dueDate < today && status !== InvoiceStatus.PAID && status !== InvoiceStatus.VOID;
+  }
+
   protected readonly HTMLInputElement = HTMLInputElement;
 }
 
@@ -484,3 +501,4 @@ import {saveAs} from 'file-saver';
 import {LocationService} from '../../../../core/services/location.service';
 import {environment} from '../../../../../environments/environment';
 import {BankTransferInfoResponse} from '../../dto/response/BankTransferInfoResponse';
+import {InvoiceStatus} from '../../domain/invoice-status.enum';

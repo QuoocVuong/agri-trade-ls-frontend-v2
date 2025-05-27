@@ -1,18 +1,20 @@
-import { Component, OnInit, inject, signal, WritableSignal, effect } from '@angular/core';
+import {Component, OnInit, inject, signal, WritableSignal, effect, OnDestroy} from '@angular/core';
 import { CommonModule, DatePipe, DecimalPipe } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { Page } from '../../../../core/models/page.model'; // Tạo interface Page nếu cần
 import { OrderSummaryResponse } from '../../dto/response/OrderSummaryResponse';
-import {FarmerOrderSearchParams, OrderService} from '../../services/order.service';
+import {BuyerOrderSearchParams, FarmerOrderSearchParams, OrderService} from '../../services/order.service';
 import { AuthService } from '../../../../core/services/auth.service';
 import { PaginatorComponent } from '../../../../shared/components/paginator/paginator.component';
 import { LoadingSpinnerComponent } from '../../../../shared/components/loading-spinner/loading-spinner.component';
 import { AlertComponent } from '../../../../shared/components/alert/alert.component';
 import { OrderStatus, getOrderStatusText, getOrderStatusCssClass } from '../../domain/order-status.enum'; // Import Enum và helpers
 import { PaymentStatus, getPaymentStatusText, getPaymentStatusCssClass } from '../../domain/payment-status.enum';
-import {Observable} from 'rxjs';
+import {Observable, Subject} from 'rxjs';
 import {PagedApiResponse} from '../../../../core/models/api-response.model';
-import {FormatBigDecimalPipe} from '../../../../shared/pipes/format-big-decimal.pipe'; // Import Enum và helpers
+import {FormatBigDecimalPipe} from '../../../../shared/pipes/format-big-decimal.pipe';
+import {debounceTime, distinctUntilChanged, takeUntil} from 'rxjs/operators';
+import {FormsModule} from '@angular/forms'; // Import Enum và helpers
 
 
 // Interface cho Page (tương tự PageData nhưng đơn giản hơn)
@@ -28,10 +30,10 @@ interface PageData<T> {
 @Component({
   selector: 'app-order-history',
   standalone: true,
-  imports: [CommonModule, RouterLink, PaginatorComponent, LoadingSpinnerComponent, AlertComponent, DatePipe, DecimalPipe, FormatBigDecimalPipe],
+  imports: [CommonModule, RouterLink, PaginatorComponent, LoadingSpinnerComponent, AlertComponent, DatePipe, DecimalPipe, FormatBigDecimalPipe, FormsModule],
   templateUrl: './order-history.component.html',
 })
-export class OrderHistoryComponent implements OnInit {
+export class OrderHistoryComponent implements OnInit, OnDestroy  {
   private orderService = inject(OrderService);
   private authService = inject(AuthService);
   private router = inject(Router); // Inject Router
@@ -49,18 +51,46 @@ export class OrderHistoryComponent implements OnInit {
   // Xác định vai trò của người dùng
   isFarmer = this.authService.hasRoleSignal('ROLE_FARMER');
 
+  // Signal cho bộ lọc và tìm kiếm
+  selectedStatus = signal<OrderStatus | null>(null);
+  searchKeyword = signal<string>('');
+  private searchInput$ = new Subject<string>(); // Subject để xử lý debounce
+  private destroy$ = new Subject<void>(); // Subject để unsubscribe
+
+  OrderStatusEnum = OrderStatus;
+  objectKeys = Object.keys as <T extends object>(obj: T) => Array<keyof T>;
+
   constructor() {
     // Effect để tự động load lại đơn hàng khi trang hoặc sắp xếp thay đổi
     effect(() => {
-      this.loadOrders(this.currentPage(), this.pageSize(), this.sort());
+      this.loadOrders(
+        this.currentPage(),
+        this.pageSize(),
+        this.sort(),
+        this.selectedStatus(),
+        this.searchKeyword()
+      );
     });
   }
 
   ngOnInit(): void {
-    // Không cần gọi loadOrders ở đây vì effect đã xử lý
+    this.searchInput$.pipe(
+      debounceTime(500), // Chờ 500ms sau khi người dùng ngừng gõ
+      distinctUntilChanged(), // Chỉ kích hoạt nếu giá trị thay đổi
+      takeUntil(this.destroy$) // Unsubscribe khi component bị hủy
+    ).subscribe(keyword => {
+      this.searchKeyword.set(keyword.trim());
+      this.currentPage.set(0); // Reset về trang đầu khi tìm kiếm
+    });
   }
 
-  loadOrders(page: number, size: number, sort: string): void {
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+
+  loadOrders(page: number, size: number, sort: string, status: OrderStatus | null = null, keyword: string = '' ): void {
     this.isLoading.set(true);
     this.errorMessage.set(null);
 
@@ -71,16 +101,26 @@ export class OrderHistoryComponent implements OnInit {
       const farmerParams: FarmerOrderSearchParams = {
         page: page,
         size: size,
-        sort: sort
-        // keyword và status sẽ là undefined, nên không được gửi đi (đúng như mong đợi cho trang này)
+        sort: sort,
+        status: status ?? undefined,
+        keyword: keyword || undefined
+
       };
+
       apiCall = this.orderService.getMyOrdersAsFarmer(farmerParams);
     } else {
+      const buyerParams: BuyerOrderSearchParams = {
+        page: page,
+        size: size,
+        sort: sort,
+        status: status ?? undefined,
+        keyword: keyword || undefined
+      };
       // Mặc định là Buyer (Consumer hoặc Business Buyer)
-      apiCall = this.orderService.getMyOrdersAsBuyer(page, size, sort);
+      apiCall = this.orderService.getMyOrdersAsBuyer(buyerParams);
     }
 
-    apiCall.subscribe({
+    apiCall.pipe(takeUntil(this.destroy$)).subscribe({ // Thêm takeUntil
       next: (response) => {
         if (response.success && response.data) {
           this.orderPage.set(response.data);
@@ -92,7 +132,7 @@ export class OrderHistoryComponent implements OnInit {
       },
       error: (err) => {
         this.orderPage.set(null);
-        this.errorMessage.set(err.message || 'Đã xảy ra lỗi.');
+        this.errorMessage.set(err.error?.message || err.message || 'Đã xảy ra lỗi khi tải đơn hàng.');
         this.isLoading.set(false);
       }
     });
@@ -100,6 +140,23 @@ export class OrderHistoryComponent implements OnInit {
 
   onPageChange(page: number): void {
     this.currentPage.set(page); // Trigger effect để load lại
+  }
+  filterByStatus(status: OrderStatus | null): void {
+    this.selectedStatus.set(status);
+    this.currentPage.set(0);
+  }
+
+  // Hàm xử lý khi người dùng nhập vào ô tìm kiếm
+  onSearchInput(event: Event): void {
+    const keyword = (event.target as HTMLInputElement).value;
+    this.searchInput$.next(keyword); // Đẩy giá trị vào Subject để debounce
+  }
+
+  // Hàm để xóa nhanh từ khóa tìm kiếm
+  clearSearch(): void {
+    this.searchInput$.next(''); // Đặt lại Subject
+    // this.searchKeyword.set(''); // Có thể đặt trực tiếp nếu không muốn debounce khi xóa
+    // this.currentPage.set(0);
   }
 
   // Helper functions để dùng trong template

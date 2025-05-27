@@ -176,6 +176,37 @@
                 <span class="text-base-content/80 dark:text-gray-300">Giảm giá:</span>
                 <span class="text-success">- {{ o.discountAmount | formatBigDecimal:'1.0-0' }} ₫</span>
               </div>
+
+              <!-- ****** THÊM ĐOẠN NÀY ĐỂ HIỂN THỊ THÔNG TIN HÓA ĐƠN CÔNG NỢ ****** -->
+              <ng-container *ngIf="o.paymentMethod === PaymentMethodEnum.INVOICE && o.invoiceInfo as invoice">
+                <div class="divider my-3 dark:border-gray-700"></div>
+                <h4 class="text-sm font-semibold text-info dark:text-blue-400 mb-1">Thông tin Công nợ:</h4>
+                <div class="flex justify-between">
+                  <span class="text-base-content/80 dark:text-gray-300">Số hóa đơn:</span>
+                  <span class="font-medium text-base-content dark:text-white">{{ invoice.invoiceNumber }}</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-base-content/80 dark:text-gray-300">Ngày phát hành:</span>
+                  <span class="font-medium text-base-content dark:text-white">{{ invoice.issueDate | date:'dd/MM/yyyy' }}</span>
+                </div>
+                <div class="flex justify-between" [ngClass]="{'text-error dark:text-red-400': isInvoiceOverdue(invoice.dueDate, invoice.status)}">
+                  <span class="text-base-content/80 dark:text-gray-300">Ngày đáo hạn:</span>
+                  <span class="font-bold">
+            {{ invoice.dueDate | date:'dd/MM/yyyy' }}
+                    <span *ngIf="invoice.status === 'OVERDUE'" class="badge badge-error badge-xs ml-1">QUÁ HẠN</span>
+          </span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-base-content/80 dark:text-gray-300">Trạng thái HĐ:</span>
+                  <span class="font-medium text-base-content dark:text-white">{{ getInvoiceStatusText(invoice.status) }}</span>
+                </div>
+                <p *ngIf="invoice.status === InvoiceStatusEnum.ISSUED || invoice.status === InvoiceStatusEnum.OVERDUE"
+                   class="text-xs text-warning dark:text-yellow-400 mt-2">
+                  Vui lòng thanh toán trước hoặc vào ngày <strong [innerHTML]="invoice.dueDate | date:'dd/MM/yyyy'"></strong>.
+                </p>
+              </ng-container>
+              <!-- ******************************************************************** -->
+
               <div class="divider my-2 dark:border-gray-700"></div>
               <div class="flex justify-between font-bold text-lg md:text-xl">
                 <span class="text-base-content dark:text-white">Tổng cộng:</span>

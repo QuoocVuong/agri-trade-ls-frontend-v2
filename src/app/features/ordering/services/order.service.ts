@@ -22,6 +22,14 @@ export interface FarmerOrderSearchParams {
   status?: OrderStatus | string | null; // Lọc theo OrderStatus
 }
 
+export interface BuyerOrderSearchParams {
+  page: number;
+  size: number;
+  sort?: string;
+  keyword?: string | null;
+  status?: OrderStatus | string | null;
+}
+
 
 @Injectable({
   providedIn: 'root' // Cung cấp ở root vì nhiều nơi có thể cần xem đơn hàng
@@ -38,15 +46,15 @@ export class OrderService {
     return this.http.post<ApiResponse<OrderResponse[]>>(`${this.orderApiUrl}/checkout`, request);
   }
 
-  getMyOrdersAsBuyer(page: number, size: number, sort?: string): Observable<PagedApiResponse<OrderSummaryResponse>> {
-    let params = new HttpParams()
-      .set('page', page.toString())
-      .set('size', size.toString());
-    if (sort) {
-      params = params.set('sort', sort);
+  getMyOrdersAsBuyer(params: BuyerOrderSearchParams): Observable<PagedApiResponse<OrderSummaryResponse>> {
+      let httpParams = new HttpParams()
+        .set('page', params.page.toString())
+        .set('size', params.size.toString());
+      if (params.sort) httpParams = httpParams.set('sort', params.sort);
+      if (params.keyword?.trim()) httpParams = httpParams.set('keyword', params.keyword.trim());
+      if (params.status) httpParams = httpParams.set('status', params.status.toString());
+      return this.http.get<PagedApiResponse<OrderSummaryResponse>>(`${this.orderApiUrl}/my`, { params: httpParams });
     }
-    return this.http.get<PagedApiResponse<OrderSummaryResponse>>(`${this.orderApiUrl}/my`, { params });
-  }
 
   getMyOrderDetailsById(orderId: number): Observable<ApiResponse<OrderResponse>> {
     return this.http.get<ApiResponse<OrderResponse>>(`${this.orderApiUrl}/${orderId}`);
