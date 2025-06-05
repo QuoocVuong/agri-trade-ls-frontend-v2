@@ -1,0 +1,133 @@
+<!-- src/app/features/catalog/components/supply-registration-form/supply-registration-form.component.html -->
+<div class="bg-base-200 dark:bg-gray-900 min-h-screen py-8 md:py-10 lg:py-12">
+  <div class="container mx-auto px-4 max-w-3xl">
+    <header class="text-center mb-10 md:mb-12">
+      <h1 class="text-3xl md:text-4xl font-bold text-base-content dark:text-white">
+        {{ isEditMode() ? 'Chỉnh Sửa Nguồn Cung' : 'Đăng Nguồn Cung Nông Sản' }}
+      </h1>
+      <p class="text-base-content/70 dark:text-gray-400 mt-2 max-w-xl mx-auto">
+        {{ isEditMode() ? 'Cập nhật thông tin cho nguồn cung của bạn.' : 'Cung cấp thông tin chi tiết về nông sản bạn muốn bán sỉ.' }}
+      </p>
+    </header>
+
+    <div *ngIf="isFetchingInitialData()" class="flex justify-center py-16">
+      <app-loading-spinner size="lg"></app-loading-spinner>
+    </div>
+    <app-alert *ngIf="errorMessage() && isFetchingInitialData()" type="error" [message]="errorMessage()" class="mb-6"></app-alert>
+
+    <form *ngIf="!isFetchingInitialData()" [formGroup]="supplyForm" (ngSubmit)="onSubmit()"
+          class="card bg-base-100 dark:bg-gray-800 shadow-xl rounded-xl p-6 md:p-8 space-y-8">
+      <app-alert *ngIf="errorMessage() && !isLoading()" type="error" [message]="errorMessage()" class="mb-0"></app-alert>
+      <app-alert *ngIf="successMessage()" type="success" [message]="successMessage()" class="mb-0"></app-alert>
+
+      <!-- Thông Tin Nguồn Cung -->
+      <section class="space-y-5">
+        <h2 class="text-xl font-semibold text-primary dark:text-green-400 pb-2 border-b border-base-300 dark:border-gray-700">
+          Thông Tin Nguồn Cung
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+          <div class="form-control w-full">
+            <label class="label pb-1"><span class="label-text font-medium">Tên nông sản <span class="text-error">*</span></span></label>
+            <input type="text" placeholder="Ví dụ: Khoai tây Đà Lạt loại A" class="input input-bordered w-full dark:bg-gray-700 dark:border-gray-600" formControlName="name" />
+            <!-- Validation messages -->
+          </div>
+          <div class="form-control w-full">
+            <label class="label pb-1"><span class="label-text font-medium">Danh mục <span class="text-error">*</span></span></label>
+            <select class="select select-bordered w-full dark:bg-gray-700 dark:border-gray-600" formControlName="categoryId">
+              <option [ngValue]="null" disabled>-- Chọn danh mục --</option>
+              <option *ngFor="let cat of categories()" [value]="cat.id">{{ cat.name }}</option>
+            </select>
+            <!-- Validation messages -->
+          </div>
+        </div>
+        <div class="form-control w-full">
+          <label class="label pb-1"><span class="label-text font-medium">Mô tả chi tiết</span></label>
+          <textarea class="textarea textarea-bordered h-24 dark:bg-gray-700 dark:border-gray-600" placeholder="Nguồn gốc, đặc điểm, quy cách đóng gói, khả năng cung ứng..." formControlName="description"></textarea>
+        </div>
+      </section>
+
+      <!-- Số Lượng và Giá Tham Khảo -->
+      <section class="space-y-5">
+        <h2 class="text-xl font-semibold text-primary dark:text-green-400 pb-2 border-b border-base-300 dark:border-gray-700">
+          Số Lượng & Giá Tham Khảo
+        </h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-4">
+          <div class="form-control">
+            <label class="label pb-1"><span class="label-text font-medium">Số lượng hiện có <span class="text-error">*</span></span></label>
+            <input type="number" placeholder="0" class="input input-bordered w-full dark:bg-gray-700 dark:border-gray-600" formControlName="stockQuantity" min="0" />
+          </div>
+          <div class="form-control">
+            <label class="label pb-1"><span class="label-text font-medium">Đơn vị tính sỉ <span class="text-error">*</span></span></label>
+            <input type="text" placeholder="Tấn, tạ, kg, thùng..." class="input input-bordered w-full dark:bg-gray-700 dark:border-gray-600" formControlName="wholesaleUnit" />
+          </div>
+          <div class="form-control">
+            <label class="label pb-1"><span class="label-text font-medium">Giá tham khảo / đơn vị sỉ (VNĐ)</span></label>
+            <input type="number" placeholder="Giá đề xuất" class="input input-bordered w-full dark:bg-gray-700 dark:border-gray-600" formControlName="referenceWholesalePrice" min="0" />
+          </div>
+        </div>
+        <div class="form-control">
+          <label class="label cursor-pointer justify-start gap-3 p-0">
+            <input type="checkbox" class="checkbox checkbox-primary" formControlName="negotiablePrice" />
+            <span class="label-text font-medium text-base-content dark:text-gray-200">Giá có thể thương lượng</span>
+          </label>
+        </div>
+        <div class="form-control">
+          <label class="label pb-1"><span class="label-text font-medium">Ngày thu hoạch (hoặc dự kiến)</span></label>
+          <input type="date" class="input input-bordered w-full dark:bg-gray-700 dark:border-gray-600" formControlName="harvestDate" />
+        </div>
+      </section>
+
+      <!-- Hình Ảnh Nguồn Cung -->
+      <section class="space-y-4">
+        <h2 class="text-xl font-semibold text-primary dark:text-green-400 pb-2 border-b border-base-300 dark:border-gray-700">
+          Hình Ảnh <span class="text-error">*</span>
+        </h2>
+        <app-file-uploader
+          [uploadUrlPath]="'/files/upload'"
+          [allowedTypes]="['image/png', 'image/jpeg', 'image/gif', 'image/webp']"
+          [uploadParams]="{ type: 'supply_images' }"
+        (uploadSuccess)="onImageUploaded($event)"
+        (uploadError)="onImageUploadError($event)">
+        </app-file-uploader>
+        <p class="text-xs text-base-content/60 dark:text-gray-500 mt-1">
+          Thêm hình ảnh thực tế của nông sản. Ảnh đầu tiên sẽ là ảnh đại diện.
+        </p>
+        <div cdkDropList class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 md:gap-4" formArrayName="images" (cdkDropListDropped)="dropImage($event)">
+          <div *ngFor="let imgCtrl of imagesArray.controls; let i=index; trackBy: trackImageByIndex"
+               [formGroupName]="i" cdkDrag
+               class="card card-compact bg-base-200 dark:bg-gray-700/50 shadow rounded-lg overflow-hidden relative group cursor-move border-2"
+               [class.border-primary]="imgCtrl.get('isDefault')?.value"
+               [class.dark:border-green-400]="imgCtrl.get('isDefault')?.value"
+               [class.border-transparent]="!imgCtrl.get('isDefault')?.value">
+            <figure class="aspect-square">
+              <img [src]="imgCtrl.get('imageUrl')?.value || 'assets/images/placeholder-image.png'"
+                   alt="Preview {{i+1}}" class="w-full h-full object-cover" />
+            </figure>
+            <div class="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <button type="button" class="btn btn-xs btn-circle btn-error text-white" (click)="removeImageControl(i)" title="Xóa ảnh này">✕</button>
+            </div>
+            <div class="absolute bottom-1 left-1 right-1 p-1.5 bg-black/40 backdrop-blur-sm rounded-b-md opacity-0 group-hover:opacity-100 transition-opacity">
+              <label class="label cursor-pointer justify-center p-0">
+                <input type="radio" [name]="'isDefaultSupplyImageRadio-' + productId()" class="radio radio-primary radio-xs mr-1"
+                       [checked]="imgCtrl.get('isDefault')?.value" (change)="setDefaultImage(i)" />
+                <span class="label-text text-xs text-white">Mặc định</span>
+              </label>
+            </div>
+          </div>
+        </div>
+        <div *ngIf="imagesArray.invalid && imagesArray.touched && imagesArray.length === 0" class="text-center text-sm text-error p-4 border border-dashed border-error/50 rounded-md bg-error/5">
+          Vui lòng thêm ít nhất một hình ảnh cho nguồn cung.
+        </div>
+      </section>
+
+      <div class="card-actions justify-end mt-10 pt-6 border-t border-base-300 dark:border-gray-700">
+        <a routerLink="/farmer/my-supplies" class="btn btn-ghost btn-md rounded-full dark:hover:bg-gray-700">Hủy Bỏ</a>
+        <button type="submit" class="btn btn-primary btn-md rounded-full px-10 dark:text-white"
+                [disabled]="isLoading() || supplyForm.invalid">
+          <span *ngIf="isLoading()" class="loading loading-spinner"></span>
+          {{ isLoading() ? 'Đang xử lý...' : (isEditMode() ? 'Lưu Thay Đổi' : 'Đăng Nguồn Cung') }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal, Output, EventEmitter } from '@angular/core';
+import {Component, OnInit, inject, signal, Output, EventEmitter, Input} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, RouterLinkActive, ActivatedRoute, Router } from '@angular/router'; // Import ActivatedRoute, Router
 import { CategoryService } from '../../services/category.service';
@@ -12,7 +12,9 @@ import { ApiResponse } from '../../../../core/models/api-response.model';
   templateUrl: './category-sidebar.component.html',
 })
 export class CategorySidebarComponent implements OnInit {
- // @Output() categorySelected = new EventEmitter<string | null>(); // Emit ID category được chọn
+  @Output() categorySelected = new EventEmitter<string | null>(); // Emit ID category được chọn
+  @Input() pageType: 'products' | 'supply-sources' = 'products'; // Mặc định là 'products'
+
 
   private categoryService = inject(CategoryService);
   private route = inject(ActivatedRoute); // Để lấy slug category hiện tại (nếu có)
@@ -78,13 +80,23 @@ export class CategorySidebarComponent implements OnInit {
 
 
   selectCategory(category: CategoryResponse | null): void {
-    if (category && category.slug) {
-      this.activeCategorySlug.set(category.slug);
-      // Chỉ điều hướng, ProductListComponent sẽ bắt sự kiện thay đổi URL
-      this.router.navigate(['/categories', category.slug], { queryParams: {} }); // Xóa query params cũ
-    } else {
-      this.activeCategorySlug.set(null);
-      this.router.navigate(['/products'], { queryParams: {} }); // Xóa query params cũ
+    const targetSlug = category ? category.slug : null;
+    this.activeCategorySlug.set(targetSlug);
+    this.categorySelected.emit(targetSlug); // Vẫn emit slug như cũ
+
+    // **ĐIỀU HƯỚNG DỰA TRÊN pageType**
+    if (this.pageType === 'supply-sources') {
+      if (targetSlug) {
+        this.router.navigate(['/supply-sources/category', targetSlug], { queryParams: {} });
+      } else {
+        this.router.navigate(['/supply-sources'], { queryParams: {} });
+      }
+    } else { // Mặc định hoặc 'products'
+      if (targetSlug) {
+        this.router.navigate(['/categories', targetSlug], { queryParams: {} });
+      } else {
+        this.router.navigate(['/products'], { queryParams: {} });
+      }
     }
   }
 

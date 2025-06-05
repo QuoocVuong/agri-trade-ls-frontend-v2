@@ -449,22 +449,64 @@ export class OrderDetailComponent implements OnInit, OnDestroy {
 
   downloadInvoice(): void {
     if (!this.order()) return;
-    const orderId = this.order()!.id;
-    const orderCode = this.order()!.orderCode;
+
+    const currentOrder = this.order()!;
+    const orderCode = currentOrder.orderCode;
+    const invoiceIdToDownload = currentOrder.invoiceInfo?.invoiceId; // Lấy invoiceId từ invoiceInfo
+    const orderIdToDownload = currentOrder.id;
+
     this.isDownloadingInvoice.set(true);
-    this.orderService.downloadInvoice(orderId)
+    let downloadObservable: Observable<Blob>;
+
+    if (invoiceIdToDownload) {
+      console.log(`Downloading invoice using invoiceId: ${invoiceIdToDownload}`);
+      downloadObservable = this.orderService.downloadInvoiceByInvoiceId(invoiceIdToDownload);
+    } else {
+      // Fallback nếu không có invoiceId (hoặc nếu bạn muốn luôn dùng orderId cho API này)
+      console.log(`Downloading invoice using orderId: ${orderIdToDownload}`);
+      downloadObservable = this.orderService.downloadInvoiceByOrderId(orderIdToDownload);
+    }
+
+    downloadObservable
       .pipe(finalize(() => this.isDownloadingInvoice.set(false)))
       .subscribe({
         next: (blob) => {
           if (blob.size > 0) {
-            saveAs(blob, `hoa-don-${orderCode}.pdf`); // Dùng file-saver để tải
+            // Tạo tên file dựa trên số hóa đơn nếu có, nếu không thì dùng mã đơn hàng
+            const fileNameInvoiceNumber = currentOrder.invoiceInfo?.invoiceNumber;
+            const finalFileName = fileNameInvoiceNumber
+              ? `hoa-don-${fileNameInvoiceNumber}.pdf`
+              : `hoa-don-donhang-${orderCode}.pdf`;
+            saveAs(blob, finalFileName);
+            this.toastr.success('Đã tải xuống hóa đơn.');
           } else {
             this.toastr.error('Không thể tạo hóa đơn hoặc hóa đơn trống.');
           }
         },
         error: (err) => {
           console.error("Error downloading invoice:", err);
-          this.toastr.error('Lỗi khi tải hóa đơn.');
+          let errorMessage = 'Lỗi khi tải hóa đơn.';
+          if (err.status === 404) {
+            errorMessage = 'Không tìm thấy hóa đơn cho đơn hàng này.';
+          } else if (err.error instanceof Blob && err.error.type === "application/json") {
+            // Cố gắng đọc lỗi JSON từ Blob
+            const reader = new FileReader();
+            reader.onload = (e: any) => {
+              try {
+                const errorResponse = JSON.parse(e.target.result);
+                this.toastr.error(errorResponse.message || errorMessage);
+              } catch (parseError) {
+                this.toastr.error(errorMessage);
+              }
+            };
+            reader.readAsText(err.error);
+            return; // Tránh toastr mặc định bên dưới
+          } else if (err.error?.message) {
+            errorMessage = err.error.message;
+          } else if (err.message) {
+            errorMessage = err.message;
+          }
+          this.toastr.error(errorMessage);
         }
       });
   }

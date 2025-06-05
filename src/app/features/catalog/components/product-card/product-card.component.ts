@@ -140,47 +140,47 @@ export class ProductCardComponent {
         })
       )
       .subscribe({ // Giả sử service cần user
-      next: () => {
-        console.log('Added to cart:', this.product.name);
-        this.toastr.success(`Đã thêm "${productName}" vào giỏ hàng!`);
-        // // ****** THÊM KIỂM TRA SAU KHI THÊM THÀNH CÔNG ******
-        // const updatedCart = this.cartService.getCurrentCart(); // Lấy lại giỏ hàng mới nhất
-        // const addedItem = updatedCart?.items.find(item => item.product?.id === this.product.id);
-        // const newQuantityInCart = addedItem?.quantity ?? 0;
-        // const stock = this.product.stockQuantity ?? 0; // Lấy lại stock (mặc dù ít thay đổi ở đây)
-        //
-        // // Kiểm tra nếu số lượng mới bằng tồn kho
-        // if (newQuantityInCart > 0 && stock > 0 && newQuantityInCart === stock) {
-        //   // Dùng timeout nhỏ để toastr không bị đè lên nhau quá nhanh (tùy chọn)
-        //   setTimeout(() => {
-        //     this.toastr.info(`Đã đạt số lượng tối đa (${stock}) cho "${productName}" trong giỏ hàng.`);
-        //     this.cdr.markForCheck(); // Đảm bảo toastr thứ 2 hiển thị
-        //   }, 100); // 100ms delay
-        // }
-        // // ****************************************************
-        // ****** KIỂM TRA DỰA TRÊN SỐ LƯỢNG CŨ VÀ SỐ LƯỢNG VỪA THÊM (là 1) ******
-        const expectedNewQuantityInCart = quantityInCartBeforeAdd + 1;
-        const stock = this.product.stockQuantity ?? 0;
+        next: () => {
+          console.log('Added to cart:', this.product.name);
+          this.toastr.success(`Đã thêm "${productName}" vào giỏ hàng!`);
+          // // ****** THÊM KIỂM TRA SAU KHI THÊM THÀNH CÔNG ******
+          // const updatedCart = this.cartService.getCurrentCart(); // Lấy lại giỏ hàng mới nhất
+          // const addedItem = updatedCart?.items.find(item => item.product?.id === this.product.id);
+          // const newQuantityInCart = addedItem?.quantity ?? 0;
+          // const stock = this.product.stockQuantity ?? 0; // Lấy lại stock (mặc dù ít thay đổi ở đây)
+          //
+          // // Kiểm tra nếu số lượng mới bằng tồn kho
+          // if (newQuantityInCart > 0 && stock > 0 && newQuantityInCart === stock) {
+          //   // Dùng timeout nhỏ để toastr không bị đè lên nhau quá nhanh (tùy chọn)
+          //   setTimeout(() => {
+          //     this.toastr.info(`Đã đạt số lượng tối đa (${stock}) cho "${productName}" trong giỏ hàng.`);
+          //     this.cdr.markForCheck(); // Đảm bảo toastr thứ 2 hiển thị
+          //   }, 100); // 100ms delay
+          // }
+          // // ****************************************************
+          // ****** KIỂM TRA DỰA TRÊN SỐ LƯỢNG CŨ VÀ SỐ LƯỢNG VỪA THÊM (là 1) ******
+          const expectedNewQuantityInCart = quantityInCartBeforeAdd + 1;
+          const stock = this.product.stockQuantity ?? 0;
 
-        console.log(`--- After Add Success (Product ID: ${this.product.id}) ---`);
-        console.log(`Stock: ${stock}`);
-        console.log(`Quantity Before Add: ${quantityInCartBeforeAdd}`);
-        console.log(`Quantity Added: 1`);
-        console.log(`Expected New Quantity: ${expectedNewQuantityInCart}`);
-        console.log(`Is Expected New Quantity === Stock? : ${expectedNewQuantityInCart === stock}`);
+          console.log(`--- After Add Success (Product ID: ${this.product.id}) ---`);
+          console.log(`Stock: ${stock}`);
+          console.log(`Quantity Before Add: ${quantityInCartBeforeAdd}`);
+          console.log(`Quantity Added: 1`);
+          console.log(`Expected New Quantity: ${expectedNewQuantityInCart}`);
+          console.log(`Is Expected New Quantity === Stock? : ${expectedNewQuantityInCart === stock}`);
 
-        // Kiểm tra nếu số lượng mới bằng tồn kho
-        if (expectedNewQuantityInCart > 0 && stock > 0 && expectedNewQuantityInCart === stock) {
-          console.log('>>> Condition MET! Showing info toastr.');
-          setTimeout(() => {
-            this.toastr.info(`Đã đạt số lượng tối đa (${stock}) cho "${productName}" trong giỏ hàng.`);
-            this.cdr.markForCheck();
-          }, 100);
-        } else {
-          console.log('>>> Condition NOT MET.');
-        }
-        // ******************************************************************
-      },
+          // Kiểm tra nếu số lượng mới bằng tồn kho
+          if (expectedNewQuantityInCart > 0 && stock > 0 && expectedNewQuantityInCart === stock) {
+            console.log('>>> Condition MET! Showing info toastr.');
+            setTimeout(() => {
+              this.toastr.info(`Đã đạt số lượng tối đa (${stock}) cho "${productName}" trong giỏ hàng.`);
+              this.cdr.markForCheck();
+            }, 100);
+          } else {
+            console.log('>>> Condition NOT MET.');
+          }
+          // ******************************************************************
+        },
         // *** Sửa kiểu dữ liệu cho err ***
         error: (err: any) => { // Dùng any hoặc HttpErrorResponse
           console.error('Error adding to cart from product card:', err);
@@ -233,7 +233,7 @@ export class ProductCardComponent {
     this.isTogglingFavorite.set(true);
     const currentIsFavorite = this.isFavorite(); // Lấy trạng thái hiện tại từ signal
 
-  //*** Sửa tham số gọi service ***
+    //*** Sửa tham số gọi service ***
     const action = currentIsFavorite
       ? this.favoriteService.removeFavorite(this.product.id) // Chỉ cần productId
       : this.favoriteService.addFavorite(this.product.id);    // Chỉ cần productId

@@ -105,20 +105,44 @@ export const routes: Routes = [
         title: 'AgriTrade - Nông sản sạch Lạng Sơn'
       },
 
+      // {
+      //   path: 'products', // Tất cả các route bắt đầu bằng /products
+      //   loadChildren: () => import('./features/catalog/catalog.routes').then(m => m.CATALOG_ROUTES)
+      // },
       {
-        path: 'products', // Tất cả các route bắt đầu bằng /products
-        loadChildren: () => import('./features/catalog/catalog.routes').then(m => m.CATALOG_ROUTES)
+        path: 'products', // Trang danh sách sản phẩm B2C
+        loadComponent: () => import('./features/catalog/components/product-list/product-list.component').then(m => m.ProductListComponent),
+        title: 'Sản phẩm Nông sản'
       },
       { // Route chi tiết sản phẩm (đặt ở đây để URL là /products/:slug)
-        path: 'products/:slug',
+        path: 'products/:slug', // Chi tiết sản phẩm B2C
         loadComponent: () => import('./features/catalog/components/product-detail/product-detail.component').then(m => m.ProductDetailComponent)
         // Title sẽ được set động trong component
       },
       { // Route lọc theo category (đặt ở đây để URL là /categories/:slug)
-        path: 'categories/:slug',
+        path: 'categories/:slug', // Sản phẩm B2C theo category
         loadComponent: () => import('./features/catalog/components/product-list/product-list.component').then(m => m.ProductListComponent)
         // Title sẽ được set động trong component
       },
+
+      // --- LUỒNG TÌM KIẾM NGUỒN CUNG (MỚI) ---
+      {
+        path: 'supply-sources', // URL: /supply-sources
+        loadComponent: () => import('./features/catalog/components/supply-source-list/supply-source-list.component').then(m => m.SupplySourceListComponent),
+        title: 'Tìm Nguồn Cung Nông Sản'
+      },
+      {
+        path: 'supply-sources/category/:categorySlug', // URL: /supply-sources/category/rau-cu
+        loadComponent: () => import('./features/catalog/components/supply-source-list/supply-source-list.component').then(m => m.SupplySourceListComponent),
+        // Title sẽ được set động dựa trên category
+      },
+      {
+        path: 'supply-sources/detail/:productSlug', // URL: /supply-sources/detail/ca-rot-da-lat
+        loadComponent: () => import('./features/catalog/components/supply-source-detail/supply-source-detail.component').then(m => m.SupplySourceDetailComponent),
+        // Title sẽ được set động dựa trên tên sản phẩm/nguồn cung
+      },
+      // ---------------------------------------
+
       { // Route Giỏ hàng (đặt trong layout public hoặc user đều được, ở đây ví dụ public)
         path: 'cart',
         loadComponent: () => import('./features/ordering/components/cart/cart.component').then(m => m.CartComponent),

@@ -10,7 +10,7 @@ import {
   ViewChild,
   ElementRef,
   AfterViewChecked,
-  computed, effect, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRef
+  computed, effect, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRef, OnInit
 } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
@@ -30,15 +30,16 @@ import {UserInfoSimpleResponse} from '../../../../user-profile/dto/response/User
 import {TimeAgoPipe} from '../../../../../shared/pipes/time-ago.pipe';
 import {ActivatedRoute, RouterLink} from '@angular/router';
 import {routes} from '../../../../../app.routes';
+import {SafeHtmlPipe} from '../../../../../shared/pipes/safe-html.pipe';
 
 @Component({
   selector: 'app-message-area',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, LoadingSpinnerComponent, DatePipe, AlertComponent, TimeAgoPipe, RouterLink],
+  imports: [CommonModule, ReactiveFormsModule, LoadingSpinnerComponent, DatePipe, AlertComponent, TimeAgoPipe, RouterLink, SafeHtmlPipe],
   templateUrl: './message-area.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush // Sử dụng OnPush
 })
-export class MessageAreaComponent implements OnChanges, OnDestroy  {
+export class MessageAreaComponent implements OnChanges, OnDestroy, OnInit   {
   @Input({ required: true }) selectedRoom!: ChatRoomResponse | null;
   @Output() backToList = new EventEmitter<void>(); // Event để quay lại list trên mobile
 
@@ -50,6 +51,13 @@ export class MessageAreaComponent implements OnChanges, OnDestroy  {
   private destroy$ = new Subject<void>();
   private cdr = inject(ChangeDetectorRef);
   private route = inject(ActivatedRoute);
+
+  // Biến để lưu trữ thông tin context từ URL, chỉ dùng cho tin nhắn đầu tiên
+  private initialContextProductId: number | null = null;
+  private initialContextProductName: string | null = null;
+  private initialContextProductSlug: string | null = null;
+  private contextHasBeenSentForThisRoom = false; // Cờ để đảm bảo context chỉ được gửi một lần cho mỗi lần mở phòng với context
+
 
   messages = signal<ChatMessageResponse[]>([]);
   isLoading = this.chatService.isLoadingMessages;
@@ -73,6 +81,23 @@ export class MessageAreaComponent implements OnChanges, OnDestroy  {
   currentChatPartner = signal<UserInfoSimpleResponse | null>(null);
 
   //private shouldScrollToBottom = false; // Cờ để chỉ scroll khi có tin nhắn mới
+
+
+  ngOnInit(): void { // Thêm ngOnInit
+    this.route.queryParamMap.pipe(takeUntil(this.destroy$)).subscribe(params => {
+      const roomIdFromQuery = params.get('roomId');
+      // Chỉ lấy context nếu roomId từ query khớp với phòng đang mở (hoặc khi phòng mới được mở)
+      if (roomIdFromQuery && this.selectedRoom && this.selectedRoom.id === +roomIdFromQuery) {
+        this.initialContextProductId = params.get('contextProductId') ? +params.get('contextProductId')! : null;
+        this.initialContextProductName = params.get('contextProductName');
+        this.initialContextProductSlug = params.get('contextProductSlug');
+        this.contextHasBeenSentForThisRoom = false; // Reset cờ khi phòng (có thể với context mới) được chọn
+        console.log('MessageArea received context:', this.initialContextProductId, this.initialContextProductName);
+      } else if (!roomIdFromQuery) { // Nếu không có roomId trong query, reset context
+        this.clearInitialContext();
+      }
+    });
+  }
 
   // *** Thêm constructor hoặc ngOnInit để subscribe ***
   constructor() {
@@ -116,7 +141,7 @@ export class MessageAreaComponent implements OnChanges, OnDestroy  {
     });
   }
 
-
+// Override ngOnChanges để reset context khi phòng thay đổi
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['selectedRoom']) {
       const newRoom = changes['selectedRoom'].currentValue as ChatRoomResponse | null;
@@ -125,13 +150,34 @@ export class MessageAreaComponent implements OnChanges, OnDestroy  {
         this.resetChat();
         this.loadInitialMessages();
         this.chatService.setCurrentChatRoom(newRoom.id);
+        // Kiểm tra lại queryParams khi phòng thay đổi
+        const queryProductId = this.route.snapshot.queryParamMap.get('contextProductId');
+        if (queryProductId && newRoom.id === +this.route.snapshot.queryParamMap.get('roomId')!) {
+          this.initialContextProductId = +queryProductId;
+          this.initialContextProductName = this.route.snapshot.queryParamMap.get('contextProductName');
+          this.initialContextProductSlug = this.route.snapshot.queryParamMap.get('contextProductSlug');
+          this.contextHasBeenSentForThisRoom = false;
+          console.log('MessageArea context re-evaluated on room change:', this.initialContextProductId);
+        } else {
+          this.clearInitialContext();
+        }
+
       } else {
         this.resetChat();
         this.chatService.setCurrentChatRoom(null);
+        this.clearInitialContext();
       }
-      this.cdr.markForCheck(); // Cần thiết khi Input thay đổi và dùng OnPush
+      this.cdr.markForCheck();
     }
   }
+
+  private clearInitialContext(): void {
+    this.initialContextProductId = null;
+    this.initialContextProductName = null;
+    this.initialContextProductSlug = null;
+    this.contextHasBeenSentForThisRoom = true; // Coi như đã "xử lý" context rỗng
+  }
+
 
 
   // ****** SỬA HÀM NÀY ******
@@ -191,17 +237,24 @@ export class MessageAreaComponent implements OnChanges, OnDestroy  {
     this.chatService.getChatMessages(this.selectedRoom.id, this.currentPage, this.pageSize)
       .pipe(
         takeUntil(this.destroy$),
-        finalize(() => this.isLoadingMore.set(false))
+        finalize(() => {
+          this.isLoadingMore.set(false);
+          if (isInitialLoad) this.isLoading.set(false); // Chỉ tắt isLoading chính khi load lần đầu
+        })
       )
       .subscribe({
         next: (res: PagedApiResponse<ChatMessageResponse>) => {
           if (res.success && res.data) {
             this.totalPages = res.data.totalPages;
             this.hasMoreMessages.set(!res.data.last);
-            const newMessages = res.data.content.reverse(); // API trả về mới nhất trước, cần đảo lại
+            const newMessagesFromApi = res.data.content.reverse(); // API trả về mới nhất trước, cần đảo lại
             if (!isInitialLoad) {
-              // Thêm tin nhắn cũ vào đầu danh sách hiện tại
-              this.messages.update(current => [...newMessages, ...current]);
+              this.messages.update(current => {
+                const combined = [...newMessagesFromApi, ...current];
+                // **SẮP XẾP LẠI**
+                combined.sort((a, b) => new Date(a.sentAt).getTime() - new Date(b.sentAt).getTime());
+                return combined;
+              });
               // Khôi phục vị trí scroll sau khi DOM cập nhật
               setTimeout(() => {
                 if (this.messageContainer?.nativeElement && scrollState) {
@@ -270,9 +323,21 @@ export class MessageAreaComponent implements OnChanges, OnDestroy  {
     const request: ChatMessageRequest = {
       recipientId: recipientId,
       content: contentToSend,
-      messageType: MessageType.TEXT
+      messageType: MessageType.TEXT,
+      // **Đính kèm context nếu có và chưa được gửi cho phòng này**
+      contextProductId: !this.contextHasBeenSentForThisRoom ? this.initialContextProductId : null,
+      contextProductName: !this.contextHasBeenSentForThisRoom ? this.initialContextProductName : null,
+      contextProductSlug: !this.contextHasBeenSentForThisRoom ? this.initialContextProductSlug : null
     };
     this.chatService.sendMessageViaWebSocket(request);
+    this.messageForm.reset(); // Reset form sau khi gửi
+
+    // Đánh dấu context đã được gửi cho lần này
+    if (!this.contextHasBeenSentForThisRoom && this.initialContextProductId) {
+      this.contextHasBeenSentForThisRoom = true;
+      // Không cần xóa initialContext... ngay, nó sẽ được cập nhật khi route thay đổi
+    }
+
   }
   // Hàm scroll xuống cuối
   scrollToBottom(behavior: ScrollBehavior = 'auto'): void {

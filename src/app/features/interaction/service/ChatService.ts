@@ -252,8 +252,12 @@ export class ChatService {
     if (newMessage.roomId === currentOpenRoomId) {
       console.log("Adding message to current view:", newMessage);
       const currentMessages = this.currentMessagesSubject.value;
-      // Thêm tin nhắn mới vào cuối danh sách
-      this.currentMessagesSubject.next([...currentMessages, newMessage]);
+
+      const updatedMessages = [...currentMessages, newMessage];
+      // **SẮP XẾP LẠI THEO sentAt TĂNG DẦN**
+      updatedMessages.sort((a, b) => new Date(a.sentAt).getTime() - new Date(b.sentAt).getTime());
+      this.currentMessagesSubject.next(updatedMessages);
+
       // Tự động đánh dấu đã đọc nếu đang mở phòng?
        this.markMessagesAsRead(newMessage.roomId).subscribe(); // Gọi API đánh dấu đã đọc
 
@@ -494,7 +498,7 @@ export class ChatService {
   // Lấy lịch sử tin nhắn (API)
   getChatMessages(roomId: number, page: number, size: number): Observable<PagedApiResponse<ChatMessageResponse>> {
     this.isLoadingMessages.set(true);
-    this.currentRoomId = roomId;
+    //his.currentRoomId = roomId;
     this.currentRoomIdSignal.set(roomId);
     let params = new HttpParams()
       .set('page', page.toString())
@@ -504,10 +508,11 @@ export class ChatService {
     return this.http.get<PagedApiResponse<ChatMessageResponse>>(`${this.apiUrl}/rooms/${roomId}/messages`, { params }).pipe(
       tap(response => {
         if (response.success && response.data) {
-          const messages = response.data.content.reverse();
+          const messagesFromApi = response.data.content.reverse();
           // *** Cập nhật Subject khi load trang đầu tiên ***
           if (page === 0) {
-            this.currentMessagesSubject.next(messages);
+            messagesFromApi.sort((a, b) => new Date(a.sentAt).getTime() - new Date(b.sentAt).getTime());
+            this.currentMessagesSubject.next(messagesFromApi)
           } else {
             // Khi load trang cũ hơn, để component xử lý việc thêm vào đầu
           }

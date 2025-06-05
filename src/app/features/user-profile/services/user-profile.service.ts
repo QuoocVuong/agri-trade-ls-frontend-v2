@@ -1,8 +1,8 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import {HttpClient, HttpParams} from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../environments/environment';
-import { ApiResponse } from '../../../core/models/api-response.model';
+import {ApiResponse, PagedApiResponse} from '../../../core/models/api-response.model';
 // Import DTOs
 import { UserProfileResponse } from '../dto/response/UserProfileResponse'; // Giả sử DTO này nằm trong user-profile/dto
 import { UserUpdateRequest } from '../dto/request/UserUpdateRequest';
@@ -14,6 +14,7 @@ import { FarmerProfileResponse } from '../dto/response/FarmerProfileResponse';
 import { BusinessProfileRequest } from '../dto/request/BusinessProfileRequest';
 import { BusinessProfileResponse } from '../dto/response/BusinessProfileResponse';
 import {UserResponse} from '../dto/response/UserResponse';
+import {RoleType} from '../../../common/model/role-type.enum';
 
 
 @Injectable({
@@ -25,6 +26,8 @@ export class UserProfileService {
   private farmerProfileApiUrl = `${environment.apiUrl}/profiles/farmer`;
   private businessProfileApiUrl = `${environment.apiUrl}/profiles/business`;
   private addressApiUrl = `${environment.apiUrl}/addresses`; // Giả sử có API riêng cho địa chỉ
+
+  private adminUserApiUrl = `${environment.apiUrl}/admin/users`;
 
   // Lấy profile đầy đủ của user đang đăng nhập
   getMyProfile(): Observable<ApiResponse<UserProfileResponse>> {
@@ -72,4 +75,55 @@ export class UserProfileService {
   }
 
   // Có thể thêm các hàm lấy profile public của farmer/business khác ở đây nếu cần
+
+  // --- THÊM PHƯƠNG THỨC MỚI ĐỂ TÌM USER CHO SELECTION ---
+  searchUsersForSelection(keyword: string, roles: RoleType[], page: number = 0, size: number = 10): Observable<PagedApiResponse<UserResponse>> {
+    let params = new HttpParams()
+      .set('keyword', keyword)
+      .set('page', page.toString())
+      .set('size', size.toString())
+      .set('isActive', 'true'); // Chỉ tìm user đang active
+
+    // Backend API /api/admin/users của bạn cần hỗ trợ lọc theo nhiều role
+    // Nếu API chỉ hỗ trợ 1 role, bạn cần gọi nhiều lần hoặc sửa API backend
+    // Giả sử API hỗ trợ query param 'roles' dạng comma-separated: roles=ROLE_CONSUMER,ROLE_BUSINESS_BUYER
+    if (roles && roles.length > 0) {
+      params = params.set('roles', roles.join(',')); // Hoặc cách API backend của bạn nhận nhiều role
+    }
+    // API này có thể cần quyền Admin, hoặc một API public riêng để tìm user (ít bảo mật hơn)
+    // Hiện tại, giả sử dùng API của Admin
+    return this.http.get<PagedApiResponse<UserResponse>>(this.adminUserApiUrl, { params });
+  }
+  // ----------------------------------------------------
+
+  getDefaultAddress(userId: number): Observable<ApiResponse<AddressResponse | null>> {
+    // Backend cần có API này, ví dụ: GET /api/addresses/user/{userId}/default
+    // Hoặc bạn có thể lấy tất cả địa chỉ rồi lọc ở frontend (ít hiệu quả hơn)
+    // Tạm thời, giả sử API là:
+    return this.http.get<ApiResponse<AddressResponse | null>>(`${this.addressApiUrl}/user/${userId}/default`);
+    // Nếu backend không có API này, bạn cần lấy hết địa chỉ và lọc:
+    // return this.http.get<ApiResponse<AddressResponse[]>>(`${this.addressApiUrl}/user/${userId}`).pipe(
+    //   map(response => {
+    //     if (response.success && response.data) {
+    //       const defaultAddress = response.data.find(addr => addr.isDefault);
+    //       return { ...response, data: defaultAddress || null };
+    //     }
+    //     return { ...response, data: null };
+    //   })
+    // );
+  }
+
+  searchBuyers(keyword: string,  page: number, size: number, sort?: string): Observable<PagedApiResponse<UserResponse>> {
+    let params = new HttpParams()
+      .set('keyword', keyword)
+      .set('page', page.toString())
+      .set('size', size.toString())
+      .set('isActive', 'true'); // Chỉ tìm user đang active
+    if (sort) {
+      params = params.set('sort', sort);
+    }
+    // Gọi API mới đã tạo ở backend
+    return this.http.get<PagedApiResponse<UserResponse>>(`${this.userApiUrl}/search-buyers`, { params });
+  }
+
 }

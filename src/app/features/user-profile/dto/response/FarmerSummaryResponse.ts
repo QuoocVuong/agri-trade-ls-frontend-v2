@@ -7,6 +7,8 @@ export interface FarmerSummaryResponse {
   /** ID của User (Farmer) */
   userId: number;
 
+  farmerId: number;
+
   /** Tên trang trại/cửa hàng (lấy từ FarmerProfile) */
   farmName: string | null;
 

@@ -11,7 +11,8 @@ import { OrderStatus } from '../domain/order-status.enum';
 import {OrderCalculationResponse} from '../dto/response/OrderCalculationResponse';
 import {PaymentMethod} from '../domain/payment-method.enum';
 import {PaymentUrlResponse} from '../dto/response/PaymentUrlResponse';
-import {BankTransferInfoResponse} from '../dto/response/BankTransferInfoResponse'; // Import Enum
+import {BankTransferInfoResponse} from '../dto/response/BankTransferInfoResponse';
+import {AgreedOrderRequest} from '../dto/request/AgreedOrderRequest'; // Import Enum
 
 // Interface cho tham số tìm kiếm đơn hàng của Farmer
 export interface FarmerOrderSearchParams {
@@ -40,6 +41,7 @@ export class OrderService {
   private farmerOrderApiUrl = `${environment.apiUrl}/farmer/orders`;
   private adminOrderApiUrl = `${environment.apiUrl}/admin/orders`;
   private InvoiceApiUrl  = `${environment.apiUrl}`;
+  private invoiceDownloadApiUrl = `${environment.apiUrl}/invoices`;
 
   // --- Buyer APIs ---
   checkout(request: CheckoutRequest): Observable<ApiResponse<OrderResponse[]>> { // Backend trả về List<OrderResponse>
@@ -150,6 +152,40 @@ export class OrderService {
   // OrderService.ts (Frontend)
   calculateTotals(request: { shippingAddressId: number | null }): Observable<ApiResponse<OrderCalculationResponse>> {
     return this.http.post<ApiResponse<OrderCalculationResponse>>(`${this.orderApiUrl}/calculate-totals`, request);
+  }
+
+  // --- THÊM PHƯƠNG THỨC MỚI CHO ĐƠN HÀNG THỎA THUẬN ---
+  /**
+   * Gọi API backend để tạo một "Đơn hàng thỏa thuận".
+   * @param request Dữ liệu của đơn hàng thỏa thuận.
+   * @returns Observable chứa ApiResponse với OrderResponse của đơn hàng vừa tạo.
+   */
+  createAgreedOrder(request: AgreedOrderRequest): Observable<ApiResponse<OrderResponse>> {
+    // Endpoint backend là: POST /api/orders/agreed-order
+    // (Hoặc /api/admin/orders/agreed-order, /api/farmer/orders/agreed-order tùy theo quyền và cách bạn tổ chức API)
+    // Giả sử endpoint chung là /api/orders/agreed-order và backend sẽ kiểm tra quyền của người gọi
+    return this.http.post<ApiResponse<OrderResponse>>(`${this.orderApiUrl}/agreed-order`, request);
+  }
+  // ----------------------------------------------------
+
+  /**
+   * Tải PDF hóa đơn theo Order ID.
+   * @param orderId ID của đơn hàng.
+   * @returns Observable chứa Blob của file PDF.
+   */
+  downloadInvoiceByOrderId(orderId: number): Observable<Blob> {
+    const url = `${this.orderApiUrl}/${orderId}/invoice/download`;
+    return this.http.get(url, { responseType: 'blob' });
+  }
+
+  /**
+   * Tải PDF hóa đơn theo Invoice ID.
+   * @param invoiceId ID của hóa đơn.
+   * @returns Observable chứa Blob của file PDF.
+   */
+  downloadInvoiceByInvoiceId(invoiceId: number): Observable<Blob> {
+    const url = `${this.invoiceDownloadApiUrl}/${invoiceId}/download`; // API backend: /api/invoices/{invoiceId}/download
+    return this.http.get(url, { responseType: 'blob' });
   }
 
 }

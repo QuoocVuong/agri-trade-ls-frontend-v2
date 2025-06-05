@@ -1,36 +1,54 @@
-// src/app/features/catalog/dto/response/ProductSummaryResponse.ts
-import { ProductStatus } from '../../domain/product-status.enum'; // Import Enum Status
+import { ProductStatus } from '../../domain/product-status.enum';
 import { FarmerInfoResponse } from './FarmerInfoResponse';
-import  BigDecimal  from 'js-big-decimal';
-import {CategoryInfoResponse} from './CategoryInfoResponse';
-import {ProductPricingTierResponse} from './ProductPricingTierResponse'; // Hoặc dùng number/string
+import BigDecimal from 'js-big-decimal';
+import { CategoryInfoResponse } from './CategoryInfoResponse';
+import { ProductPricingTierResponse } from './ProductPricingTierResponse';
 
 export interface ProductSummaryResponse {
   id: number;
   name: string;
-
   slug: string;
   thumbnailUrl: string | null;
-  price: number | string | BigDecimal; // Giá B2C, dùng number hoặc string
-  unit: string; // Đơn vị B2C
+
+  // Giá B2C
+  price: number | string | BigDecimal;
+  unit: string;
+
+  // Tồn kho và đánh giá
+  stockQuantity: number;
   averageRating: number | null;
-  farmerInfo: FarmerInfoResponse | null; // Thông tin cơ bản của farmer
+
+  // Nông dân và địa lý
+  farmerInfo: FarmerInfoResponse | null;
   provinceCode: string | null;
+
+  // Trạng thái và phân loại
   status: ProductStatus;
-  b2bEnabled : boolean;
+  category: CategoryInfoResponse | null;
+
+  // Thời gian
+  createdAt: Date | string | null;
+  updatedAt: Date | string | null;
+  lastStockUpdate?: Date | string | null;
+
+  // B2B thông tin
+  b2bEnabled: boolean;
   b2bUnit: string | null;
-  b2bBasePrice: number | string | BigDecimal | null; // Hoặc kiểu dữ liệu bạn dùng
+  b2bBasePrice: number | string | BigDecimal | null;
   minB2bQuantity?: number | null;
   pricingTiers?: ProductPricingTierResponse[] | null;
-  category: CategoryInfoResponse | null;
-  stockQuantity: number;
-  description: string | null;
-  createdAt: Date | null;
-  updatedAt: Date | null;
+
+  // Thông tin nông sản
+  harvestDate?: Date | string | null;
+  negotiablePrice?: boolean;
+  wholesaleUnit?: string | null;
+  referenceWholesalePrice?: number | string | BigDecimal | null;
+
+  // UI bổ sung
   isFavorite: boolean;
+  favoriteCount?: number;
   new?: boolean;
 
-
-  // Có thể thêm favorite count nếu cần hiển thị nhanh
-   favoriteCount?: number;
+  // Optional mô tả nếu có
+  description?: string | null;
 }

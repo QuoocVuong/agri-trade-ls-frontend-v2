@@ -1,0 +1,156 @@
+<!-- src/app/features/ordering/components/agreed-order-form/agreed-order-form.component.html -->
+<div class="container mx-auto px-4 py-8 max-w-3xl">
+  <h1 class="text-2xl md:text-3xl font-bold text-center mb-8 text-primary dark:text-green-400">
+    Tạo Đơn Hàng Thỏa Thuận
+  </h1>
+
+  <app-alert *ngIf="errorMessage()" type="error" [message]="errorMessage()" class="mb-6"></app-alert>
+  <app-alert *ngIf="successMessage()" type="success" [message]="successMessage()" class="mb-6"></app-alert>
+
+  <form [formGroup]="agreedOrderForm" (ngSubmit)="onSubmit()" class="space-y-6 card bg-base-100 dark:bg-gray-800 shadow-xl p-6 md:p-8 rounded-lg">
+
+    <!-- Thông tin Người Mua và Người Bán -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div class="form-control">
+        <label class="label"><span class="label-text font-medium">Người Mua (Doanh nghiệp/Đối tác) <span class="text-error">*</span></span></label>
+        <!-- SỬ DỤNG COMPONENT TÌM KIẾM USER -->
+        <app-user-search-select (userSelected)="onBuyerSelected($event)" [initialUser]="selectedBuyer()"></app-user-search-select>
+        <input type="text" formControlName="buyerDisplay" class="input input-bordered input-sm mt-1" placeholder="Tên người mua đã chọn" readonly>
+        <div *ngIf="agreedOrderForm.get('buyerId')?.invalid && agreedOrderForm.get('buyerId')?.touched" class="text-error text-xs mt-1">
+          Vui lòng chọn người mua.
+        </div>
+      </div>
+
+<!--      <div class="form-control">-->
+<!--        <label class="label"><span class="label-text font-medium">Người Bán (Nông dân) <span class="text-error">*</span></span></label>-->
+<!--        <input type="text" class="input input-bordered" formControlName="farmerId" placeholder="ID Nông dân" [readonly]="isFarmer()">-->
+<!--        &lt;!&ndash; Nếu là Admin, có thể cần một component tìm kiếm Farmer tương tự &ndash;&gt;-->
+<!--      </div>-->
+
+      <!-- HOẶC NẾU MUỐN HIỂN THỊ THÔNG TIN FARMER ĐANG ĐĂNG NHẬP -->
+      <div class="form-control" *ngIf="isFarmer() && currentUser()">
+        <label class="label"><span class="label-text font-medium">Người Bán (Bạn)</span></label>
+        <input type="text" class="input input-bordered input-disabled" [value]="currentUser()?.fullName + ' (ID: ' + currentUser()?.id + ')'" readonly>
+      </div>
+    </div>
+
+    <!-- Danh sách Sản phẩm Thỏa thuận -->
+    <div>
+      <h3 class="text-lg font-semibold mb-3">Chi tiết Sản phẩm Thỏa thuận</h3>
+      <div formArrayName="items" class="space-y-4">
+        <div *ngFor="let itemGroup of itemsFormArray.controls; let i = index" [formGroupName]="i"
+             class="p-4 border border-base-300 dark:border-gray-700 rounded-md relative">
+          <h4 class="font-medium mb-2 text-sm">Sản phẩm #{{ i + 1 }}</h4>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="form-control sm:col-span-2">
+              <label class="label pb-1"><span class="label-text text-xs">Chọn sản phẩm tham khảo (của nông dân)</span></label>
+              <!-- SỬ DỤNG COMPONENT TÌM KIẾM SẢN PHẨM -->
+              <app-product-search-select [farmerId]="currentUser()?.id ?? null"
+                                         (productSelected)="onProductSelected($event, i)"
+                                         [initialProduct]="{id: itemGroup.get('productId')?.value, name: itemGroup.get('productDisplay')?.value }">
+              </app-product-search-select>
+              <input type="text" formControlName="productDisplay" class="input input-bordered input-xs mt-1" placeholder="Sản phẩm đã chọn" readonly>
+            </div>
+
+            <div class="form-control">
+              <label class="label pb-1"><span class="label-text text-xs">Tên sản phẩm (thỏa thuận) <span class="text-error">*</span></span></label>
+              <input type="text" formControlName="productName" class="input input-bordered input-sm" placeholder="Tên sản phẩm">
+            </div>
+            <div class="form-control">
+              <label class="label pb-1"><span class="label-text text-xs">Đơn vị tính <span class="text-error">*</span></span></label>
+              <input type="text" formControlName="unit" class="input input-bordered input-sm" placeholder="kg, tấn, tạ...">
+            </div>
+            <div class="form-control">
+              <label class="label pb-1"><span class="label-text text-xs">Số lượng <span class="text-error">*</span></span></label>
+              <input type="number" formControlName="quantity" class="input input-bordered input-sm" placeholder="Số lượng">
+            </div>
+            <div class="form-control">
+              <label class="label pb-1"><span class="label-text text-xs">Đơn giá (VNĐ) <span class="text-error">*</span></span></label>
+              <input type="number" formControlName="pricePerUnit" class="input input-bordered input-sm" placeholder="Đơn giá">
+            </div>
+          </div>
+          <button *ngIf="itemsFormArray.length > 1" type="button" (click)="removeItem(i)"
+                  class="btn btn-xs btn-circle btn-outline btn-error absolute top-2 right-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+          </button>
+        </div>
+      </div>
+      <button type="button" (click)="addItem()" class="btn btn-sm btn-outline btn-accent mt-4">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg>
+        Thêm sản phẩm
+      </button>
+    </div>
+
+    <!-- Thông tin Thanh toán và Giao hàng -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div class="form-control">
+        <label class="label"><span class="label-text font-medium">Tổng tiền thỏa thuận (VNĐ) <span class="text-error">*</span></span></label>
+        <input type="number" formControlName="agreedTotalAmount" class="input input-bordered" placeholder="Tổng số tiền">
+      </div>
+      <div class="form-control">
+        <label class="label"><span class="label-text font-medium">Phương thức thanh toán <span class="text-error">*</span></span></label>
+        <select formControlName="agreedPaymentMethod" class="select select-bordered">
+          <option *ngFor="let method of paymentMethods" [value]="method">
+            {{ getPaymentMethodText(method) }}
+          </option>
+        </select>
+      </div>
+    </div>
+
+    <div>
+      <h3 class="text-lg font-semibold mb-3 mt-4">Thông tin Giao Hàng (Thỏa thuận)</h3>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+        <div class="form-control">
+          <label class="label pb-1"><span class="label-text text-xs">Tên người nhận</span></label>
+          <input type="text" formControlName="shippingFullName" class="input input-bordered input-sm" placeholder="Tên người nhận hàng">
+        </div>
+        <div class="form-control">
+          <label class="label pb-1"><span class="label-text text-xs">Số điện thoại nhận hàng</span></label>
+          <input type="tel" formControlName="shippingPhoneNumber" class="input input-bordered input-sm" placeholder="SĐT người nhận">
+        </div>
+        <div class="form-control md:col-span-2">
+          <label class="label pb-1"><span class="label-text text-xs">Địa chỉ chi tiết</span></label>
+          <input type="text" formControlName="shippingAddressDetail" class="input input-bordered input-sm" placeholder="Số nhà, tên đường...">
+        </div>
+        <div class="form-control">
+          <label class="label pb-1"><span class="label-text text-xs">Tỉnh/Thành phố</span></label>
+          <select formControlName="shippingProvinceCode" class="select select-bordered select-sm">
+            <option value="">-- Chọn Tỉnh/Thành --</option>
+            <option *ngFor="let province of provinces()" [value]="province.idProvince">{{ province.name }}</option>
+          </select>
+        </div>
+        <div class="form-control">
+          <label class="label pb-1"><span class="label-text text-xs">Quận/Huyện</span></label>
+          <select formControlName="shippingDistrictCode" class="select select-bordered select-sm" [disabled]="!agreedOrderForm.get('shippingProvinceCode')?.value || districts().length === 0">
+            <option value="">-- Chọn Quận/Huyện --</option>
+            <option *ngFor="let district of districts()" [value]="district.idDistrict">{{ district.name }}</option>
+          </select>
+        </div>
+        <div class="form-control">
+          <label class="label pb-1"><span class="label-text text-xs">Xã/Phường</span></label>
+          <select formControlName="shippingWardCode" class="select select-bordered select-sm" [disabled]="!agreedOrderForm.get('shippingDistrictCode')?.value || wards().length === 0">
+            <option value="">-- Chọn Xã/Phường --</option>
+            <option *ngFor="let ward of wards()" [value]="ward.idWard">{{ ward.name }}</option>
+          </select>
+        </div>
+        <div class="form-control">
+          <label class="label pb-1"><span class="label-text text-xs">Ngày giao dự kiến</span></label>
+          <input type="date" formControlName="expectedDeliveryDate" class="input input-bordered input-sm">
+        </div>
+      </div>
+    </div>
+
+    <div class="form-control">
+      <label class="label"><span class="label-text font-medium">Ghi chú thêm</span></label>
+      <textarea formControlName="notes" class="textarea textarea-bordered" placeholder="Các điều khoản thỏa thuận khác..."></textarea>
+    </div>
+
+    <div class="card-actions justify-end mt-6">
+      <button type="button" routerLink="/user/orders" class="btn btn-ghost">Hủy</button> <!-- Hoặc link về dashboard farmer -->
+      <button type="submit" class="btn btn-primary" [disabled]="isSubmitting() || agreedOrderForm.invalid">
+        <span *ngIf="isSubmitting()" class="loading loading-spinner"></span>
+        {{ isSubmitting() ? 'Đang xử lý...' : 'Tạo Đơn Hàng Thỏa Thuận' }}
+      </button>
+    </div>
+  </form>
+</div>

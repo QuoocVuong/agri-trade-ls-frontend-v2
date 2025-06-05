@@ -6,7 +6,8 @@ import { ApiResponse, PagedApiResponse } from '../../../core/models/api-response
 import { ProductSummaryResponse } from '../dto/response/ProductSummaryResponse';
 import { ProductDetailResponse } from '../dto/response/ProductDetailResponse';
 import { ProductRequest } from '../dto/request/ProductRequest'; // Import request DTO
-import { ProductStatus } from '../domain/product-status.enum'; // Import Enum Status
+import { ProductStatus } from '../domain/product-status.enum';
+import {SupplySourceResponse} from '../dto/response/SupplySourceResponse'; // Import Enum Status
 
 // Interface cho tham số tìm kiếm (mở rộng cho Admin)
 export interface ProductSearchParams {
@@ -18,6 +19,19 @@ export interface ProductSearchParams {
   minPrice?: number | null;
   maxPrice?: number | null;
   minRating?: number | null;
+  page?: number;
+  size?: number;
+  sort?: string;
+}
+
+// Gần đầu file product.service.ts
+export interface SupplySourceSearchParams {
+  productKeyword?: string | null;
+  categoryId?: number | null;
+  provinceCode?: string | null;
+  districtCode?: string | null;
+  wardCode?: string | null;
+  minQuantityNeeded?: number | null;
   page?: number;
   size?: number;
   sort?: string;
@@ -149,4 +163,26 @@ export class ProductService {
     return this.http.get<PagedApiResponse<ProductSummaryResponse>>(url, { params });
   }
 
+
+  // Bên trong class ProductService
+
+// API mới để tìm kiếm nguồn cung
+  findSupplySources(params: SupplySourceSearchParams): Observable<PagedApiResponse<SupplySourceResponse>> {
+    let httpParams = new HttpParams();
+    if (params.productKeyword?.trim()) httpParams = httpParams.set('productKeyword', params.productKeyword.trim());
+    if (params.categoryId != null) httpParams = httpParams.set('categoryId', params.categoryId.toString());
+    if (params.provinceCode?.trim()) httpParams = httpParams.set('provinceCode', params.provinceCode.trim());
+    if (params.districtCode?.trim()) httpParams = httpParams.set('districtCode', params.districtCode.trim());
+    if (params.minQuantityNeeded != null && params.minQuantityNeeded > 0) {
+      httpParams = httpParams.set('minQuantityNeeded', params.minQuantityNeeded.toString());
+    }
+
+    httpParams = httpParams.set('page', (params.page ?? 0).toString());
+    httpParams = httpParams.set('size', (params.size ?? 12).toString()); // Kích thước trang mặc định
+    if (params.sort) httpParams = httpParams.set('sort', params.sort);
+
+    // Gọi API backend mới
+    const url = `${environment.apiUrl}/public/supply-sources`; // Đảm bảo URL này đúng
+    return this.http.get<PagedApiResponse<SupplySourceResponse>>(url, { params: httpParams });
+  }
 }

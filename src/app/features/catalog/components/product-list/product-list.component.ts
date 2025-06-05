@@ -322,4 +322,12 @@ export class ProductListComponent implements OnInit {
     });
   }
 
+  navigateToProductCategory(categorySlug: string | null): void {
+    if (categorySlug) {
+      this.router.navigate(['/categories', categorySlug]);
+    } else {
+      this.router.navigate(['/products']);
+    }
+  }
+
 }

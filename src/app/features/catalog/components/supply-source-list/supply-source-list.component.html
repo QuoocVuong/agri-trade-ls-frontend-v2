@@ -1,0 +1,134 @@
+<!-- src/app/features/catalog/components/supply-source-list/supply-source-list.component.html -->
+<div class="flex flex-col md:flex-row gap-6 lg:gap-8 container mx-auto px-4 py-8">
+  <!-- Sidebar Filters -->
+  <aside class="w-full md:w-1/4 lg:w-1/5 flex-shrink-0">
+    <!-- Category Sidebar (có thể tái sử dụng nếu muốn lọc nguồn cung theo category) -->
+    <div class="rounded-xl shadow-md p-4 mb-6">
+      <h3 class="text-lg font-semibold mb-3 text-primary dark:text-green-400">Lọc theo Danh mục</h3>
+      <app-category-sidebar [pageType]="'supply-sources'"
+                            (categorySelected)="navigateToCategory($event)"></app-category-sidebar>
+      <!-- (categorySelected) sẽ điều hướng đến /supply-sources/category/:slug -->
+    </div>
+
+    <!-- Bộ lọc cho Nguồn Cung -->
+    <div class="rounded-xl shadow-md p-4">
+      <h3 class="text-lg font-semibold mb-4 text-primary dark:text-green-400">Bộ lọc Nguồn Cung</h3>
+      <form [formGroup]="filterForm" (ngSubmit)="applyFilters(false)">
+        <div class="form-control mb-4">
+          <label class="label dark:text-base-content"><span class="label-text font-medium">Tên nông sản</span></label>
+          <input type="text" placeholder="VD: Cà chua, Khoai lang..."
+                 class="input input-sm input-bordered w-full rounded-full focus:ring-2 focus:ring-primary dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                 formControlName="productKeyword" />
+        </div>
+        <!-- Tỉnh/Thành phố Dropdown -->
+        <div class="form-control mb-4">
+          <label class="label dark:text-base-content"><span class="label-text font-medium">Tỉnh/Thành phố</span></label>
+          <select class="select select-sm select-bordered w-full rounded-full ..."
+                  formControlName="provinceCode">
+            <option value="">-- Chọn Tỉnh/Thành --</option>
+            <option *ngFor="let province of provinces()" [value]="province.idProvince">
+              {{ province.name }}
+            </option>
+          </select>
+        </div>
+
+        <!-- Quận/Huyện Dropdown -->
+        <div class="form-control mb-4">
+          <label class="label dark:text-base-content"><span class="label-text font-medium">Quận/Huyện</span></label>
+          <select class="select select-sm select-bordered w-full rounded-full ..."
+                  formControlName="districtCode"
+                  [disabled]="!filterForm.get('provinceCode')?.value || districts().length === 0">
+            <option value="">-- Chọn Quận/Huyện --</option>
+            <option *ngFor="let district of districts()" [value]="district.idDistrict">
+              {{ district.name }}
+            </option>
+          </select>
+        </div>
+
+        <!-- Xã/Phường Dropdown (MỚI) -->
+        <div class="form-control mb-4">
+          <label class="label dark:text-base-content"><span class="label-text font-medium">Xã/Phường</span></label>
+          <select class="select select-sm select-bordered w-full rounded-full ..."
+                  formControlName="wardCode"
+                  [disabled]="!filterForm.get('districtCode')?.value || wards().length === 0">
+            <option value="">-- Chọn Xã/Phường --</option>
+            <option *ngFor="let ward of wards()" [value]="ward.idWard"> <!-- Giả sử idWard là mã xã -->
+              {{ ward.name }}
+            </option>
+          </select>
+        </div>
+        <!-- Số lượng cần -->
+        <div class="form-control mb-4">
+          <label class="label dark:text-base-content"><span class="label-text font-medium">Số lượng cần (tối thiểu)</span></label>
+          <input type="number" placeholder="VD: 1000 (kg, tấn...)"
+                 class="input input-sm input-bordered w-full rounded-full dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                 formControlName="minQuantityNeeded" />
+        </div>
+
+        <button type="submit" class="btn btn-sm btn-primary w-full rounded-full mt-4 dark:bg-green-600 dark:hover:bg-green-700 dark:border-green-600"
+                [disabled]="filterForm.invalid">
+          <span *ngIf="currentCategoryContext()">Lọc trong "{{currentCategoryContext()?.name}}"</span>
+          <span *ngIf="!currentCategoryContext()">Tìm nguồn cung</span>
+        </button>
+        <button type="button" class="btn btn-sm btn-secondary w-full rounded-full mt-2 dark:bg-teal-600 dark:hover:bg-teal-700 dark:border-teal-600"
+                (click)="applyFilters(true)"
+                [disabled]="!filterForm.dirty && !filterForm.touched && !this.route.snapshot.paramMap.get('categorySlug')">
+          Tìm trên tất cả
+        </button>
+        <button type="button" class="btn btn-sm btn-ghost w-full rounded-full mt-2 text-base-content/70 hover:bg-base-200 dark:hover:bg-gray-700"
+                (click)="resetFilters()">
+          Xóa bộ lọc
+        </button>
+      </form>
+    </div>
+  </aside>
+
+  <!-- Main Content - Supply Source Grid -->
+  <div class="flex-grow">
+    <div class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
+      <h2 class="text-2xl md:text-3xl font-bold animate-fade-in dark:text-white">
+        <span *ngIf="currentCategoryContext()">Nguồn cung {{ currentCategoryContext()?.name }}</span>
+        <span *ngIf="!currentCategoryContext()">Danh sách Nguồn Cung Nông Sản</span>
+        <span *ngIf="paginationData()" class="text-sm font-normal text-base-content/70 ml-2 dark:text-gray-400">
+          ({{ paginationData()?.totalElements }} kết quả)
+        </span>
+      </h2>
+      <select class="select select-sm select-bordered w-full sm:w-52 rounded-full focus:ring-2 focus:ring-primary dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              (change)="onSortChange($event)"
+              aria-label="Sắp xếp nguồn cung">
+        <option disabled selected value="">Sắp xếp theo</option>
+        <option value="farmer.farmerProfile.farmName,asc">Tên nông trại (A-Z)</option>
+        <option value="farmer.farmerProfile.farmName,desc">Tên nông trại (Z-A)</option>
+        <option value="stockQuantity,desc">Số lượng giảm dần</option>
+        <option value="stockQuantity,asc">Số lượng tăng dần</option>
+        <option value="harvestDate,desc">Thu hoạch mới nhất</option>
+        <option value="harvestDate,asc">Thu hoạch cũ nhất</option>
+        <option value="lastStockUpdate,desc">Cập nhật kho mới nhất</option>
+      </select>
+    </div>
+
+    <div *ngIf="isLoading()" class="text-center py-20 animate-pulse">
+      <app-loading-spinner size="lg"></app-loading-spinner>
+    </div>
+    <app-alert *ngIf="errorMessage() && !isLoading()" type="error" [message]="errorMessage()" class="mb-6"></app-alert>
+
+    <div *ngIf="!isLoading() && supplySources().length === 0 && !errorMessage()" class="text-center py-20">
+      <p class="text-lg text-base-content/60 dark:text-gray-400">Không tìm thấy nguồn cung nào phù hợp với tiêu chí của bạn.</p>
+    </div>
+
+    <div *ngIf="!isLoading() && supplySources().length > 0"
+         class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4 lg:gap-6"> <!-- Điều chỉnh số cột nếu cần -->
+      <app-supply-source-card *ngFor="let supply of supplySources(); trackBy: trackSupplySourceById"
+                              [supplySource]="supply"
+                              class="animate-fade-in"></app-supply-source-card>
+    </div>
+
+    <div *ngIf="paginationData() && paginationData()!.totalPages > 1" class="mt-8 flex justify-center">
+      <app-paginator
+        [currentPage]="paginationData()!.number"
+        [totalPages]="paginationData()!.totalPages"
+        (pageChange)="onPageChange($event)">
+      </app-paginator>
+    </div>
+  </div>
+</div>

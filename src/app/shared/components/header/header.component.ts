@@ -135,7 +135,8 @@ export class HeaderComponent implements AfterViewInit {
         this.desktopSearchInputRef.nativeElement.value = '';
       }
       // TODO: Điều hướng đến trang kết quả tìm kiếm hoặc xử lý tìm kiếm
-      this.router.navigate(['/products'], { queryParams: { keyword: searchTerm.trim() } });
+      this.router.navigate(['/supply-sources'], { queryParams: { keyword: searchTerm.trim() } });
+      //this.router.navigate(['/products'], { queryParams: { keyword: searchTerm.trim() } });
     }
   }
 

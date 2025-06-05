@@ -40,7 +40,16 @@
   </div>
 
   <ng-container *ngFor="let message of messages(); trackBy: trackMessageById; let i = index">
-    <div class="chat animate-message-in" [ngClass]="message.sender?.id === currentUserId() ? 'chat-end' : 'chat-start'">
+
+    <!-- Tin nhắn hệ thống (SYSTEM) -->
+    <div *ngIf="message.messageType === 'SYSTEM'" class="my-2 text-center text-xs text-base-content/60 dark:text-gray-500 italic animate-message-in">
+      <span [innerHTML]="message.content | safeHtml"></span> <!-- Dùng safeHtml nếu content có HTML (link) -->
+      <!-- Hoặc chỉ {{ message.content }} nếu không có HTML -->
+    </div>
+
+
+    <!-- Tin nhắn người dùng (TEXT, IMAGE, FILE) -->
+    <div *ngIf="message.messageType !== 'SYSTEM'" class="chat animate-message-in" [ngClass]="message.sender?.id === currentUserId() ? 'chat-end' : 'chat-start'">
       <div class="chat-image avatar" *ngIf="message.sender?.id !== currentUserId() && shouldShowAvatar(i)">
         <div class="w-8 h-8 rounded-full">
           <img [alt]="message.sender?.fullName || 'User'" [src]="message.sender?.avatarUrl || 'assets/images/default-avatar.png'" class="object-cover" />

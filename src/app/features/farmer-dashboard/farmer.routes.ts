@@ -34,6 +34,14 @@ export const FARMER_ROUTES: Routes = [
     data: { isFarmerView: true }, // Truyền data để component biết là view của Farmer
     title: 'Kênh người bán - Chi tiết Đơn hàng'
   },
+
+  {
+    path: 'agreed-order/new',
+    loadComponent: () => import('../ordering/components/agreed-order-form/agreed-order-form.component').then(m => m.AgreedOrderFormComponent),
+    title: 'Tạo Đơn Hàng Thỏa Thuận'
+    // Không cần canActivate và data ở đây nữa vì FARMER_ROUTES đã có rồi
+  },
+
   // { path: 'reviews', loadComponent: () => ..., title: 'Kênh người bán - Đánh giá' }, // Nếu cần xem review về SP của mình
   { // Link đến trang sửa profile farmer (đã có trong user-profile)
     path: 'profile',
@@ -45,6 +53,23 @@ export const FARMER_ROUTES: Routes = [
     loadComponent: () => import('./components/farmer-reviews/farmer-reviews.component').then(m => m.FarmerReviewsComponent),
     title: 'Kênh người bán - Đánh giá sản phẩm' // <<< Đổi title cho phù hợp
   },
+  {
+    path: 'my-supplies', // Trang quản lý danh sách nguồn cung của farmer
+    loadComponent: () => import('./components/farmer-supply-list/farmer-supply-list.component').then(m => m.FarmerSupplyListComponent),
+    title: 'Nguồn Cung Của Tôi'
+  },
+
+  {
+    path: 'supply/new', // Tạo nguồn cung mới
+    loadComponent: () => import('../farmer-dashboard/components/supply-registration-form/supply-registration-form.component').then(m => m.SupplyRegistrationFormComponent),
+    title: 'Đăng Nguồn Cung Mới'
+  },
+  {
+    path: 'supply/edit/:productId', // Chỉnh sửa nguồn cung (dùng productId)
+    loadComponent: () => import('../farmer-dashboard/components/supply-registration-form/supply-registration-form.component').then(m => m.SupplyRegistrationFormComponent),
+    title: 'Chỉnh Sửa Nguồn Cung'
+  },
+
   // Redirect mặc định của /farmer về /farmer/dashboard
   {
     path: '',
