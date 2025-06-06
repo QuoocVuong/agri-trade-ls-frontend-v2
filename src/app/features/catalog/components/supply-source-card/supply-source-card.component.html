@@ -73,24 +73,35 @@
     </div>
 
     <!-- Nút Liên hệ -->
-    <div class="card-actions justify-end mt-3 p-4 pt-0">
-      <button class="btn btn-primary btn-sm w-full rounded-full hover:bg-primary-dark transition-colors dark:text-white"
+    <div class="card-actions justify-end mt-3 p-4 pt-0 space-y-2 sm:space-y-0 sm:space-x-2 sm:flex-row flex-col"> <!-- Thay đổi flex layout -->
+      <button class="btn btn-outline btn-primary btn-xs w-full sm:w-auto rounded-full dark:text-green-400 dark:border-green-400"
               (click)="contactSupplier($event)"
-              [disabled]="isContactingSupplier() || (currentUser() && currentUser()!.id === supplySource.farmerInfo?.farmerId)"
-              [class.btn-disabled]="currentUser() && currentUser()!.id === supplySource.farmerInfo?.farmerId"
-              aria-label="Liên hệ nhà cung cấp">
+              [disabled]="isContactingSupplier() || (currentUser() && currentUser()!.id === supplySource.farmerInfo?.userId) || !supplySource.farmerInfo?.userId"
+              [class.btn-disabled]="(currentUser() && currentUser()!.id === supplySource.farmerInfo?.userId) || !supplySource.farmerInfo?.userId"
+              aria-label="Liên hệ nhà cung cấp (Chat)">
         <span *ngIf="isContactingSupplier()" class="loading loading-spinner loading-xs"></span>
         <ng-container *ngIf="!isContactingSupplier()">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-          </svg>
-          Liên hệ
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
+          <span class="hidden sm:inline ml-1">Chat</span>
         </ng-container>
       </button>
-        <p *ngIf="currentUser() && currentUser()!.id === supplySource.farmerInfo?.userId"
-           class="text-xs text-center text-base-content/60 dark:text-gray-500 w-full mt-1">
-            Nguồn cung của bạn
-        </p>
+      <button class="btn btn-accent btn-sm w-full sm:flex-grow rounded-full dark:text-white"
+      (click)="navigateToRequestForm($event)"
+      [disabled]="isNavigatingToRequestForm() || (currentUser() && currentUser()!.id === supplySource.farmerInfo?.userId) || !supplySource.farmerInfo?.userId"
+      [class.btn-disabled]="(currentUser() && currentUser()!.id === supplySource.farmerInfo?.userId) || !supplySource.farmerInfo?.userId"
+      aria-label="Gửi yêu cầu đặt hàng">
+      <span *ngIf="isNavigatingToRequestForm()" class="loading loading-spinner loading-xs"></span>
+      <ng-container *ngIf="!isNavigatingToRequestForm()">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+        </svg>
+        Gửi Yêu Cầu
+      </ng-container>
+      </button>
     </div>
+    <p *ngIf="currentUser() && currentUser()!.id === supplySource.farmerInfo?.userId"
+       class="text-xs text-center text-base-content/60 dark:text-gray-500 w-full mt-1 px-4 pb-2">
+      Nguồn cung của bạn
+    </p>
   </div>
 </div>

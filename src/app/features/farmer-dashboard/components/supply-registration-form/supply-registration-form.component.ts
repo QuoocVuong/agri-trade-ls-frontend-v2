@@ -26,6 +26,7 @@ import {ProductRequest} from '../../../catalog/dto/request/ProductRequest';
 import BigDecimal from 'js-big-decimal';
 import {ProductStatus} from '../../../catalog/domain/product-status.enum';
 import {ProductDetailResponse} from '../../../catalog/dto/response/ProductDetailResponse';
+import {getMassUnitText, MassUnit} from '../../../catalog/domain/mass-unit.enum';
 
 @Component({
   selector: 'app-supply-registration-form',
@@ -67,6 +68,10 @@ export class SupplyRegistrationFormComponent implements OnInit, OnDestroy {
   categories = signal<CategoryResponse[]>([]);
   imagesArray!: FormArray;
 
+  // Danh sách đơn vị cho Farmer chọn
+  availableWholesaleUnits = Object.values(MassUnit);
+  getUnitText = getMassUnitText; // Để dùng trong template
+
   constructor() {
     this.imagesArray = this.fb.array([], Validators.required); // Yêu cầu ít nhất 1 ảnh
 
@@ -78,10 +83,11 @@ export class SupplyRegistrationFormComponent implements OnInit, OnDestroy {
       // unit: [''], // Bỏ nếu dùng wholesaleUnit
       // price: [null],
 
+
       stockQuantity: [null, [Validators.required, Validators.min(0)]], // Số lượng tồn kho
       harvestDate: [null as string | null], // Ngày thu hoạch
       negotiablePrice: [true], // Mặc định giá có thể thương lượng
-      wholesaleUnit: ['', [Validators.required, Validators.maxLength(50)]], // Đơn vị tính sỉ (tấn, tạ, kg)
+      wholesaleUnit: ['', [Validators.required]], // Đơn vị tính sỉ (tấn, tạ, kg)
       referenceWholesalePrice: [null as number | null, [Validators.min(0)]], // Giá sỉ tham khảo
 
       images: this.imagesArray,

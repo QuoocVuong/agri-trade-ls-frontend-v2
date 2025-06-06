@@ -25,6 +25,7 @@
         <ng-container *ngIf="menuType === 'user'">
           <li><app-sidebar-item icon="fas fa-user-circle" link="/user/profile" label="Trang Cá Nhân" (itemClick)="onMenuItemClick()"></app-sidebar-item></li>
           <li><app-sidebar-item icon="fas fa-receipt" link="/user/orders" label="Đơn Hàng Của Tôi" (itemClick)="onMenuItemClick()"></app-sidebar-item></li>
+          <li><app-sidebar-item icon="fas fa-paper-plane" link="/user/my-supply-requests" label="Yêu Cầu Đã Gửi" (itemClick)="onMenuItemClick()"></app-sidebar-item></li>
           <li><app-sidebar-item icon="fas fa-map-marker-alt" link="/user/addresses" label="Sổ Địa Chỉ" (itemClick)="onMenuItemClick()"></app-sidebar-item></li>
           <li><app-sidebar-item icon="fas fa-heart" link="/user/favorites" label="Sản Phẩm Yêu Thích" (itemClick)="onMenuItemClick()"></app-sidebar-item></li>
           <li><app-sidebar-item icon="fas fa-star-half-alt" link="/user/my-reviews" label="Đánh Giá Của Tôi" (itemClick)="onMenuItemClick()"></app-sidebar-item></li>
@@ -39,6 +40,7 @@
           <li><app-sidebar-item icon="fas fa-box-open" link="/farmer/products" label="Quản Lý Sản Phẩm" (itemClick)="onMenuItemClick()"></app-sidebar-item></li>
           <li><app-sidebar-item icon="fas fa-plus-circle" link="/farmer/products/new" label="Thêm Sản Phẩm Mới" (itemClick)="onMenuItemClick()"></app-sidebar-item></li>
           <li><app-sidebar-item icon="fas fa-file-invoice-dollar" link="/farmer/orders" label="Quản Lý Đơn Hàng" (itemClick)="onMenuItemClick()"></app-sidebar-item></li>
+          <li><app-sidebar-item icon="fas fa-tasks" link="/farmer/supply-requests" label="Quản Lý Yêu Cầu Đặt Hàng" (itemClick)="onMenuItemClick()"></app-sidebar-item></li>
           <li>
             <app-sidebar-item icon="fas fa-handshake"
                               link="/farmer/agreed-order/new"

@@ -26,6 +26,14 @@ export const ORDERING_ROUTES: Routes = [
     canActivate: [authGuard],
     title: 'Chi tiết đơn hàng'
   },
+
+  {
+    path: 'supply-request/new', // URL: /user/orders/supply-request/new (nếu ORDERING_ROUTES nằm trong user)
+    loadComponent: () => import('./components/supply-order-request-form/supply-order-request-form.component').then(m => m.SupplyOrderRequestFormComponent),
+    canActivate: [authGuard], // Yêu cầu đăng nhập
+    title: 'Gửi Yêu Cầu Đặt Hàng Nguồn Cung'
+  },
+
   // Route mặc định cho ordering (nếu có) - ví dụ về history
   { path: '', redirectTo: 'history', pathMatch: 'full' }
 ];

@@ -176,4 +176,33 @@ export class SupplySourceDetailComponent implements OnInit, OnDestroy {
   trackImageById(index: number, item: any): any {
     return item.id || index; // Giả sử image có id
   }
+
+  navigateToRequestForm(): void {
+    if (!this.isAuthenticated()) {
+      this.toastr.info('Vui lòng đăng nhập để gửi yêu cầu.');
+      this.router.navigate(['/auth/login'], { queryParams: { returnUrl: this.router.url } });
+      return;
+    }
+
+    const farmerId = this.supplyDetail()?.farmer?.farmerId;
+    const productId = this.supplyDetail()?.id; // ID của Product (nguồn cung)
+
+    if (!farmerId || !productId) {
+      this.toastr.error('Không đủ thông tin để tạo yêu cầu.');
+      return;
+    }
+    if (this.isMySupplySource()) {
+      this.toastr.info('Bạn không thể tự gửi yêu cầu cho chính mình.');
+      return;
+    }
+
+    this.router.navigate(['/user/orders/supply-request/new'], { // Route đến form mới
+      queryParams: {
+        farmerId: farmerId,
+        productId: productId
+        // Không cần truyền productName, slug ở đây, form sẽ tự lấy khi load productContext
+      }
+    });
+  }
+
 }

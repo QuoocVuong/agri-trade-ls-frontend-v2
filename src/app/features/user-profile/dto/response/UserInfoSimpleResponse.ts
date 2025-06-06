@@ -15,4 +15,6 @@ export interface UserInfoSimpleResponse {
   avatarUrl: string | null;
 
   Online?: boolean;
+
+
 }

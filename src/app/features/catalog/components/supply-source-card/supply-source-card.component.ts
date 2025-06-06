@@ -31,6 +31,7 @@ export class SupplySourceCardComponent implements OnInit, OnDestroy {
   isContactingSupplier = signal(false);
   isAuthenticated = this.authService.isAuthenticated;
   currentUser = this.authService.currentUser;
+  isNavigatingToRequestForm = signal(false);
 
   farmerProvinceName = signal<string | null>(null); // Signal cho tên tỉnh của nông dân
 
@@ -97,6 +98,41 @@ export class SupplySourceCardComponent implements OnInit, OnDestroy {
           this.toastr.error(err.error?.message || 'Lỗi khi bắt đầu trò chuyện.');
         }
       });
+  }
+
+  navigateToRequestForm(event: MouseEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (!this.isAuthenticated()) {
+      this.toastr.info('Vui lòng đăng nhập để gửi yêu cầu.');
+      this.router.navigate(['/auth/login'], { queryParams: { returnUrl: this.router.url } });
+      return;
+    }
+
+    const farmerId = this.supplySource?.farmerInfo?.userId; // Đã sửa ở lần trước
+    const productId = this.supplySource?.productId;
+
+    if (!farmerId || !productId) {
+      this.toastr.error('Không đủ thông tin để tạo yêu cầu từ card này.');
+      return;
+    }
+
+    const currentUserId = this.currentUser()?.id;
+    if (currentUserId && currentUserId === farmerId) {
+      this.toastr.info('Bạn không thể tự gửi yêu cầu cho chính mình.');
+      return;
+    }
+
+    this.isNavigatingToRequestForm.set(true); // Set loading
+    // Điều hướng đến form tạo yêu cầu, truyền thông tin cần thiết
+    this.router.navigate(['/user/orders/supply-request/new'], { // Đảm bảo route này đúng
+      queryParams: {
+        farmerId: farmerId,
+        productId: productId
+        // Không cần truyền productName, slug ở đây, form sẽ tự lấy khi load productContext
+      }
+    }).finally(() => this.isNavigatingToRequestForm.set(false)); // Tắt loading sau khi điều hướng
   }
 
   // Helper để lấy tên hiển thị cho nông dân

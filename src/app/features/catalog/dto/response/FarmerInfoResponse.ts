@@ -3,6 +3,7 @@
 export interface FarmerInfoResponse {
   farmerId: number; // userId của farmer
   farmName: string | null; // Lấy từ FarmerProfile
+  fullName: string | null;
   farmerName?: string; // Tên của farmer (tùy chọn, lấy từ User)
   farmerAvatarUrl: string | null; // Lấy từ User
   provinceCode: string | null; // Lấy từ FarmerProfile

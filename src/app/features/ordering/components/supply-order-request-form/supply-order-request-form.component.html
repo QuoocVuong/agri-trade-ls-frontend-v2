@@ -1,0 +1,157 @@
+<!-- src/app/features/ordering/components/supply-order-request-form/supply-order-request-form.component.html -->
+<div class="container mx-auto px-4 py-8 max-w-2xl">
+  <header class="text-center mb-8">
+    <h1 class="text-2xl md:text-3xl font-bold text-primary dark:text-green-400">
+      Gửi Yêu Cầu Đặt Hàng
+    </h1>
+  </header>
+
+  <div *ngIf="isLoadingInitialData()" class="flex justify-center py-10">
+    <app-loading-spinner size="md"></app-loading-spinner>
+  </div>
+  <app-alert *ngIf="errorMessage() && !isLoadingInitialData()" type="error" [message]="errorMessage()"></app-alert>
+
+  <form *ngIf="!isLoadingInitialData() && productContext() as product"
+        [formGroup]="requestForm" (ngSubmit)="onSubmit()"
+        class="card bg-base-100 dark:bg-gray-800 shadow-xl p-6 space-y-6 rounded-lg">
+
+    <app-alert *ngIf="errorMessage() && !isSubmitting()" type="error" [message]="errorMessage()" class="mb-0"></app-alert>
+    <app-alert *ngIf="successMessage()" type="success" [message]="successMessage()" class="mb-0"></app-alert>
+
+    <!-- Thông tin sản phẩm đang yêu cầu -->
+    <div class="p-4 rounded-md bg-base-200 dark:bg-gray-700/50 border border-base-300 dark:border-gray-700">
+      <h3 class="text-lg font-semibold mb-2 text-base-content dark:text-white">Sản phẩm bạn đang quan tâm:</h3>
+      <div class="flex items-center gap-4">
+        <img [src]="product.images?.[0]?.imageUrl || 'assets/images/placeholder-image.png'" [alt]="product.name" class="w-20 h-20 object-cover rounded">
+        <div>
+          <p class="font-medium text-base-content dark:text-gray-100">{{ product.name }}</p>
+          <p class="text-sm text-base-content/70 dark:text-gray-400">
+            Cung cấp bởi: {{ product.farmer?.farmName || product.farmer?.fullName }}
+          </p>
+          <p class="text-xs text-base-content/60 dark:text-gray-500">
+            Hiện có: {{ product.stockQuantity | number }} {{ product.wholesaleUnit || product.unit }}
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Thông tin yêu cầu -->
+    <div>
+      <h3 class="text-lg font-semibold mb-3 text-primary dark:text-green-400">Chi tiết yêu cầu của bạn</h3>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div class="form-control">
+          <label class="label pb-1"><span class="label-text font-medium">Số lượng yêu cầu <span class="text-error">*</span></span>
+            <span class="label-text-alt" *ngIf="productContext()?.stockQuantity != null">
+          (Tối đa: {{ productContext()?.stockQuantity | number }} {{ product.wholesaleUnit || product.unit }})
+        </span>
+          </label>
+          <input type="number" formControlName="requestedQuantity" class="input input-bordered" placeholder="VD: 1000">
+
+          <div *ngIf="requestForm.get('requestedQuantity')?.hasError('required') && requestForm.get('requestedQuantity')?.touched"
+               class="text-error text-xs mt-1">Vui lòng nhập số lượng.</div>
+          <div *ngIf="requestForm.get('requestedQuantity')?.hasError('min') && requestForm.get('requestedQuantity')?.touched"
+               class="text-error text-xs mt-1">Số lượng phải lớn hơn 0.</div>
+          <div *ngIf="requestForm.get('requestedQuantity')?.hasError('maxQuantityExceeded') && requestForm.get('requestedQuantity')?.touched"
+               class="text-error text-xs mt-1">
+            Số lượng không được vượt quá {{ requestForm.get('requestedQuantity')?.errors?.['maxQuantityExceeded'].max }}.
+          </div>
+
+        </div>
+        <div class="form-control">
+          <label class="label pb-1"><span class="label-text font-medium">Đơn vị tính <span class="text-error">*</span></span></label>
+          <select formControlName="requestedUnit" class="select select-bordered">
+            <option *ngFor="let unit of availableRequestUnits" [value]="unit">
+              {{ getUnitText(unit) }}
+            </option>
+          </select>
+        </div>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+        <div class="form-control">
+          <label class="label pb-1">
+            <span class="label-text font-medium">Giá đề xuất / {{ getUnitText(requestForm.get('requestedUnit')?.value) }} (VNĐ) (Nếu có)</span>
+          </label>
+          <input type="number" formControlName="proposedPricePerUnit" class="input input-bordered" placeholder="Để trống nếu muốn nhà cung cấp báo giá">
+          <div *ngIf="requestForm.get('proposedPricePerUnit')?.hasError('min') && requestForm.get('proposedPricePerUnit')?.touched"
+               class="text-error text-xs mt-1">Giá đề xuất không hợp lệ.</div>
+        </div>
+        <!-- Hiển thị Tổng tiền dự kiến (đã quy đổi về KG để tính) -->
+        <div class="form-control">
+          <label class="label pb-1"><span class="label-text font-medium">Tổng tiền dự kiến (VNĐ)</span></label>
+          <input type="text" class="input input-bordered input-disabled bg-base-200 dark:bg-gray-700"
+                 [value]="(proposedTotalAmountInKg() | formatBigDecimal:'1.0-0') || '---'" readonly>
+          <label class="label pt-1" *ngIf="proposedTotalAmountInKg()">
+        <span class="label-text-alt text-xs italic">
+          (Tính dựa trên quy đổi về KG:
+          {{ requestForm.get('requestedQuantity')?.value | number }} {{ getUnitText(requestForm.get('requestedUnit')?.value) }}
+          x {{ (requestForm.get('proposedPricePerUnit')?.value && requestForm.get('requestedUnit')?.value) ? (convertPriceToPerKg(requestForm.get('proposedPricePerUnit')?.value, requestForm.get('requestedUnit')?.value) | formatBigDecimal:'1.0-2') : '0' }} đ/kg)
+        </span>
+          </label>
+        </div>
+      </div>
+
+
+      <div class="form-control mt-4">
+        <label class="label pb-1"><span class="label-text font-medium">Ghi chú cho nhà cung cấp</span></label>
+        <textarea formControlName="buyerNotes" class="textarea textarea-bordered h-20" placeholder="Yêu cầu thêm về sản phẩm, đóng gói, vận chuyển..."></textarea>
+      </div>
+    </div>
+
+    <!-- Thông tin giao hàng mong muốn -->
+    <div>
+      <h3 class="text-lg font-semibold mb-3 mt-4 text-primary dark:text-green-400">Thông tin giao hàng mong muốn</h3>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+        <div class="form-control">
+          <label class="label pb-1"><span class="label-text text-xs">Tên người nhận</span></label>
+          <input type="text" formControlName="shippingFullName" class="input input-bordered input-sm">
+        </div>
+        <div class="form-control">
+          <label class="label pb-1"><span class="label-text text-xs">Số điện thoại</span></label>
+          <input type="tel" formControlName="shippingPhoneNumber" class="input input-bordered input-sm">
+        </div>
+        <div class="form-control md:col-span-2">
+          <label class="label pb-1"><span class="label-text text-xs">Địa chỉ chi tiết</span></label>
+          <input type="text" formControlName="shippingAddressDetail" class="input input-bordered input-sm">
+        </div>
+        <div class="form-control">
+          <label class="label pb-1"><span class="label-text text-xs">Tỉnh/Thành</span></label>
+          <select formControlName="shippingProvinceCode" class="select select-bordered select-sm">
+            <option value="">-- Chọn --</option>
+            <option *ngFor="let p of provinces()" [value]="p.idProvince">{{p.name}}</option>
+          </select>
+        </div>
+        <div class="form-control">
+          <label class="label pb-1"><span class="label-text text-xs">Quận/Huyện</span></label>
+          <select formControlName="shippingDistrictCode" class="select select-bordered select-sm" [disabled]="!requestForm.get('shippingProvinceCode')?.value || districts().length === 0">
+            <option value="">-- Chọn --</option>
+            <option *ngFor="let d of districts()" [value]="d.idDistrict">{{d.name}}</option>
+          </select>
+        </div>
+        <div class="form-control">
+          <label class="label pb-1"><span class="label-text text-xs">Xã/Phường</span></label>
+          <select formControlName="shippingWardCode" class="select select-bordered select-sm" [disabled]="!requestForm.get('shippingDistrictCode')?.value || wards().length === 0">
+            <option value="">-- Chọn --</option>
+            <option *ngFor="let w of wards()" [value]="w.idWard">{{w.name}}</option>
+          </select>
+        </div>
+        <div class="form-control">
+          <label class="label pb-1"><span class="label-text text-xs">Ngày giao dự kiến</span></label>
+          <input type="date" formControlName="expectedDeliveryDate" class="input input-bordered input-sm">
+        </div>
+      </div>
+    </div>
+
+    <div class="card-actions justify-end mt-6">
+      <a [routerLink]="['/supply-sources/detail', productContext()?.slug]" class="btn btn-ghost">Hủy</a>
+      <button type="submit" class="btn btn-primary" [disabled]="isSubmitting() || requestForm.invalid">
+        <span *ngIf="isSubmitting()" class="loading loading-spinner"></span>
+        {{ isSubmitting() ? 'Đang gửi...' : 'Gửi Yêu Cầu Đặt Hàng' }}
+      </button>
+    </div>
+  </form>
+
+  <div *ngIf="!isLoadingInitialData() && !productContext()" class="text-center py-10">
+    <p class="text-lg text-error">Không thể tải thông tin sản phẩm để tạo yêu cầu.</p>
+    <a routerLink="/supply-sources" class="btn btn-link mt-4">Quay lại tìm kiếm</a>
+  </div>
+</div>

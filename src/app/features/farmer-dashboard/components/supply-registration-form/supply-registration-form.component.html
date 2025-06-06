@@ -58,7 +58,13 @@
           </div>
           <div class="form-control">
             <label class="label pb-1"><span class="label-text font-medium">Đơn vị tính sỉ <span class="text-error">*</span></span></label>
-            <input type="text" placeholder="Tấn, tạ, kg, thùng..." class="input input-bordered w-full dark:bg-gray-700 dark:border-gray-600" formControlName="wholesaleUnit" />
+            <select formControlName="wholesaleUnit" class="select select-bordered w-full dark:bg-gray-700 dark:border-gray-600 ">
+              <option value="" disabled selected hidden>Chọn đơn vị</option>
+              <option *ngFor="let unit of availableWholesaleUnits" [value]="unit">
+                {{ getUnitText(unit) }}
+              </option>
+            </select>
+
           </div>
           <div class="form-control">
             <label class="label pb-1"><span class="label-text font-medium">Giá tham khảo / đơn vị sỉ (VNĐ)</span></label>

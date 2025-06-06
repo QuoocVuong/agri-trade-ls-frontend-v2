@@ -1,4 +1,4 @@
-// src/app/features/ordering/components/agreed-order-form/agreed-order-form.component.ts
+
 import { Component, OnInit, inject, signal, OnDestroy } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, FormArray, Validators, AbstractControl } from '@angular/forms';
@@ -7,15 +7,15 @@ import { Subject } from 'rxjs';
 import { takeUntil, finalize, debounceTime, switchMap, filter, tap } from 'rxjs/operators';
 import { ToastrService } from 'ngx-toastr';
 
-import { OrderService } from '../../services/order.service';
+import { OrderService } from '../../../ordering/services/order.service';
 import { AuthService } from '../../../../core/services/auth.service';
 
 import { ProductService } from '../../../catalog/services/product.service'; // Để tìm sản phẩm của farmer
 
-import { AgreedOrderRequest } from '../../dto/request/AgreedOrderRequest';
+import { AgreedOrderRequest } from '../../../ordering/dto/request/AgreedOrderRequest';
 import { UserResponse } from '../../../user-profile/dto/response/UserResponse'; // DTO cho tìm kiếm user
 import { ProductSummaryResponse } from '../../../catalog/dto/response/ProductSummaryResponse'; // DTO cho tìm sản phẩm
-import { PaymentMethod, getPaymentMethodText } from '../../domain/payment-method.enum';
+import { PaymentMethod, getPaymentMethodText } from '../../../ordering/domain/payment-method.enum';
 
 import { LoadingSpinnerComponent } from '../../../../shared/components/loading-spinner/loading-spinner.component';
 import { AlertComponent } from '../../../../shared/components/alert/alert.component';
@@ -25,7 +25,7 @@ import {UserSearchSelectComponent} from '../../../../shared/components/user-sear
 import {
   ProductSearchSelectComponent
 } from '../../../../shared/components/product-search-select/product-search-select.component';
-import {AgreedOrderItemRequest} from '../../dto/request/AgreedOrderItemRequest';
+import {AgreedOrderItemRequest} from '../../../ordering/dto/request/AgreedOrderItemRequest';
 import {UserProfileService} from '../../../user-profile/services/user-profile.service';
 
 

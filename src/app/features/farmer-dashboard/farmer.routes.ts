@@ -37,7 +37,7 @@ export const FARMER_ROUTES: Routes = [
 
   {
     path: 'agreed-order/new',
-    loadComponent: () => import('../ordering/components/agreed-order-form/agreed-order-form.component').then(m => m.AgreedOrderFormComponent),
+    loadComponent: () => import('./components/agreed-order-form/agreed-order-form.component').then(m => m.AgreedOrderFormComponent),
     title: 'Tạo Đơn Hàng Thỏa Thuận'
     // Không cần canActivate và data ở đây nữa vì FARMER_ROUTES đã có rồi
   },
@@ -68,6 +68,12 @@ export const FARMER_ROUTES: Routes = [
     path: 'supply/edit/:productId', // Chỉnh sửa nguồn cung (dùng productId)
     loadComponent: () => import('../farmer-dashboard/components/supply-registration-form/supply-registration-form.component').then(m => m.SupplyRegistrationFormComponent),
     title: 'Chỉnh Sửa Nguồn Cung'
+  },
+
+  {
+    path: 'supply-requests', // URL: /farmer/supply-requests
+    loadComponent: () => import('./components/manage-supply-requests/manage-supply-requests.component').then(m => m.ManageSupplyRequestsComponent),
+    title: 'Quản Lý Yêu Cầu Đặt Hàng'
   },
 
   // Redirect mặc định của /farmer về /farmer/dashboard

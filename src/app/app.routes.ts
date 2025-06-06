@@ -41,6 +41,13 @@ export const routes: Routes = [
         path: 'orders', // Path: /user/orders và các route con của nó (history, detail)
         loadChildren: () => import('./features/ordering/ordering.routes').then(m => m.ORDERING_ROUTES)
       },
+
+      {
+        path: 'my-supply-requests', // URL: /user/my-supply-requests
+        loadComponent: () => import('./features/user-profile/components/my-sent-supply-requests/my-sent-supply-requests.component').then(m => m.MySentSupplyRequestsComponent),
+        title: 'Yêu Cầu Đặt Hàng Đã Gửi'
+      },
+
       {
         path: 'favorites', // Path: /user/favorites
         loadComponent: () => import('./features/interaction/components/favorite-list/favorite-list.component').then(m => m.FavoriteListComponent),
