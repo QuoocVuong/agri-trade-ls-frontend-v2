@@ -11,6 +11,8 @@ export interface UserInfoSimpleResponse {
   /** Họ và tên đầy đủ */
   fullName: string;
 
+  phoneNumber: string | null;
+
   /** URL ảnh đại diện (có thể null) */
   avatarUrl: string | null;
 

@@ -34,28 +34,35 @@
         </div>
       </div>
     </div>
-
     <!-- Thông tin yêu cầu -->
     <div>
       <h3 class="text-lg font-semibold mb-3 text-primary dark:text-green-400">Chi tiết yêu cầu của bạn</h3>
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div class="form-control">
-          <label class="label pb-1"><span class="label-text font-medium">Số lượng yêu cầu <span class="text-error">*</span></span>
-            <span class="label-text-alt" *ngIf="productContext()?.stockQuantity != null">
-          (Tối đa: {{ productContext()?.stockQuantity | number }} {{ product.wholesaleUnit || product.unit }})
-        </span>
+          <label class="label pb-1">
+            <span class="label-text font-medium">Số lượng yêu cầu <span class="text-error">*</span></span>
+            <!-- SỬA HIỂN THỊ TỒN KHO -->
+            <span class="label-text-alt" *ngIf="productContext()?.stockQuantity != null && productContext()?.unit">
+              (Tối đa: {{ calculateMaxAllowedInSelectedUnit() | number }} {{ getUnitText(requestForm.get('requestedUnit')?.value) }})
+            </span>
           </label>
-          <input type="number" formControlName="requestedQuantity" class="input input-bordered" placeholder="VD: 1000">
-
+          <input type="number" formControlName="requestedQuantity" class="input input-bordered" placeholder="VD: 100">
+          <!-- Các thông báo lỗi -->
           <div *ngIf="requestForm.get('requestedQuantity')?.hasError('required') && requestForm.get('requestedQuantity')?.touched"
                class="text-error text-xs mt-1">Vui lòng nhập số lượng.</div>
           <div *ngIf="requestForm.get('requestedQuantity')?.hasError('min') && requestForm.get('requestedQuantity')?.touched"
                class="text-error text-xs mt-1">Số lượng phải lớn hơn 0.</div>
-          <div *ngIf="requestForm.get('requestedQuantity')?.hasError('maxQuantityExceeded') && requestForm.get('requestedQuantity')?.touched"
+          <!-- SỬA THÔNG BÁO LỖI MAX -->
+          <div *ngIf="requestForm.get('requestedQuantity')?.hasError('maxQuantityExceededBase') && requestForm.get('requestedQuantity')?.touched"
                class="text-error text-xs mt-1">
-            Số lượng không được vượt quá {{ requestForm.get('requestedQuantity')?.errors?.['maxQuantityExceeded'].max }}.
+            Số lượng yêu cầu ({{ requestForm.get('requestedQuantity')?.errors?.['maxQuantityExceededBase'].requestedBase | number }} {{ getUnitText(productContext()?.unit) }})
+            vượt quá tồn kho ({{ requestForm.get('requestedQuantity')?.errors?.['maxQuantityExceededBase'].maxBase | number }} {{ getUnitText(productContext()?.unit) }}).
+            Vui lòng nhập tối đa {{ calculateMaxAllowedInSelectedUnitForDisplay() }}.
           </div>
-
+          <div *ngIf="requestForm.get('requestedQuantity')?.hasError('max') && requestForm.get('requestedQuantity')?.touched && !requestForm.get('requestedQuantity')?.hasError('maxQuantityExceededBase')"
+               class="text-error text-xs mt-1">
+            Số lượng không được vượt quá {{ requestForm.get('requestedQuantity')?.errors?.['max'].max | number }} {{ getUnitText(requestForm.get('requestedUnit')?.value) }}.
+          </div>
         </div>
         <div class="form-control">
           <label class="label pb-1"><span class="label-text font-medium">Đơn vị tính <span class="text-error">*</span></span></label>
@@ -74,26 +81,9 @@
           <input type="number" formControlName="proposedPricePerUnit" class="input input-bordered" placeholder="Để trống nếu muốn nhà cung cấp báo giá">
           <div *ngIf="requestForm.get('proposedPricePerUnit')?.hasError('min') && requestForm.get('proposedPricePerUnit')?.touched"
                class="text-error text-xs mt-1">Giá đề xuất không hợp lệ.</div>
-        </div>
-        <!-- Hiển thị Tổng tiền dự kiến (đã quy đổi về KG để tính) -->
-        <div class="form-control">
-          <label class="label pb-1"><span class="label-text font-medium">Tổng tiền dự kiến (VNĐ)</span></label>
-          <input type="text" class="input input-bordered input-disabled bg-base-200 dark:bg-gray-700"
-                 [value]="(proposedTotalAmountInKg() | formatBigDecimal:'1.0-0') || '---'" readonly>
-          <label class="label pt-1" *ngIf="proposedTotalAmountInKg()">
-        <span class="label-text-alt text-xs italic">
-          (Tính dựa trên quy đổi về KG:
-          {{ requestForm.get('requestedQuantity')?.value | number }} {{ getUnitText(requestForm.get('requestedUnit')?.value) }}
-          x {{ (requestForm.get('proposedPricePerUnit')?.value && requestForm.get('requestedUnit')?.value) ? (convertPriceToPerKg(requestForm.get('proposedPricePerUnit')?.value, requestForm.get('requestedUnit')?.value) | formatBigDecimal:'1.0-2') : '0' }} đ/kg)
-        </span>
-          </label>
-        </div>
-      </div>
 
+        </div>
 
-      <div class="form-control mt-4">
-        <label class="label pb-1"><span class="label-text font-medium">Ghi chú cho nhà cung cấp</span></label>
-        <textarea formControlName="buyerNotes" class="textarea textarea-bordered h-20" placeholder="Yêu cầu thêm về sản phẩm, đóng gói, vận chuyển..."></textarea>
       </div>
     </div>
 

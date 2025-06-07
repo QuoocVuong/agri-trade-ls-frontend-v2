@@ -45,6 +45,8 @@ export class ProductService {
   private publicApiUrl = `${environment.apiUrl}/public/products`;
   private farmerApiUrl = `${environment.apiUrl}/farmer/products`;
   private adminApiUrl = `${environment.apiUrl}/admin/products`;
+  private farmerB2CProductApiUrl = `${environment.apiUrl}/farmer/products`; // URL cho sản phẩm B2C của farmer
+  private farmerSupplyApiUrl = `${environment.apiUrl}/farmer/supplies`;   // URL mới cho nguồn cung của farmer
 
   // --- Public APIs ---
 
@@ -99,6 +101,30 @@ export class ProductService {
     }
 
     return this.http.get<PagedApiResponse<ProductSummaryResponse>>(`${this.farmerApiUrl}/me`, { params: httpParams });
+  }
+
+  // Hàm lấy sản phẩm B2C của Farmer
+  getMyB2CProducts(params: ProductSearchParams): Observable<PagedApiResponse<ProductSummaryResponse>> {
+    let httpParams = new HttpParams();
+    if (params.page !== undefined) httpParams = httpParams.set('page', params.page.toString());
+    if (params.size !== undefined) httpParams = httpParams.set('size', params.size.toString());
+    if (params.sort) httpParams = httpParams.set('sort', params.sort);
+    if (params.keyword) httpParams = httpParams.set('keyword', params.keyword);
+    if (params.status) httpParams = httpParams.set('status', params.status.toString());
+
+    return this.http.get<PagedApiResponse<ProductSummaryResponse>>(`${this.farmerB2CProductApiUrl}/me`, { params: httpParams });
+  }
+
+  // Hàm lấy nguồn cung B2B của Farmer
+  getMySupplyProducts(params: ProductSearchParams): Observable<PagedApiResponse<ProductSummaryResponse>> {
+    let httpParams = new HttpParams();
+    if (params.page !== undefined) httpParams = httpParams.set('page', params.page.toString());
+    if (params.size !== undefined) httpParams = httpParams.set('size', params.size.toString());
+    if (params.sort) httpParams = httpParams.set('sort', params.sort);
+    if (params.keyword) httpParams = httpParams.set('keyword', params.keyword);
+    if (params.status) httpParams = httpParams.set('status', params.status.toString());
+    // API này sẽ trả về ProductSummaryResponse nhưng chỉ chứa các sản phẩm có b2bEnabled=true
+    return this.http.get<PagedApiResponse<ProductSummaryResponse>>(`${this.farmerSupplyApiUrl}/me`, { params: httpParams });
   }
 
   getMyProductById(productId: number): Observable<ApiResponse<ProductDetailResponse>> {

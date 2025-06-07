@@ -282,10 +282,10 @@ export class SupplyRegistrationFormComponent implements OnInit, OnDestroy {
       images: imageRequests,
 
       // Các trường mới cho nguồn cung
-      harvestDate: formValue.harvestDate ? new Date(formValue.harvestDate).toISOString().split('T')[0] as any : null,
-      negotiablePrice: formValue.negotiablePrice,
-      wholesaleUnit: formValue.wholesaleUnit,
-      referenceWholesalePrice: formValue.referenceWholesalePrice,
+      harvestDate: formValue.harvestDate ? new Date(formValue.harvestDate).toISOString().split('T')[0] as any : null, // Ngày thu hoạch
+      negotiablePrice: formValue.negotiablePrice,// giá thương lượng
+      wholesaleUnit: formValue.wholesaleUnit,// đơn vị bán sll
+      referenceWholesalePrice: formValue.referenceWholesalePrice,//giá tham khảo của đơn vị bán sll
 
       // Các trường B2C cũ có thể đặt giá trị mặc định hoặc null
       unit: formValue.wholesaleUnit || 'đơn vị', // Lấy tạm wholesaleUnit làm unit chính

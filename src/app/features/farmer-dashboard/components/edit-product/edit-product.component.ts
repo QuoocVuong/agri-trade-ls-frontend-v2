@@ -54,7 +54,7 @@ export class EditProductComponent implements OnInit, OnDestroy {
   categories = signal<CategoryResponse[]>([]); // Danh sách category phẳng
   // Dùng FormArray để quản lý ảnh và bậc giá
   imagesArray!: FormArray;
-  pricingTiersArray!: FormArray;
+
 
   // Lấy danh sách trạng thái Farmer có thể chọn
   // availableStatuses = [ProductStatus.DRAFT, ProductStatus.UNPUBLISHED, ProductStatus.PENDING_APPROVAL];
@@ -82,8 +82,6 @@ export class EditProductComponent implements OnInit, OnDestroy {
         } else {
           this.productId.set(null); // Chế độ thêm mới
           this.isFetchingData.set(false); // Không cần fetch data
-          // ****** KHI THÊM MỚI, KHÔNG CẦN VALIDATOR CHO STATUS ******
-          // ****** VÀ CÓ THỂ SET GIÁ TRỊ MẶC ĐỊNH (HOẶC ĐỂ BACKEND XỬ LÝ) ******
           this.productForm.get('status')?.clearValidators(); // Xóa validator nếu có
           this.productForm.get('status')?.updateValueAndValidity();
           // Không cần patchValue cho status ở đây, sẽ xử lý khi submit
@@ -98,7 +96,7 @@ export class EditProductComponent implements OnInit, OnDestroy {
 
   initForm(): void {
     this.imagesArray = this.fb.array([]); // Khởi tạo FormArray rỗng
-    this.pricingTiersArray = this.fb.array([]); // Khởi tạo FormArray rỗng
+    // this.pricingTiersArray = this.fb.array([]); // Khởi tạo FormArray rỗng
 
     this.productForm = this.fb.group({
       name: ['', [Validators.required, Validators.maxLength(255)]],
@@ -109,14 +107,14 @@ export class EditProductComponent implements OnInit, OnDestroy {
       price: [null, [Validators.required, Validators.min(0)]], // Giá B2C
       stockQuantity: [0, [Validators.required, Validators.min(0)]],
       status: [null],
-      b2bEnabled: [false],
-      b2bUnit: [{ value: '', disabled: true }, Validators.maxLength(50)], // Khởi tạo disable
-      minB2bQuantity: [{ value: 1, disabled: true }, Validators.min(1)], // Khởi tạo disable
-      b2bBasePrice: [{ value: null, disabled: true }, Validators.min(0)], // Khởi tạo disable
+      // b2bEnabled: [false],
+      // b2bUnit: [{ value: '', disabled: true }, Validators.maxLength(50)], // Khởi tạo disable
+      // minB2bQuantity: [{ value: 1, disabled: true }, Validators.min(1)], // Khởi tạo disable
+      // b2bBasePrice: [{ value: null, disabled: true }, Validators.min(0)], // Khởi tạo disable
       images: this.imagesArray, // Gán FormArray vào form group
-      pricingTiers: this.fb.array([]) // Khởi tạo pricingTiers là FormArray rỗng, cũng disable ban đầu
+      // pricingTiers: this.fb.array([]) // Khởi tạo pricingTiers là FormArray rỗng, cũng disable ban đầu
     });
-    this.pricingTiersArray = this.productForm.get('pricingTiers') as FormArray;
+    // this.pricingTiersArray = this.productForm.get('pricingTiers') as FormArray;
 
 
   //   // Disable các trường B2B nếu b2bEnabled là false
@@ -141,43 +139,43 @@ export class EditProductComponent implements OnInit, OnDestroy {
   //     });
   // }
 
-    // Lắng nghe thay đổi của b2bEnabled
-    this.productForm.get('b2bEnabled')?.valueChanges
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(isAvailable => {
-        this.toggleB2BControls(isAvailable); // Gọi hàm helper
-      });
-
-    // ****** GỌI HÀM TOGGLE NGAY SAU KHI KHỞI TẠO ******
-    // Để đảm bảo trạng thái disable/enable đúng với giá trị ban đầu (false)
-    this.toggleB2BControls(this.productForm.get('b2bEnabled')?.value);
+    // // Lắng nghe thay đổi của b2bEnabled
+    // this.productForm.get('b2bEnabled')?.valueChanges
+    //   .pipe(takeUntil(this.destroy$))
+    //   .subscribe(isAvailable => {
+    //     this.toggleB2BControls(isAvailable); // Gọi hàm helper
+    //   });
+    //
+    // // ****** GỌI HÀM TOGGLE NGAY SAU KHI KHỞI TẠO ******
+    // // Để đảm bảo trạng thái disable/enable đúng với giá trị ban đầu (false)
+    // this.toggleB2BControls(this.productForm.get('b2bEnabled')?.value);
     // **************************************************
   }
   // ****** TÁCH LOGIC ENABLE/DISABLE RA HÀM RIÊNG ******
-  toggleB2BControls(isAvailable: boolean): void {
-    const b2bControls = ['b2bUnit', 'minB2bQuantity', 'b2bBasePrice'];
-    if (isAvailable) {
-      b2bControls.forEach(controlName => this.productForm.get(controlName)?.enable());
-      this.pricingTiersArray.enable(); // Enable cả FormArray
-      // Thêm Validators.required
-      this.productForm.get('b2bUnit')?.setValidators([Validators.required, Validators.maxLength(50)]);
-      this.productForm.get('minB2bQuantity')?.setValidators([Validators.required, Validators.min(1)]);
-      this.productForm.get('b2bBasePrice')?.setValidators([Validators.required, Validators.min(0)]); // Thêm required cho giá B2B cơ bản
-    } else {
-      b2bControls.forEach(controlName => this.productForm.get(controlName)?.disable());
-      this.pricingTiersArray.disable(); // Disable cả FormArray
-      // Xóa Validators.required
-      this.productForm.get('b2bUnit')?.clearValidators();
-      this.productForm.get('minB2bQuantity')?.clearValidators();
-      this.productForm.get('b2bBasePrice')?.clearValidators();
-      // Reset giá trị khi disable (quan trọng)
-      this.productForm.patchValue({ b2bUnit: null, minB2bQuantity: 1, b2bBasePrice: null }, { emitEvent: false });
-      this.pricingTiersArray.clear(); // Xóa các bậc giá
-    }
-    // Cập nhật trạng thái validation
-    b2bControls.forEach(controlName => this.productForm.get(controlName)?.updateValueAndValidity());
-    this.pricingTiersArray.updateValueAndValidity();
-  }
+  // toggleB2BControls(isAvailable: boolean): void {
+  //   const b2bControls = ['b2bUnit', 'minB2bQuantity', 'b2bBasePrice'];
+  //   if (isAvailable) {
+  //     b2bControls.forEach(controlName => this.productForm.get(controlName)?.enable());
+  //     this.pricingTiersArray.enable(); // Enable cả FormArray
+  //     // Thêm Validators.required
+  //     this.productForm.get('b2bUnit')?.setValidators([Validators.required, Validators.maxLength(50)]);
+  //     this.productForm.get('minB2bQuantity')?.setValidators([Validators.required, Validators.min(1)]);
+  //     this.productForm.get('b2bBasePrice')?.setValidators([Validators.required, Validators.min(0)]); // Thêm required cho giá B2B cơ bản
+  //   } else {
+  //     b2bControls.forEach(controlName => this.productForm.get(controlName)?.disable());
+  //     this.pricingTiersArray.disable(); // Disable cả FormArray
+  //     // Xóa Validators.required
+  //     this.productForm.get('b2bUnit')?.clearValidators();
+  //     this.productForm.get('minB2bQuantity')?.clearValidators();
+  //     this.productForm.get('b2bBasePrice')?.clearValidators();
+  //     // Reset giá trị khi disable (quan trọng)
+  //     this.productForm.patchValue({ b2bUnit: null, minB2bQuantity: 1, b2bBasePrice: null }, { emitEvent: false });
+  //     this.pricingTiersArray.clear(); // Xóa các bậc giá
+  //   }
+  //   // Cập nhật trạng thái validation
+  //   b2bControls.forEach(controlName => this.productForm.get(controlName)?.updateValueAndValidity());
+  //   this.pricingTiersArray.updateValueAndValidity();
+  // }
   // ****************************************************
 
 
@@ -210,21 +208,21 @@ export class EditProductComponent implements OnInit, OnDestroy {
               price: product.price, // Cần xử lý BigDecimal nếu có
               stockQuantity: product.stockQuantity,
               status: product.status,
-              b2bEnabled : product.b2bEnabled ,
-              b2bUnit: product.b2bUnit,
-              minB2bQuantity: product.minB2bQuantity,
-              b2bBasePrice: product.b2bBasePrice // Cần xử lý BigDecimal nếu có
+              // b2bEnabled : product.b2bEnabled ,
+              // b2bUnit: product.b2bUnit,
+              // minB2bQuantity: product.minB2bQuantity,
+              // b2bBasePrice: product.b2bBasePrice // Cần xử lý BigDecimal nếu có
             });
             // Xóa các ảnh và bậc giá cũ trong FormArray
             this.imagesArray.clear();
-            this.pricingTiersArray.clear();
+            // this.pricingTiersArray.clear();
             // Thêm ảnh vào FormArray
             // ****** KHI LOAD, ProductImageResponse CẦN CÓ blobPath ******
             product.images?.forEach(imgResp => this.addImageControl(imgResp)); // imgResp là ProductImageResponse
             // ***********************************************************
             // Thêm bậc giá vào FormArray
-            product.pricingTiers?.forEach(tier => this.addPricingTierControl(tier));
-            this.toggleB2BControls(product.b2bEnabled); // Gọi lại toggle
+            // product.pricingTiers?.forEach(tier => this.addPricingTierControl(tier));
+            // this.toggleB2BControls(product.b2bEnabled); // Gọi lại toggle
             this.cdr.markForCheck(); // Cập nhật view
           } else {
             this.handleErrorAndNavigate(res.message || 'Không tìm thấy sản phẩm.');
@@ -355,25 +353,25 @@ export class EditProductComponent implements OnInit, OnDestroy {
 
 
   // --- Quản lý Bậc giá B2B ---
-  createPricingTierGroup(tier?: ProductPricingTierResponse | ProductPricingTierRequest): FormGroup {
-    return this.fb.group({
-      minQuantity: [tier?.minQuantity || 1, [Validators.required, Validators.min(1)]],
-      pricePerUnit: [tier?.pricePerUnit || null, [Validators.required, Validators.min(0)]]
-    });
-  }
-
-  addPricingTierControl(tier?: ProductPricingTierResponse | ProductPricingTierRequest): void {
-    const tierGroup = this.createPricingTierGroup(tier);
-    if (!this.productForm.controls['b2bEnabled'].value) {
-      tierGroup.disable(); // Disable nếu B2B không được chọn
-    }
-    this.pricingTiersArray.push(tierGroup);
-  }
-
-
-  removePricingTierControl(index: number): void {
-    this.pricingTiersArray.removeAt(index);
-  }
+  // createPricingTierGroup(tier?: ProductPricingTierResponse | ProductPricingTierRequest): FormGroup {
+  //   return this.fb.group({
+  //     minQuantity: [tier?.minQuantity || 1, [Validators.required, Validators.min(1)]],
+  //     pricePerUnit: [tier?.pricePerUnit || null, [Validators.required, Validators.min(0)]]
+  //   });
+  // }
+  //
+  // addPricingTierControl(tier?: ProductPricingTierResponse | ProductPricingTierRequest): void {
+  //   const tierGroup = this.createPricingTierGroup(tier);
+  //   if (!this.productForm.controls['b2bEnabled'].value) {
+  //     tierGroup.disable(); // Disable nếu B2B không được chọn
+  //   }
+  //   this.pricingTiersArray.push(tierGroup);
+  // }
+  //
+  //
+  // removePricingTierControl(index: number): void {
+  //   this.pricingTiersArray.removeAt(index);
+  // }
 
 
   // --- Submit Form ---
@@ -422,10 +420,10 @@ export class EditProductComponent implements OnInit, OnDestroy {
     });
     // ***************************************************
 
-    let pricingTierRequests: ProductPricingTierRequest[] | null = null;
-    if (formValue.b2bEnabled && this.pricingTiersArray.controls.length > 0) {
-      pricingTierRequests = this.pricingTiersArray.controls.map(ctrl => ctrl.value);
-    }
+    // let pricingTierRequests: ProductPricingTierRequest[] | null = null;
+    // if (formValue.b2bEnabled && this.pricingTiersArray.controls.length > 0) {
+    //   pricingTierRequests = this.pricingTiersArray.controls.map(ctrl => ctrl.value);
+    // }
 
 
     let finalStatus: ProductStatus; // Khai báo kiểu rõ ràng
@@ -447,16 +445,14 @@ export class EditProductComponent implements OnInit, OnDestroy {
       name: formValue.name,
       categoryId: formValue.categoryId,
       description: formValue.description || null,
-      unit: formValue.unit,
-      price: formValue.price,
+      unit: formValue.unit, // Đơn vị B2C
+      price: formValue.price, // Giá B2C
       stockQuantity: formValue.stockQuantity,
       status: finalStatus,
-      b2bEnabled: formValue.b2bEnabled,
-      b2bUnit: formValue.b2bEnabled ? formValue.b2bUnit : null,
-      minB2bQuantity: formValue.b2bEnabled ? formValue.minB2bQuantity : null,
-      b2bBasePrice: formValue.b2bEnabled ? formValue.b2bBasePrice : null,
+      b2bEnabled: false, // << LUÔN SET LÀ FALSE CHO SẢN PHẨM B2C
+
       images: imageRequests, // Sử dụng mảng đã chuẩn hóa
-      pricingTiers: formValue.b2bEnabled ? pricingTierRequests : null
+
       // slug sẽ được tạo ở backend
     };
 

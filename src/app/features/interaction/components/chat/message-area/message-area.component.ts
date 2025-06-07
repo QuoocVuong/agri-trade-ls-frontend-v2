@@ -304,6 +304,7 @@ export class MessageAreaComponent implements OnChanges, OnDestroy, OnInit   {
         id: currentUser.id,
         fullName: currentUser.fullName,
         avatarUrl: currentUser.avatarUrl,
+        phoneNumber: currentUser.phoneNumber,
         Online: true // Giả định mình đang online
       },
       recipient: this.selectedRoom.otherUser,

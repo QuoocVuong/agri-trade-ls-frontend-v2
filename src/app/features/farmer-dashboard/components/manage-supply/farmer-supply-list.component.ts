@@ -1,4 +1,4 @@
-// src/app/features/farmer-dashboard/components/farmer-supply-list/farmer-supply-list.component.ts
+// src/app/features/farmer-dashboard/components/manage-supply/manage-supply.component.ts
 import { Component, OnInit, inject, signal, OnDestroy, effect } from '@angular/core';
 import { CommonModule, DatePipe, DecimalPipe } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
@@ -18,7 +18,7 @@ import { FormatBigDecimalPipe } from '../../../../shared/pipes/format-big-decima
 import {FormsModule} from '@angular/forms';
 
 @Component({
-  selector: 'app-farmer-supply-list',
+  selector: 'app-manage-supply',
   standalone: true,
   imports: [
     CommonModule,
@@ -32,7 +32,7 @@ import {FormsModule} from '@angular/forms';
     FormsModule
   ],
   templateUrl: './farmer-supply-list.component.html',
-  // styleUrls: ['./farmer-supply-list.component.css']
+  // styleUrls: ['./manage-supply.component.css']
 })
 export class FarmerSupplyListComponent implements OnInit, OnDestroy {
   private productService = inject(ProductService);
@@ -87,7 +87,7 @@ export class FarmerSupplyListComponent implements OnInit, OnDestroy {
       keyword: this.currentKeyword().trim() || undefined
     };
 
-    this.productService.getMyProducts(params) // API này lấy sản phẩm của farmer đang đăng nhập
+    this.productService.getMySupplyProducts(params) // API này lấy sản phẩm của farmer đang đăng nhập
       .pipe(
         takeUntil(this.destroy$),
         finalize(() => this.isLoading.set(false))

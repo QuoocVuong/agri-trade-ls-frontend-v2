@@ -162,7 +162,6 @@ export class OrderService {
    */
   createAgreedOrder(request: AgreedOrderRequest): Observable<ApiResponse<OrderResponse>> {
     // Endpoint backend là: POST /api/orders/agreed-order
-    // (Hoặc /api/admin/orders/agreed-order, /api/farmer/orders/agreed-order tùy theo quyền và cách bạn tổ chức API)
     // Giả sử endpoint chung là /api/orders/agreed-order và backend sẽ kiểm tra quyền của người gọi
     return this.http.post<ApiResponse<OrderResponse>>(`${this.orderApiUrl}/agreed-order`, request);
   }

@@ -1,25 +1,58 @@
 <!-- Hero Section -->
-<div class="hero min-h-[70vh] bg-base-200 rounded-2xl mb-12 relative overflow-hidden" style="background-image: url(assets/images/langson-landscape.jpg); background-size: cover; background-position: center;">
+<div class="hero min-h-[70vh] bg-base-200 rounded-2xl mb-12 relative overflow-hidden"
+     style="background-image: url(assets/images/langson-landscape.jpg); background-size: cover; background-position: center;">
   <div class="hero-overlay bg-gradient-to-b from-black/70 to-black/30 rounded-2xl"></div>
   <div class="hero-content text-center text-neutral-content z-10">
     <div class="max-w-lg animate-fade-in-up">
-      <h1 class="mb-6 text-5xl md:text-6xl font-extrabold tracking-tight">Nông Sản Sạch </h1>
-      <p class="mb-8 text-lg md:text-xl opacity-90">Khám phá hương vị tươi ngon từ những trang trại bền vững. Giao hàng tận nơi, chất lượng đảm bảo.</p>
-      <div class="form-control mb-8 max-w-md mx-auto">
-        <div class="relative">
-          <!-- THÊM #heroSearchInput VÀ (keyup.enter) -->
-          <input #heroSearchInput
-                 type="text"
-                 placeholder="Tìm kiếm rau củ, trái cây..."
-                 class="input input-bordered w-full pr-12 rounded-full shadow-lg focus:ring-2 focus:ring-primary transition-all"
-                 (keyup.enter)="performHeroSearch(heroSearchInput.value)" />
-          <!-- THÊM (click) CHO NÚT -->
-          <button class="absolute right-2 top-1/2 transform -translate-y-1/2 btn btn-primary btn-circle btn-sm" (click)="performHeroSearch(heroSearchInput.value)">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+      <h1 class="mb-6 text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight">Nông Sản Sạch</h1>
+      <p class="mb-8 text-base sm:text-lg md:text-xl opacity-90">
+        Khám phá hương vị tươi ngon từ những trang trại bền vững. Giao hàng tận nơi, chất lượng đảm bảo.
+      </p>
+
+      <!-- Search Form -->
+      <div class="mb-8 max-w-md mx-auto space-y-3 sm:space-y-0 sm:flex sm:flex-col md:flex-row md:items-center md:gap-3">
+        <!-- Input Group -->
+        <div class="relative flex-grow w-full md:w-auto">
+          <input #heroSearchInput type="text"
+                 [placeholder]="searchTypeSignal() === 'products' ? 'Tìm rau củ, trái cây...' : 'Tìm nguồn cung lớn...'"
+                 class="input input-bordered w-full pr-14 py-3 text-sm sm:text-base rounded-full shadow-lg focus:ring-2 focus:ring-primary transition-all"
+                 (keyup.enter)="performHeroSearch(heroSearchInput.value)"
+                 aria-label="Từ khóa tìm kiếm" />
+          <button class="absolute right-2 top-1/2 transform -translate-y-1/2 btn btn-primary btn-circle btn-sm md:btn-md"
+                  (click)="performHeroSearch(heroSearchInput.value)"
+                  aria-label="Tìm kiếm">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 sm:h-5 sm:w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
           </button>
         </div>
+
+        <!-- Select Type - Sẽ xuống dòng trên mobile nếu dùng flex-col cho parent -->
+        <select class="select select-bordered select-sm sm:select-md w-full md:w-auto rounded-full focus:ring-2 focus:ring-primary shadow-lg text-sm"
+                [(ngModel)]="searchTypeSignal" (ngModelChange)="updateSearchPlaceholder()"
+                aria-label="Chọn loại tìm kiếm">
+          <option value="products">Sản phẩm lẻ</option>
+          <option value="supplies">Nguồn cung</option>
+        </select>
       </div>
-      <a routerLink="/products" class="btn btn-primary btn-lg rounded-full shadow-lg hover:scale-105 transition-transform">Khám phá sản phẩm</a>
+      <!-- End Search Form -->
+
+      <!-- CTA Buttons -->
+      <div class="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
+        <a routerLink="/products" class="btn btn-primary btn-md sm:btn-lg rounded-full shadow-lg hover:scale-105 transition-transform px-6">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+          </svg>
+          Mua Sắm Ngay
+        </a>
+        <a routerLink="/supply-sources" class="btn btn-accent btn-md sm:btn-lg rounded-full shadow-lg hover:scale-105 transition-transform px-6">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 4h5m-5 4h5m-5-12h.01M15 7h.01" />
+          </svg>
+          Tìm Nguồn Cung Lớn
+        </a>
+      </div>
+      <!-- End CTA Buttons -->
     </div>
   </div>
 </div>
@@ -40,6 +73,29 @@
   </div>
 </section>
 
+
+<!-- Newest/Featured Supply Sources -->
+<section class="mb-16 container mx-auto px-4">
+  <div class="flex justify-between items-center mb-8">
+    <h2 class="text-3xl font-bold animate-fade-in dark:text-white">Nguồn Cung Mới</h2>
+    <a routerLink="/supply-sources" class="btn btn-ghost btn-sm hover:bg-primary/10">
+      Xem tất cả nguồn cung <span class="ml-1">→</span>
+    </a>
+  </div>
+  <div *ngIf="isLoadingNewestSupplies()" class="text-center py-12"><app-loading-spinner></app-loading-spinner></div>
+  <div *ngIf="!isLoadingNewestSupplies() && newestSupplies().length > 0"
+       class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+
+    <app-supply-source-card *ngFor="let supply of newestSupplies(); trackBy: trackSupplyById"
+                            [supplySource]="supply"
+                            class="transform hover:scale-105 transition-transform duration-300">
+    </app-supply-source-card>
+  </div>
+  <div *ngIf="!isLoadingNewestSupplies() && newestSupplies().length === 0" class="text-center py-12 text-base-content/60">
+    Chưa có nguồn cung mới nào được đăng.
+  </div>
+</section>
+
 <!-- Newest Products -->
 <section class="mb-16 container mx-auto px-4">
   <div class="flex justify-between items-center mb-8">
@@ -55,6 +111,7 @@
   </div>
 </section>
 
+
 <!-- Featured Farmers -->
 <section class="mb-16 container mx-auto px-4">
   <div class="flex justify-between items-center mb-8">
@@ -63,21 +120,34 @@
   </div>
   <div *ngIf="isLoadingFarmers()" class="text-center py-12"><app-loading-spinner></app-loading-spinner></div>
   <div *ngIf="!isLoadingFarmers() && featuredFarmers().length > 0" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+    <!-- SỬA ĐOẠN CODE BÊN DƯỚI -->
     <div *ngFor="let farmer of featuredFarmers(); trackBy: trackFarmerById" class="card shadow-lg hover:shadow-xl transition-all duration-300 rounded-lg overflow-hidden">
       <div class="card-body items-center text-center p-6">
         <div class="avatar mb-3">
-          <div class="w-20 rounded-full ring ring-primary ring-offset-base-100 ring-offset-2">
-            <img [src]="farmer.avatarUrl || 'assets/images/default-avatar.png'" [alt]="farmer.farmName" class="object-cover">
+          <div class="w-20 rounded-full ring ring-primary dark:ring-green-500 ring-offset-base-100 dark:ring-offset-gray-800 ring-offset-2">
+            <img [src]="farmer.avatarUrl || 'assets/images/default-avatar.png'" [alt]="farmer.farmName || farmer.fullName" class="object-cover">
           </div>
         </div>
-        <h3 class="card-title text-lg font-semibold">{{ farmer.farmName }}</h3>
-        <p class="text-sm text-base-content/70">{{ farmer.address }}</p>
+        <h3 class="card-title text-lg font-semibold text-base-content dark:text-white">{{ farmer.farmName || farmer.fullName }}</h3>
+        <!-- THAY THẾ farmer.address BẰNG farmer.provinceNameDisplay() -->
+        <p class="text-sm text-base-content/70 dark:text-gray-400 flex items-center justify-center gap-1">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 opacity-70" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+          <span>{{ farmer.provinceNameDisplay() || 'N/A' }}</span>
+        </p>
         <div class="card-actions mt-4">
-          <a [routerLink]="['/farmer', farmer.userId]" class="btn btn-sm btn-outline btn-primary rounded-full hover:bg-primary hover:text-white">Xem sản phẩm</a>
+          <a [routerLink]="['/farmer', farmer.userId]" class="btn btn-sm btn-outline btn-primary dark:btn-outline-green-500 dark:hover:bg-green-500 dark:hover:text-white rounded-full hover:bg-primary hover:text-white">Xem gian hàng</a>
         </div>
       </div>
     </div>
+    <!-- KẾT THÚC SỬA ĐỔI -->
   </div>
+  <div *ngIf="!isLoadingFarmers() && featuredFarmers().length === 0 && !errorMessage()" class="text-center py-12 text-base-content/60 dark:text-gray-400">
+    Chưa có nông dân tiêu biểu nào.
+  </div>
+  <app-alert *ngIf="errorMessage() && !isLoadingFarmers()" type="error" [message]="errorMessage()!" class="mt-6"></app-alert>
 </section>
 
 <!-- Introduction/Commitment Section -->

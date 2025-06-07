@@ -1,18 +1,18 @@
 // src/app/features/ordering/components/supply-order-request-form/supply-order-request-form.component.ts
-import {Component, OnInit, inject, signal, OnDestroy, ChangeDetectorRef, computed} from '@angular/core';
+import { Component, OnInit, inject, signal, OnDestroy, ChangeDetectorRef, computed } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import {
   ReactiveFormsModule,
   FormBuilder,
   FormGroup,
   Validators,
-  ValidationErrors,
-  ValidatorFn,
-  AbstractControl
+  ValidationErrors, // Thêm ValidationErrors
+  ValidatorFn,      // Thêm ValidatorFn
+  AbstractControl   // Thêm AbstractControl
 } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import {of, Subject} from 'rxjs';
-import { takeUntil, finalize, switchMap } from 'rxjs/operators';
+import {of, Subject, combineLatest, startWith} from 'rxjs'; // Thêm combineLatest
+import { takeUntil, finalize, switchMap, distinctUntilChanged, tap } from 'rxjs/operators';
 import { ToastrService } from 'ngx-toastr';
 
 import { SupplyOrderRequestService } from '../../services/supply-order-request.service';
@@ -21,31 +21,28 @@ import { LocationService, Province, District, Ward } from '../../../../core/serv
 import { AuthService } from '../../../../core/services/auth.service';
 
 import { SupplyOrderPlacementRequest } from '../../dto/request/SupplyOrderPlacementRequest';
-import { ProductDetailResponse } from '../../../catalog/dto/response/ProductDetailResponse'; // Dùng để lấy thông tin sản phẩm ban đầu
-import { AddressResponse } from '../../../user-profile/dto/response/AddressResponse'; // Để lấy địa chỉ mặc định
-import { UserProfileService } from '../../../user-profile/services/user-profile.service'; // Để lấy địa chỉ
+import { ProductDetailResponse } from '../../../catalog/dto/response/ProductDetailResponse';
+import { UserProfileService } from '../../../user-profile/services/user-profile.service';
 
 import { LoadingSpinnerComponent } from '../../../../shared/components/loading-spinner/loading-spinner.component';
 import { AlertComponent } from '../../../../shared/components/alert/alert.component';
 import { FormatBigDecimalPipe } from '../../../../shared/pipes/format-big-decimal.pipe';
 import BigDecimal from 'js-big-decimal';
-import {convertPriceToPerKg, convertToKg, getMassUnitText, MassUnit} from '../../../catalog/domain/mass-unit.enum';
+import { convertPriceToPerKg, convertToKg, getMassUnitText, MassUnit } from '../../../catalog/domain/mass-unit.enum';
 
-
-// Custom validator function
+// Custom validator function (đã có từ trước, giữ nguyên)
 export function maxQuantityValidator(max: number | null | undefined): ValidatorFn {
   return (control: AbstractControl): ValidationErrors | null => {
     if (max === null || max === undefined) {
-      return null; // Không có giới hạn max, luôn hợp lệ
+      return null;
     }
     const value = control.value;
     if (value === null || value === undefined || value === '') {
-      return null; // Không validate nếu rỗng (để Validators.required xử lý)
+      return null;
     }
     return +value > max ? { maxQuantityExceeded: { max: max, actual: value } } : null;
   };
 }
-
 
 @Component({
   selector: 'app-supply-order-request-form',
@@ -54,13 +51,14 @@ export function maxQuantityValidator(max: number | null | undefined): ValidatorF
   templateUrl: './supply-order-request-form.component.html',
 })
 export class SupplyOrderRequestFormComponent implements OnInit, OnDestroy {
+  // ... (các injects và signals khác giữ nguyên) ...
   private fb = inject(FormBuilder);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private supplyRequestService = inject(SupplyOrderRequestService);
-  private productService = inject(ProductService); // Để lấy thông tin sản phẩm
+  private productService = inject(ProductService);
   private authService = inject(AuthService);
-  private userProfileService = inject(UserProfileService); // Để lấy địa chỉ mặc định
+  private userProfileService = inject(UserProfileService);
   private locationService = inject(LocationService);
   private toastr = inject(ToastrService);
   private destroy$ = new Subject<void>();
@@ -72,74 +70,82 @@ export class SupplyOrderRequestFormComponent implements OnInit, OnDestroy {
   errorMessage = signal<string | null>(null);
   successMessage = signal<string | null>(null);
 
-  // Thông tin từ route params/query params
   private targetFarmerId: number | null = null;
   private targetProductId: number | null = null;
-  productContext = signal<ProductDetailResponse | null>(null); // Thông tin sản phẩm đang yêu cầu
-
+  productContext = signal<ProductDetailResponse | null>(null);
   currentUser = this.authService.currentUser;
 
   provinces = signal<Province[]>([]);
   districts = signal<District[]>([]);
   wards = signal<Ward[]>([]);
 
-  // Signal để lưu trữ đơn vị tính của sản phẩm context
-  productContextUnit = signal<string | null>(null);
-  availableRequestUnits = Object.values(MassUnit); // Đơn vị Buyer có thể chọn
+  availableRequestUnits = Object.values(MassUnit);
   getUnitText = getMassUnitText;
 
-
-
-  // Computed signal để tính tổng tiền dự kiến
-  proposedTotalAmount = computed(() => {
-    const quantity = this.requestForm.get('requestedQuantity')?.value;
-    const pricePerUnit = this.requestForm.get('proposedPricePerUnit')?.value;
-    if (quantity && pricePerUnit && quantity > 0 && pricePerUnit > 0) {
-      try {
-        // Sử dụng js-big-decimal để tính toán chính xác hơn
-        const qtyDecimal = new BigDecimal(quantity);
-        const priceDecimal = new BigDecimal(pricePerUnit);
-        return qtyDecimal.multiply(priceDecimal);
-      } catch (e) {
-        return null; // Lỗi parse số
-      }
-    }
-    return null;
-  });
-
-
-
-
-
-
+  // Computed signal để tính tổng tiền dự kiến (đã có từ trước, giữ nguyên)
   proposedTotalAmountInKg = computed(() => {
     const requestedQuantity = this.requestForm.get('requestedQuantity')?.value;
-    const requestedUnit = this.requestForm.get('requestedUnit')?.value as MassUnit | null; // Ép kiểu
+    const requestedUnit = this.requestForm.get('requestedUnit')?.value as MassUnit | null;
     const proposedPricePerUnit = this.requestForm.get('proposedPricePerUnit')?.value;
 
-    if (requestedQuantity && requestedUnit && proposedPricePerUnit &&
-      requestedQuantity > 0 && proposedPricePerUnit > 0) {
+    console.log('Calculating total: ', { requestedQuantity, requestedUnit, proposedPricePerUnit });
+
+    // Chỉ tính toán nếu cả số lượng và giá đều có giá trị dương
+    if (requestedQuantity != null && requestedUnit && proposedPricePerUnit != null &&
+      +requestedQuantity > 0 && +proposedPricePerUnit > 0) { // <<<< THÊM ĐIỀU KIỆN > 0
       try {
         const quantityInKg = convertToKg(requestedQuantity, requestedUnit);
         const pricePerKg = convertPriceToPerKg(proposedPricePerUnit, requestedUnit);
 
+        if (isNaN(quantityInKg) || isNaN(pricePerKg)) {
+           console.error("NaN detected in conversion:", { quantityInKg, pricePerKg });
+          return null;
+        }
+
         const totalDecimal = new BigDecimal(quantityInKg).multiply(new BigDecimal(pricePerKg));
+        console.log('Calculated totalDecimal:', totalDecimal.getValue());
         return totalDecimal;
       } catch (e) {
         console.error("Error calculating proposed total in KG:", e);
         return null;
       }
     }
+    console.log('Conditions not met for calculation.');
     return null;
   });
 
+  // Hàm mới để quyết định hiển thị gì cho tổng tiền
+  getDisplayProposedTotal(): string {
+    const totalKgAmount = this.proposedTotalAmountInKg();
+    console.log('getDisplayProposedTotal - totalKgAmount:', totalKgAmount?.getValue());
+    if (totalKgAmount !== null) {
+      const pipe = new FormatBigDecimalPipe();
+      const formatted = pipe.transform(totalKgAmount, '1.0-0'); // Giả sử pipe của bạn trả về string
+      return formatted || '---'; // Nếu pipe trả về null/undefined, hiển thị '---'
+    }
+
+    // Nếu chưa tính được tổng tiền (do thiếu số lượng hoặc giá)
+    const quantity = this.requestForm.get('requestedQuantity')?.value;
+    const price = this.requestForm.get('proposedPricePerUnit')?.value;
+
+    if (!quantity && !price) {
+      return '---';
+    }
+    if (!quantity) {
+      return 'Vui lòng nhập số lượng';
+    }
+    if (!price) {
+      return 'Vui lòng nhập giá đề xuất';
+    }
+    return '---'; // Trường hợp khác
+  }
+
   constructor() {
     this.requestForm = this.fb.group({
-      requestedQuantity: [null, [Validators.required, Validators.min(1)]],
-      requestedUnit: [MassUnit.KG,  Validators.required],
-      proposedPricePerUnit: [null as number | null, [Validators.min(0)]],
+      requestedQuantity: [null, [Validators.required, Validators.min(1)]], // Validator max sẽ được thêm động
+      requestedUnit: [MassUnit.KG, Validators.required],
+      proposedPricePerUnit: [null as number | null, [Validators.min(0.01)]],
       buyerNotes: ['', Validators.maxLength(1000)],
-      // Thông tin giao hàng
       shippingFullName: ['', Validators.maxLength(100)],
       shippingPhoneNumber: ['', [Validators.pattern(/^(\+84|0)\d{9,10}$/)]],
       shippingAddressDetail: ['', Validators.maxLength(255)],
@@ -160,37 +166,30 @@ export class SupplyOrderRequestFormComponent implements OnInit, OnDestroy {
         switchMap(params => {
           this.isLoadingInitialData.set(true);
           const farmerIdParam = params.get('farmerId');
-          const productIdParam = params.get('productId'); // Hoặc productSlug nếu bạn dùng slug
+          const productIdParam = params.get('productId');
 
           if (!farmerIdParam || !productIdParam) {
-            this.errorMessage.set('Thiếu thông tin nông dân hoặc sản phẩm để tạo yêu cầu.');
+            this.errorMessage.set('Thiếu thông tin nông dân hoặc sản phẩm.');
             this.isLoadingInitialData.set(false);
             this.toastr.error('Không thể tạo yêu cầu, thiếu thông tin.');
-            this.router.navigate(['/supply-sources']); // Quay lại trang tìm kiếm
+            this.router.navigate(['/supply-sources']);
             return of(null);
           }
           this.targetFarmerId = +farmerIdParam;
           this.targetProductId = +productIdParam;
-
-          // Lấy thông tin sản phẩm để hiển thị và điền sẵn đơn vị
-          return this.productService.getPublicProductById(this.targetProductId); // Hoặc getBySlug
+          return this.productService.getPublicProductById(this.targetProductId);
         })
       )
       .subscribe({
         next: (productRes) => {
           if (productRes && productRes.success && productRes.data) {
             const productData = productRes.data;
-            this.productContext.set(productRes.data);
-
-            // Đơn vị yêu cầu có thể mặc định là đơn vị sỉ của sản phẩm hoặc KG
-            const defaultUnit = productData.wholesaleUnit as MassUnit || MassUnit.KG;
-            // Điền sẵn đơn vị từ sản phẩm
-            this.requestForm.patchValue({
-              requestedUnit: defaultUnit
-            });
-            // Lấy địa chỉ mặc định của người mua
+            this.productContext.set(productData);
+            const defaultUnit = (productData.wholesaleUnit as MassUnit) || MassUnit.KG;
+            this.requestForm.patchValue({ requestedUnit: defaultUnit });
+            this.setQuantityValidators(); // <<<< GỌI SET VALIDATOR SAU KHI CÓ productContext
             this.loadDefaultShippingAddress();
-          } else if (productRes) { // productRes có thể là null từ switchMap
+          } else if (productRes) {
             this.errorMessage.set(productRes.message || 'Không tải được thông tin sản phẩm.');
           }
           this.isLoadingInitialData.set(false);
@@ -200,17 +199,128 @@ export class SupplyOrderRequestFormComponent implements OnInit, OnDestroy {
           this.isLoadingInitialData.set(false);
         }
       });
+
+    // Lắng nghe thay đổi của requestedUnit để cập nhật lại validator cho requestedQuantity
+    this.requestForm.get('requestedUnit')?.valueChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => {
+        this.setQuantityValidators(); // Cập nhật validator khi đơn vị thay đổi
+        this.requestForm.get('requestedQuantity')?.updateValueAndValidity(); // Trigger validation lại
+      });
   }
+
+  // Hàm set validator động cho requestedQuantity
+  private setQuantityValidators(): void {
+    const product = this.productContext();
+    const quantityControl = this.requestForm.get('requestedQuantity');
+    if (!product || !quantityControl) return;
+
+    const stockInBaseUnit = product.stockQuantity;
+    const baseUnitOfProduct = product.unit as MassUnit;
+
+    quantityControl.clearValidators();
+    quantityControl.setValidators([Validators.required, Validators.min(1)]);
+
+    if (stockInBaseUnit != null && stockInBaseUnit >= 0 && baseUnitOfProduct) {
+      const currentRequestedUnit = this.requestForm.get('requestedUnit')?.value as MassUnit;
+      if (currentRequestedUnit) {
+        try {
+          const stockInKg = convertToKg(stockInBaseUnit, baseUnitOfProduct);
+          const oneSelectedUnitInKg = convertToKg(1, currentRequestedUnit);
+
+          if (oneSelectedUnitInKg > 0) {
+            const maxAllowedRaw = stockInKg / oneSelectedUnitInKg; // Giá trị thô, có thể là thập phân
+
+            if (maxAllowedRaw > 0) {
+              // Đối với Validators.max, chúng ta cần một số nguyên nếu input là số nguyên.
+              // Nếu bạn cho phép input số thập phân cho số lượng, thì có thể dùng maxAllowedRaw trực tiếp.
+              // Hiện tại, input là type="number" nên thường là số nguyên.
+              // Validator sẽ kiểm tra giá trị *sau khi* người dùng nhập.
+              // Custom validator vẫn là cách tốt nhất để xử lý quy đổi.
+              quantityControl.addValidators((control: AbstractControl): ValidationErrors | null => {
+                const requestedQtyInput = control.value;
+                if (requestedQtyInput == null || requestedQtyInput === '') return null;
+
+                const requestedQtyInSelectedUnit = +requestedQtyInput;
+                const selectedUnit = this.requestForm.get('requestedUnit')?.value as MassUnit;
+
+                if (selectedUnit) {
+                  try {
+                    const requestedQtyInKg = convertToKg(requestedQtyInSelectedUnit, selectedUnit);
+                    if (requestedQtyInKg > stockInKg) {
+                      return { maxQuantityExceededBase: { maxBase: stockInKg, unitBase: baseUnitOfProduct, requestedBase: requestedQtyInKg } };
+                    }
+                  } catch (e) {
+                    return { invalidUnitConversion: true };
+                  }
+                }
+                return null;
+              });
+            } else {
+              quantityControl.addValidators(Validators.max(0));
+            }
+          } else {
+            quantityControl.addValidators(Validators.max(0));
+          }
+        } catch (e) {
+          console.error("Error setting max validator:", e);
+          quantityControl.addValidators(Validators.max(0));
+        }
+      }
+    }
+    quantityControl.updateValueAndValidity();
+  }
+
+  calculateMaxAllowedInSelectedUnitForDisplay(): string | null {
+    const maxAllowed = this.calculateMaxAllowedInSelectedUnit(); // Gọi hàm trên
+    if (maxAllowed === null) return '(Không xác định)';
+
+    const currentRequestedUnit = this.requestForm.get('requestedUnit')?.value as MassUnit;
+    if (maxAllowed >= 0 && currentRequestedUnit) {
+      // Làm tròn đến 2 chữ số thập phân để hiển thị nếu cần
+      const displayValue = parseFloat(maxAllowed.toFixed(2));
+      return `${displayValue} ${this.getUnitText(currentRequestedUnit)}`;
+    }
+    return `0 ${this.getUnitText(currentRequestedUnit)}`;
+  }
+
+
+  // Helper để tính toán số lượng tối đa có thể nhập theo đơn vị đang chọn (dùng cho hiển thị)
+  calculateMaxAllowedInSelectedUnit(): number | null {
+    const product = this.productContext();
+    if (!product || product.stockQuantity == null) return null;
+
+    const stockInBaseUnit = product.stockQuantity;
+    const baseUnitOfProduct = product.unit as MassUnit; // Đơn vị gốc của sản phẩm (ví dụ: kg)
+    const currentRequestedUnit = this.requestForm.get('requestedUnit')?.value as MassUnit;
+
+    if (stockInBaseUnit >= 0 && baseUnitOfProduct && currentRequestedUnit) {
+      try {
+        const stockInKg = convertToKg(stockInBaseUnit, baseUnitOfProduct);
+        const oneSelectedUnitInKg = convertToKg(1, currentRequestedUnit);
+
+        if (oneSelectedUnitInKg > 0) {
+          return stockInKg / oneSelectedUnitInKg; // Trả về số (có thể là thập phân)
+        }
+      } catch (e) {
+        console.error("Error in calculateMaxAllowedInSelectedUnit:", e);
+        return 0; // Lỗi quy đổi, coi như không thể nhập
+      }
+    }
+    return 0; // Không tính được hoặc stock = 0
+  }
+
+
 
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
   }
 
-  loadInitialLocations(): void {
+  loadInitialLocations(): void { /* ... giữ nguyên ... */
     this.locationService.getProvinces().subscribe(p => this.provinces.set(p));
   }
-  setupLocationCascades(): void {
+  setupLocationCascades(): void { /* ... giữ nguyên ... */
     this.requestForm.get('shippingProvinceCode')?.valueChanges
       .pipe(takeUntil(this.destroy$))
       .subscribe(provinceCode => {
@@ -233,103 +343,89 @@ export class SupplyOrderRequestFormComponent implements OnInit, OnDestroy {
         }
       });
   }
-
-  loadDefaultShippingAddress(): void {
+  loadDefaultShippingAddress(): void { /* ... giữ nguyên ... */
     const buyer = this.currentUser();
     if (buyer && buyer.id) {
       this.userProfileService.getDefaultAddress(buyer.id)
         .pipe(takeUntil(this.destroy$))
         .subscribe(res => {
-
           if (res.success && res.data) {
             const addressData = res.data;
             this.requestForm.patchValue({
               shippingFullName: res.data.fullName,
               shippingPhoneNumber: res.data.phoneNumber,
               shippingAddressDetail: res.data.addressDetail,
-              shippingProvinceCode: res.data.provinceCode,
-              // Cần trigger load district/ward
             });
-
             if (addressData.provinceCode) {
-              this.requestForm.get('shippingProvinceCode')?.setValue(addressData.provinceCode, { emitEvent: true }); // emitEvent: true để trigger valueChanges
-
-              // Cách tiếp cận tốt hơn:
+              this.requestForm.get('shippingProvinceCode')?.setValue(addressData.provinceCode, { emitEvent: true });
               this.locationService.getDistricts(addressData.provinceCode).subscribe(districts => {
                 this.districts.set(districts);
-                // Chỉ patch districtCode nếu nó có trong danh sách districts vừa load
                 if (districts.some(d => d.idDistrict === addressData.districtCode)) {
-                  this.requestForm.patchValue({ shippingDistrictCode: addressData.districtCode });
-
+                  this.requestForm.get('shippingDistrictCode')?.setValue(addressData.districtCode, { emitEvent: true });
                   if (addressData.districtCode) {
                     this.locationService.getWards(addressData.districtCode).subscribe(wards => {
                       this.wards.set(wards);
-                      // Chỉ patch wardCode nếu nó có trong danh sách wards vừa load
                       if (wards.some(w => w.idWard === addressData.wardCode)) {
                         this.requestForm.patchValue({ shippingWardCode: addressData.wardCode });
                       } else {
-                        this.requestForm.patchValue({ shippingWardCode: '' }); // Reset nếu không tìm thấy
+                        this.requestForm.patchValue({ shippingWardCode: '' });
                       }
-                      this.cdr.detectChanges(); // Cập nhật view
+                      this.cdr.detectChanges();
                     });
                   } else {
-                    this.wards.set([]);
-                    this.requestForm.patchValue({ shippingWardCode: '' });
-                    this.cdr.detectChanges();
+                    this.wards.set([]); this.requestForm.patchValue({ shippingWardCode: '' }); this.cdr.detectChanges();
                   }
                 } else {
-                  this.requestForm.patchValue({ shippingDistrictCode: '', shippingWardCode: '' }); // Reset nếu không tìm thấy
-                  this.wards.set([]);
-                  this.cdr.detectChanges();
+                  this.requestForm.patchValue({ shippingDistrictCode: '', shippingWardCode: '' }); this.wards.set([]); this.cdr.detectChanges();
                 }
               });
-            } else { // Nếu không có provinceCode từ địa chỉ mặc định
-              this.districts.set([]);
-              this.wards.set([]);
-              this.requestForm.patchValue({
-                shippingDistrictCode: '',
-                shippingWardCode: ''
-              });
+            } else {
+              this.districts.set([]); this.wards.set([]);
+              this.requestForm.patchValue({ shippingDistrictCode: '', shippingWardCode: '' });
               this.cdr.detectChanges();
             }
-
           } else {
-            // Nếu không có địa chỉ mặc định, hoặc API lỗi
-            console.log('No default address found or API error, patching with buyer info.');
             this.requestForm.patchValue({
               shippingFullName: buyer.fullName,
               shippingPhoneNumber: buyer.phoneNumber,
-              // Reset các trường địa chỉ khác
-              shippingAddressDetail: '',
-              shippingProvinceCode: '',
-              shippingDistrictCode: '',
-              shippingWardCode: ''
+              shippingAddressDetail: '', shippingProvinceCode: '', shippingDistrictCode: '', shippingWardCode: ''
             });
-            this.districts.set([]);
-            this.wards.set([]);
+            this.districts.set([]); this.wards.set([]);
           }
-          this.cdr.detectChanges(); // Cập nhật view sau khi patch
+          this.cdr.detectChanges();
         });
     }
   }
+
   onSubmit(): void {
     this.errorMessage.set(null);
     this.successMessage.set(null);
+
+    // Trigger validation lại một lần nữa trước khi submit, đặc biệt cho requestedQuantity
+    this.requestForm.get('requestedQuantity')?.updateValueAndValidity();
+
     if (this.requestForm.invalid || !this.targetFarmerId || !this.targetProductId) {
       this.requestForm.markAllAsTouched();
-      this.toastr.error('Vui lòng điền đầy đủ thông tin yêu cầu.');
+      this.toastr.error('Vui lòng điền đầy đủ và chính xác thông tin yêu cầu.');
+      // Log lỗi cụ thể của form
+      Object.keys(this.requestForm.controls).forEach(key => {
+        const controlErrors = this.requestForm.get(key)?.errors;
+        if (controlErrors != null) {
+          console.error('Key control: ' + key + ', errors: ' + JSON.stringify(controlErrors));
+        }
+      });
       return;
     }
 
     this.isSubmitting.set(true);
-    const formValue = this.requestForm.getRawValue(); // Lấy cả trường disabled (requestedUnit)
+    const formValue = this.requestForm.getRawValue();
 
     const request: SupplyOrderPlacementRequest = {
       farmerId: this.targetFarmerId,
       productId: this.targetProductId,
       requestedQuantity: +formValue.requestedQuantity!,
       requestedUnit: formValue.requestedUnit!,
-      proposedPricePerUnit: formValue.proposedPricePerUnit ? formValue.proposedPricePerUnit.toString() : null,
+      proposedPricePerUnit: formValue.proposedPricePerUnit ? new BigDecimal(formValue.proposedPricePerUnit).getValue() : null, // Sửa ở đây
       buyerNotes: formValue.buyerNotes || null,
       shippingFullName: formValue.shippingFullName || null,
       shippingPhoneNumber: formValue.shippingPhoneNumber || null,
@@ -350,9 +446,9 @@ export class SupplyOrderRequestFormComponent implements OnInit, OnDestroy {
           if (res.success && res.data) {
             this.toastr.success('Yêu cầu đặt hàng của bạn đã được gửi thành công!');
             this.successMessage.set(`Đã gửi yêu cầu cho sản phẩm "${this.productContext()?.name}". Nhà cung cấp sẽ sớm phản hồi.`);
-            this.requestForm.reset();
-            // Điều hướng đến trang "Yêu cầu đã gửi của tôi"
-            this.router.navigate(['/user/my-supply-requests']); // Tạo route này sau
+            this.requestForm.reset({ requestedUnit: MassUnit.KG }); // Reset về KG
+            this.setQuantityValidators(); // Reset validator sau khi reset form
+            this.router.navigate(['/user/my-supply-requests']);
           } else {
             this.errorMessage.set(res.message || 'Gửi yêu cầu thất bại.');
             this.toastr.error(res.message || 'Gửi yêu cầu thất bại.');
@@ -364,6 +460,4 @@ export class SupplyOrderRequestFormComponent implements OnInit, OnDestroy {
         }
       });
   }
-
-  protected readonly convertPriceToPerKg = convertPriceToPerKg;
 }

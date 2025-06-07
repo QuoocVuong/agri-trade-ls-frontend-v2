@@ -98,10 +98,12 @@
               <td class="p-3 md:p-4 align-middle text-center">
                 <div class="flex justify-center items-center gap-1">
                   <button class="btn btn-xs btn-ghost text-info dark:text-sky-400 hover:bg-info/10 dark:hover:bg-sky-500/10 p-1.5"
-                          [routerLink]="['/admin/orders', inv.orderId]" title="Xem chi tiết đơn hàng">
+                          [routerLink]="isAdminView() ? ['/admin/orders', inv.orderId] : ['/farmer/orders', inv.orderId]"
+                          title="Xem chi tiết đơn hàng">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-.274.996-.686 1.932-1.198 2.784M14 14l-2.168 2.168a2.502 2.502 0 01-3.536 0L5 13" /></svg>
                   </button>
-                  <button *ngIf="inv.status === InvoiceStatusEnum.ISSUED || inv.status === InvoiceStatusEnum.OVERDUE"
+                  <!-- Chỉ hiển thị nút này cho Admin -->
+                  <button *ngIf="isAdminView() && (inv.status === InvoiceStatusEnum.ISSUED || inv.status === InvoiceStatusEnum.OVERDUE)"
                           class="btn btn-xs btn-ghost text-success dark:text-green-400 hover:bg-success/10 dark:hover:bg-green-500/10 p-1.5"
                           title="Xác nhận đã thanh toán"
                           (click)="confirmPayment(inv)"

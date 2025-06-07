@@ -16,13 +16,22 @@ export interface AdminInvoiceSearchParams {
   keyword?: string | null;
   status?: InvoiceStatus | string | null;
 }
-
+export interface FarmerInvoiceSearchParams {
+  page?: number;
+  size?: number;
+  sort?: string;
+  keyword?: string | null; // Tìm theo mã HĐ, mã ĐH, tên người mua
+  status?: InvoiceStatus | string | null;
+}
 @Injectable({
   providedIn: 'root'
 })
 export class AdminInvoiceService {
   private http = inject(HttpClient);
   private apiUrl = `${environment.apiUrl}/admin/invoices`;
+  // API endpoint mới cho Farmer lấy hóa đơn của họ
+  private farmerApiUrl = `${environment.apiUrl}/farmer/invoices`;
+
 
   getAllInvoices(params: AdminInvoiceSearchParams): Observable<PagedApiResponse<InvoiceSummaryResponse>> {
     let httpParams = new HttpParams();
@@ -35,6 +44,34 @@ export class AdminInvoiceService {
     console.log('AdminInvoiceService: Calling API with params:', httpParams.toString()); // << THÊM LOG NÀY
 
     return this.http.get<PagedApiResponse<InvoiceSummaryResponse>>(this.apiUrl, { params: httpParams });
+  }
+
+  /**
+   * Lấy danh sách hóa đơn công nợ liên quan đến các đơn hàng của Farmer hiện tại.
+   * @param params Tham số tìm kiếm và phân trang.
+   * @returns Observable chứa PagedApiResponse với danh sách InvoiceSummaryResponse.
+   */
+  getMyInvoicesAsFarmer(params: FarmerInvoiceSearchParams): Observable<PagedApiResponse<InvoiceSummaryResponse>> {
+    let httpParams = new HttpParams();
+
+    if (params.page !== undefined) {
+      httpParams = httpParams.set('page', params.page.toString());
+    }
+    if (params.size !== undefined) {
+      httpParams = httpParams.set('size', params.size.toString());
+    }
+    if (params.sort) {
+      httpParams = httpParams.set('sort', params.sort);
+    }
+    if (params.keyword?.trim()) {
+      httpParams = httpParams.set('keyword', params.keyword.trim());
+    }
+    if (params.status) {
+      httpParams = httpParams.set('status', params.status.toString());
+    }
+
+    // Gọi API backend GET /api/farmer/invoices
+    return this.http.get<PagedApiResponse<InvoiceSummaryResponse>>(this.farmerApiUrl, { params: httpParams });
   }
 
   // Thêm các phương thức khác nếu cần, ví dụ:

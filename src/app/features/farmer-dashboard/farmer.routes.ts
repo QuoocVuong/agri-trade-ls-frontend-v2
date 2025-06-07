@@ -55,7 +55,7 @@ export const FARMER_ROUTES: Routes = [
   },
   {
     path: 'my-supplies', // Trang quản lý danh sách nguồn cung của farmer
-    loadComponent: () => import('./components/farmer-supply-list/farmer-supply-list.component').then(m => m.FarmerSupplyListComponent),
+    loadComponent: () => import('./components/manage-supply/farmer-supply-list.component').then(m => m.FarmerSupplyListComponent),
     title: 'Nguồn Cung Của Tôi'
   },
 
@@ -74,6 +74,14 @@ export const FARMER_ROUTES: Routes = [
     path: 'supply-requests', // URL: /farmer/supply-requests
     loadComponent: () => import('./components/manage-supply-requests/manage-supply-requests.component').then(m => m.ManageSupplyRequestsComponent),
     title: 'Quản Lý Yêu Cầu Đặt Hàng'
+  },
+
+  {
+    path: 'invoices', // Path: /farmer/invoices
+    loadComponent: () => import('../admin-dashboard/components/manage-invoice-list/manage-invoice-list.component').then(m => m.ManageInvoiceListComponent),
+    // Tái sử dụng ManageInvoiceListComponent nhưng sẽ có logic phân quyền trong component
+    data: { viewMode: 'farmer' }, // Truyền dữ liệu để component biết ai đang xem
+    title: 'Kênh người bán - Hóa đơn Công nợ'
   },
 
   // Redirect mặc định của /farmer về /farmer/dashboard

@@ -1,7 +1,7 @@
 
 import { Component, OnInit, inject, signal, OnDestroy, computed } from '@angular/core';
 import { CommonModule, DatePipe, DecimalPipe } from '@angular/common';
-import { RouterLink, Router } from '@angular/router';
+import {RouterLink, Router, ActivatedRoute} from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, FormGroup } from '@angular/forms';
 import { Subject } from 'rxjs';
 import { takeUntil, finalize, debounceTime, distinctUntilChanged } from 'rxjs/operators';
@@ -17,6 +17,7 @@ import { AdminOrderingService } from '../../services/admin-ordering.service'; //
 import { PaymentMethod } from '../../../ordering/domain/payment-method.enum';
 import {InvoiceSummaryResponse} from '../../../ordering/dto/response/InvoiceSummaryResponse';
 import {InvoiceStatus} from '../../../ordering/domain/invoice-status.enum';
+import {AuthService} from '../../../../core/services/auth.service';
 
 
 @Component({
@@ -37,11 +38,14 @@ import {InvoiceStatus} from '../../../ordering/domain/invoice-status.enum';
 export class ManageInvoiceListComponent implements OnInit, OnDestroy {
   private adminInvoiceService = inject(AdminInvoiceService);
   private adminOrderingService = inject(AdminOrderingService);
+
   private fb = inject(FormBuilder);
   // private router = inject(Router); // Tạm thời không dùng router trong debug
   private toastr = inject(ToastrService);
   private destroy$ = new Subject<void>();
   // private datePipe = inject(DatePipe); // Tạm thời không dùng datePipe trong logic TS
+  private route = inject(ActivatedRoute); // Inject ActivatedRoute
+  private authService = inject(AuthService); // Inject AuthService
 
   // Signals
   invoicesPage = signal<Page<InvoiceSummaryResponse> | null>(null);
@@ -64,6 +68,10 @@ export class ManageInvoiceListComponent implements OnInit, OnDestroy {
   isActionLoading = signal(false);
   actionInvoiceId = signal<number | null>(null);
 
+  viewMode = signal<'admin' | 'farmer'>('admin'); // Mặc định là admin
+  isAdminView = computed(() => this.viewMode() === 'admin');
+
+
   constructor() {
     console.log('[ManageInvoiceListComponent] Constructor called.');
     this.filterForm = this.fb.group({
@@ -74,8 +82,15 @@ export class ManageInvoiceListComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    console.log('[ManageInvoiceListComponent] ngOnInit called.');
-    // alert('[ManageInvoiceListComponent] ngOnInit CALLED!'); // Dùng alert nếu console không hiện
+    // Xác định viewMode dựa trên route data
+    const routeDataViewMode = this.route.snapshot.data['viewMode'];
+    if (routeDataViewMode === 'farmer') {
+      this.viewMode.set('farmer');
+    } else {
+      this.viewMode.set('admin'); // Mặc định hoặc nếu không có data
+    }
+    console.log('[ManageInvoiceListComponent] View Mode:', this.viewMode());
+
 
     this.loadInvoices(); // Gọi load invoices lần đầu
 
@@ -114,8 +129,15 @@ export class ManageInvoiceListComponent implements OnInit, OnDestroy {
     };
     console.log('[ManageInvoiceListComponent] Params for API call:', params);
 
-    this.adminInvoiceService.getAllInvoices(params)
-      .pipe(
+    let apiCall;
+    if (this.isAdminView()) {
+      apiCall = this.adminInvoiceService.getAllInvoices(params);
+    } else {
+      // Giả sử bạn có FarmerInvoiceService hoặc phương thức trong AdminInvoiceService cho Farmer
+      apiCall = this.adminInvoiceService.getMyInvoicesAsFarmer(params); // Cần tạo service/method này
+    }
+
+    apiCall.pipe(
         takeUntil(this.destroy$),
         finalize(() => {
           console.log('[ManageInvoiceListComponent] API call finalized. isLoading set to false.');
@@ -124,19 +146,14 @@ export class ManageInvoiceListComponent implements OnInit, OnDestroy {
       )
       .subscribe({
         next: (res) => {
-          console.log('[ManageInvoiceListComponent] API Response received:', JSON.stringify(res, null, 2));
           if (res.success && res.data) {
-            console.log('[ManageInvoiceListComponent] Setting invoicesPage with data. Content length:', res.data.content?.length);
             this.invoicesPage.set(res.data);
-            if (res.data.content?.length === 0) {
-              console.log('[ManageInvoiceListComponent] API returned data with empty content.');
-            }
           } else {
             const msg = res.message || 'Không tải được danh sách hóa đơn.';
-            console.error('[ManageInvoiceListComponent] API call was not successful or no data:', msg);
             this.errorMessage.set(msg);
             this.invoicesPage.set(null); // Set là null nếu có lỗi logic từ API
           }
+          this.isLoading.set(false);
         },
         error: (err) => {
           // err.error có thể chứa object ApiResponse từ backend nếu là lỗi HTTP 4xx, 5xx
@@ -199,7 +216,10 @@ export class ManageInvoiceListComponent implements OnInit, OnDestroy {
   }
 
   confirmPayment(invoice: InvoiceSummaryResponse): void {
-    console.log('[ManageInvoiceListComponent] confirmPayment called for invoice:', invoice.invoiceNumber);
+    if (!this.isAdminView()) { // Chỉ Admin mới có quyền này
+      this.toastr.warning('Bạn không có quyền thực hiện hành động này.');
+      return;
+    }
     if (invoice.status === InvoiceStatus.PAID) {
       this.toastr.info('Hóa đơn này đã được thanh toán.');
       return;

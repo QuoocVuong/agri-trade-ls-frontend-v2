@@ -90,10 +90,10 @@ export class ManageProductsComponent implements OnInit, OnDestroy {
       params.status = formValue.status;
     }
 
-    this.productService.getMyProducts(params as ProductSearchParams)
+    this.productService.getMyB2CProducts(params as ProductSearchParams)
 
     // Gọi API lấy sản phẩm CỦA TÔI
-    this.productService.getMyProducts(params)
+    this.productService.getMyB2CProducts(params)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (res) => {

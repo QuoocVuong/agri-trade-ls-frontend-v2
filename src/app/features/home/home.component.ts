@@ -2,7 +2,7 @@ import {Component, OnInit, inject, signal, ElementRef, ViewChild} from '@angular
 import { CommonModule } from '@angular/common';
 import {Router, RouterLink} from '@angular/router';
 import { CategoryService } from '../catalog/services/category.service'; // Import CategoryService
-import { ProductService } from '../catalog/services/product.service';   // Import ProductService
+import {ProductService, SupplySourceSearchParams} from '../catalog/services/product.service';   // Import ProductService
 // Import các DTOs cần thiết
 import { CategoryResponse } from '../catalog/dto/response/CategoryResponse';
 import { ProductSummaryResponse } from '../catalog/dto/response/ProductSummaryResponse';
@@ -14,7 +14,10 @@ import {FarmerService} from '../user-profile/services/farmer.service';
 import {FarmerSummaryResponse} from '../user-profile/dto/response/FarmerSummaryResponse';
 import {takeUntil} from 'rxjs/operators';
 import {LocationService} from '../../core/services/location.service';
-import {Subject} from 'rxjs'; // Import ProductCard
+import {Subject} from 'rxjs';
+import {FormsModule} from '@angular/forms';
+import {SupplySourceResponse} from '../catalog/dto/response/SupplySourceResponse';
+import {SupplySourceCardComponent} from '../catalog/components/supply-source-card/supply-source-card.component'; // Import ProductCard
 
 @Component({
   selector: 'app-home',
@@ -24,7 +27,10 @@ import {Subject} from 'rxjs'; // Import ProductCard
     RouterLink,
     LoadingSpinnerComponent,
     AlertComponent,
-    ProductCardComponent // Import component thẻ sản phẩm
+    ProductCardComponent,
+    FormsModule,
+    SupplySourceCardComponent,
+    // Import component thẻ sản phẩm
   ],
   templateUrl: './home.component.html',
   //styleUrl: './home.component.css' // Có thể thêm CSS riêng
@@ -52,6 +58,17 @@ export class HomeComponent implements OnInit {
 
   provinceName = signal<string | null>(null);
 
+  searchTypeSignal = signal<'products' | 'supplies'>('products'); // Mặc định
+
+  updateSearchPlaceholder(): void {
+    // Có thể cập nhật placeholder của input nếu cần
+  }
+
+  newestSupplies = signal<SupplySourceResponse[]>([]);
+  isLoadingNewestSupplies = signal(true);
+
+
+
   // Tham chiếu đến input tìm kiếm trong hero section
   @ViewChild('heroSearchInput') heroSearchInputRef?: ElementRef<HTMLInputElement>;
 
@@ -59,6 +76,7 @@ export class HomeComponent implements OnInit {
     this.loadFeaturedCategories();
     this.loadNewestProducts();
      this.loadFeaturedFarmers();
+    this.loadNewestSupplySources();
   }
 
   loadFeaturedCategories(): void {
@@ -104,14 +122,26 @@ export class HomeComponent implements OnInit {
   loadFeaturedFarmers(): void {
     this.isLoadingFarmers.set(true);
     this.errorMessage.set(null); // Thêm reset lỗi
-    // TODO: Gọi API lấy danh sách nông dân nổi bật
-    // Ví dụ: Giả sử bạn có FarmerService và DTO FarmerSummaryResponse
+
     this.farmerService.getFeaturedFarmers({ limit: 4 }).subscribe({
       next: (res) => {
         if (res.success && res.data) {
-          this.featuredFarmers.set(res.data); // Cần đúng kiểu dữ liệu
-        } else {  // Xử lý nếu không có data hoặc lỗi nhẹ
-          console.warn("Could not load featured farmers:", res.message);
+          const farmersWithProvinceName = res.data.map(farmer => ({
+            ...farmer,
+            provinceNameDisplay: signal<string | null>(null) // Signal riêng cho mỗi farmer
+          }));
+          this.featuredFarmers.set(farmersWithProvinceName);
+
+          // Load tên tỉnh cho từng farmer
+          farmersWithProvinceName.forEach(farmer => {
+            if (farmer.provinceCode) {
+              this.locationService.findProvinceName(farmer.provinceCode)
+                .pipe(takeUntil(this.destroy$)) // Nhớ unsubscribe
+                .subscribe(name => farmer.provinceNameDisplay.set(name || farmer.provinceCode));
+            } else {
+              farmer.provinceNameDisplay.set('N/A');
+            }
+          });
         }
       },
       error: (err) => {  console.error("Error loading featured farmers:", err);
@@ -120,26 +150,40 @@ export class HomeComponent implements OnInit {
       complete: () => this.isLoadingFarmers.set(false)
     });
 
-    // Giữ lại setTimeout để giả lập nếu chưa có API
-    // setTimeout(() => {
-    //   // Giả lập dữ liệu (thay bằng dữ liệu thật từ API)
-    //   this.featuredFarmers.set([
-    //     { id: 1, farmName: 'Trang trại Rau Sạch A', avatarUrl: null, address: 'Huyện X, Lạng Sơn' },
-    //     { id: 2, farmName: 'Vườn trái cây B', avatarUrl: null, address: 'Huyện Y, Lạng Sơn' },
-    //     { id: 3, farmName: 'Nông sản Hữu Cơ C', avatarUrl: null, address: 'Huyện Z, Lạng Sơn' },
-    //     { id: 4, farmName: 'Trang trại Mật Ong D', avatarUrl: null, address: 'Huyện X, Lạng Sơn' }
-    //   ]);
-    //   this.isLoadingFarmers.set(false);
-    // }, 1500);
+
+  }
+  loadNewestSupplySources(): void {
+    this.isLoadingNewestSupplies.set(true);
+    const params: SupplySourceSearchParams = { // Dùng interface params của supply source
+      page: 0,
+      size: 4, // Lấy 4 nguồn cung mới nhất
+      sort: 'createdAt,desc' // Sắp xếp theo ngày tạo sản phẩm (nguồn cung)
+    };
+    this.productService.findSupplySources(params).subscribe({ // Gọi API tìm nguồn cung
+      next: (res) => {
+        if (res.success && res.data) {
+          this.newestSupplies.set(res.data.content);
+        } else {
+          console.warn("Could not load newest supply sources:", res.message);
+        }
+      },
+      error: (err) => {
+        console.error("Error loading newest supply sources:", err);
+      },
+      complete: () => this.isLoadingNewestSupplies.set(false)
+    });
+  }
+
+  trackSupplyById(index: number, item: SupplySourceResponse): number {
+    return item.productId; // Hoặc một ID duy nhất khác từ SupplySourceResponse
   }
 
   // --- THÊM PHƯƠNG THỨC TÌM KIẾM ---
   performHeroSearch(searchTerm: string): void {
     const trimmedSearchTerm = searchTerm?.trim();
     if (trimmedSearchTerm) {
-      // Điều hướng đến trang sản phẩm với query param là keyword
-      this.router.navigate(['/products'], { queryParams: { keyword: trimmedSearchTerm } });
-      // Xóa nội dung input sau khi tìm kiếm (nếu muốn)
+      const targetPath = this.searchTypeSignal() === 'products' ? '/products' : '/supply-sources';
+      this.router.navigate([targetPath], { queryParams: { keyword: trimmedSearchTerm } });
       if (this.heroSearchInputRef) {
         this.heroSearchInputRef.nativeElement.value = '';
       }

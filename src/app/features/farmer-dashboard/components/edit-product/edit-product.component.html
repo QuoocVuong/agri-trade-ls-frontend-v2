@@ -75,59 +75,59 @@
         </section>
 
         <!-- Section 3: Tùy Chọn Bán Hàng B2B -->
-        <section class="space-y-4">
-          <h2 class="text-xl font-semibold text-primary dark:text-green-400 pb-2 border-b border-base-300 dark:border-gray-700">
-            3. Tùy Chọn Bán Hàng Doanh Nghiệp (B2B)
-          </h2>
-          <div class="form-control">
-            <label class="label cursor-pointer justify-start gap-3 p-0">
-              <input type="checkbox" class="checkbox checkbox-primary checkbox-md" formControlName="b2bEnabled" />
-              <span class="label-text font-medium text-base-content dark:text-gray-200">Cho phép bán sỉ/số lượng lớn cho doanh nghiệp (B2B)</span>
-            </label>
-          </div>
-          <div *ngIf="productForm.controls['b2bEnabled'].value" class="space-y-5 pl-4 border-l-2 border-primary/30 dark:border-green-500/30 ml-2 animate-fade-in">
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-x-6 gap-y-4">
-              <div class="form-control">
-                <label class="label pb-1"><span class="label-text font-medium">Đơn vị B2B <span class="text-error">*</span></span></label>
-                <input type="text" placeholder="Thùng, Tạ, Kg..." class="input input-bordered w-full dark:bg-gray-700 dark:border-gray-600" formControlName="b2bUnit" />
-                <label class="label h-5 py-0 text-xs text-error" *ngIf="productForm.controls['b2bUnit'].invalid && productForm.controls['b2bUnit'].touched">Bắt buộc.</label>
-              </div>
-              <div class="form-control">
-                <label class="label pb-1"><span class="label-text font-medium">SL B2B tối thiểu <span class="text-error">*</span></span></label>
-                <input type="number" placeholder="Số lượng" class="input input-bordered w-full dark:bg-gray-700 dark:border-gray-600" formControlName="minB2bQuantity" min="1" />
-                <label class="label h-5 py-0 text-xs text-error" *ngIf="productForm.controls['minB2bQuantity'].invalid && productForm.controls['minB2bQuantity'].touched">SL không hợp lệ.</label>
-              </div>
-              <div class="form-control">
-                <label class="label pb-1"><span class="label-text font-medium">Giá B2B cơ bản (VNĐ) <span class="text-error">*</span></span></label>
-                <input type="number" placeholder="Giá cho 1 đơn vị B2B" class="input input-bordered w-full dark:bg-gray-700 dark:border-gray-600" formControlName="b2bBasePrice" min="0" />
-                <label class="label h-5 py-0 text-xs text-error" *ngIf="productForm.controls['b2bBasePrice'].invalid && productForm.controls['b2bBasePrice'].touched">Giá không hợp lệ.</label>
-              </div>
-            </div>
-            <div>
-              <h4 class="text-base font-medium mb-2 text-base-content dark:text-gray-200">Bậc giá B2B (Tùy chọn theo số lượng)</h4>
-              <div formArrayName="pricingTiers" class="space-y-3">
-                <div *ngFor="let tier of pricingTiersArray.controls; let i=index" [formGroupName]="i"
-                     class="flex items-end gap-3 p-3 border border-base-200 dark:border-gray-700 rounded-lg bg-base-200/30 dark:bg-gray-700/30">
-                  <div class="form-control flex-grow">
-                    <label class="label py-0 pb-1"><span class="label-text text-xs">Số lượng từ <span class="text-error">*</span></span></label>
-                    <input type="number" class="input input-sm input-bordered w-full dark:bg-gray-600 dark:border-gray-500" formControlName="minQuantity" min="1" />
-                  </div>
-                  <div class="form-control flex-grow">
-                    <label class="label py-0 pb-1"><span class="label-text text-xs">Đơn giá (VNĐ) <span class="text-error">*</span></span></label>
-                    <input type="number" class="input input-sm input-bordered w-full dark:bg-gray-600 dark:border-gray-500" formControlName="pricePerUnit" min="0" />
-                  </div>
-                  <button type="button" class="btn btn-sm btn-ghost text-error p-1" (click)="removePricingTierControl(i)" title="Xóa bậc giá này">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-                  </button>
-                </div>
-              </div>
-              <button type="button" class="btn btn-sm btn-outline btn-secondary dark:btn-outline-teal-500 mt-3 rounded-full" (click)="addPricingTierControl()">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
-                Thêm Bậc Giá
-              </button>
-            </div>
-          </div>
-        </section>
+<!--        <section class="space-y-4">-->
+<!--          <h2 class="text-xl font-semibold text-primary dark:text-green-400 pb-2 border-b border-base-300 dark:border-gray-700">-->
+<!--            3. Tùy Chọn Bán Hàng Doanh Nghiệp (B2B)-->
+<!--          </h2>-->
+<!--          <div class="form-control">-->
+<!--            <label class="label cursor-pointer justify-start gap-3 p-0">-->
+<!--              <input type="checkbox" class="checkbox checkbox-primary checkbox-md" formControlName="b2bEnabled" />-->
+<!--              <span class="label-text font-medium text-base-content dark:text-gray-200">Cho phép bán sỉ/số lượng lớn cho doanh nghiệp (B2B)</span>-->
+<!--            </label>-->
+<!--          </div>-->
+<!--          <div *ngIf="productForm.controls['b2bEnabled'].value" class="space-y-5 pl-4 border-l-2 border-primary/30 dark:border-green-500/30 ml-2 animate-fade-in">-->
+<!--            <div class="grid grid-cols-1 sm:grid-cols-3 gap-x-6 gap-y-4">-->
+<!--              <div class="form-control">-->
+<!--                <label class="label pb-1"><span class="label-text font-medium">Đơn vị B2B <span class="text-error">*</span></span></label>-->
+<!--                <input type="text" placeholder="Thùng, Tạ, Kg..." class="input input-bordered w-full dark:bg-gray-700 dark:border-gray-600" formControlName="b2bUnit" />-->
+<!--                <label class="label h-5 py-0 text-xs text-error" *ngIf="productForm.controls['b2bUnit'].invalid && productForm.controls['b2bUnit'].touched">Bắt buộc.</label>-->
+<!--              </div>-->
+<!--              <div class="form-control">-->
+<!--                <label class="label pb-1"><span class="label-text font-medium">SL B2B tối thiểu <span class="text-error">*</span></span></label>-->
+<!--                <input type="number" placeholder="Số lượng" class="input input-bordered w-full dark:bg-gray-700 dark:border-gray-600" formControlName="minB2bQuantity" min="1" />-->
+<!--                <label class="label h-5 py-0 text-xs text-error" *ngIf="productForm.controls['minB2bQuantity'].invalid && productForm.controls['minB2bQuantity'].touched">SL không hợp lệ.</label>-->
+<!--              </div>-->
+<!--              <div class="form-control">-->
+<!--                <label class="label pb-1"><span class="label-text font-medium">Giá B2B cơ bản (VNĐ) <span class="text-error">*</span></span></label>-->
+<!--                <input type="number" placeholder="Giá cho 1 đơn vị B2B" class="input input-bordered w-full dark:bg-gray-700 dark:border-gray-600" formControlName="b2bBasePrice" min="0" />-->
+<!--                <label class="label h-5 py-0 text-xs text-error" *ngIf="productForm.controls['b2bBasePrice'].invalid && productForm.controls['b2bBasePrice'].touched">Giá không hợp lệ.</label>-->
+<!--              </div>-->
+<!--            </div>-->
+<!--            <div>-->
+<!--              <h4 class="text-base font-medium mb-2 text-base-content dark:text-gray-200">Bậc giá B2B (Tùy chọn theo số lượng)</h4>-->
+<!--              <div formArrayName="pricingTiers" class="space-y-3">-->
+<!--                <div *ngFor="let tier of pricingTiersArray.controls; let i=index" [formGroupName]="i"-->
+<!--                     class="flex items-end gap-3 p-3 border border-base-200 dark:border-gray-700 rounded-lg bg-base-200/30 dark:bg-gray-700/30">-->
+<!--                  <div class="form-control flex-grow">-->
+<!--                    <label class="label py-0 pb-1"><span class="label-text text-xs">Số lượng từ <span class="text-error">*</span></span></label>-->
+<!--                    <input type="number" class="input input-sm input-bordered w-full dark:bg-gray-600 dark:border-gray-500" formControlName="minQuantity" min="1" />-->
+<!--                  </div>-->
+<!--                  <div class="form-control flex-grow">-->
+<!--                    <label class="label py-0 pb-1"><span class="label-text text-xs">Đơn giá (VNĐ) <span class="text-error">*</span></span></label>-->
+<!--                    <input type="number" class="input input-sm input-bordered w-full dark:bg-gray-600 dark:border-gray-500" formControlName="pricePerUnit" min="0" />-->
+<!--                  </div>-->
+<!--                  <button type="button" class="btn btn-sm btn-ghost text-error p-1" (click)="removePricingTierControl(i)" title="Xóa bậc giá này">-->
+<!--                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>-->
+<!--                  </button>-->
+<!--                </div>-->
+<!--              </div>-->
+<!--              <button type="button" class="btn btn-sm btn-outline btn-secondary dark:btn-outline-teal-500 mt-3 rounded-full" (click)="addPricingTierControl()">-->
+<!--                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>-->
+<!--                Thêm Bậc Giá-->
+<!--              </button>-->
+<!--            </div>-->
+<!--          </div>-->
+<!--        </section>-->
 
         <!-- Section 4: Hình Ảnh Sản Phẩm -->
         <section class="space-y-4">

@@ -43,4 +43,7 @@ export class SupplyOrderRequestService {
     const payload = reason ? { reason } : {};
     return this.http.post<ApiResponse<SupplyOrderRequestResponse>>(`${this.apiUrl}/${requestId}/reject`, payload);
   }
+  cancelMySentRequest(requestId: number): Observable<ApiResponse<void>> {
+    return this.http.post<ApiResponse<void>>(`${this.apiUrl}/${requestId}/cancel-by-buyer`, {});
+  }
 }
