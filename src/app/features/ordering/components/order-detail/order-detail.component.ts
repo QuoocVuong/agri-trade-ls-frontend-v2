@@ -15,7 +15,7 @@ import {Observable, of, shareReplay, Subject} from 'rxjs';
 import { takeUntil, finalize } from 'rxjs/operators';
 import { FormatBigDecimalPipe } from '../../../../shared/pipes/format-big-decimal.pipe'; // Import Pipe
 import { OrderStatusUpdateRequest } from '../../dto/request/OrderStatusUpdateRequest'; // Import DTO update status
-import { ReactiveFormsModule, FormControl, Validators } from '@angular/forms'; // Import Forms
+import {ReactiveFormsModule, FormControl, Validators, FormBuilder} from '@angular/forms'; // Import Forms
 import { ModalComponent } from '../../../../shared/components/modal/modal.component'; // Import Modal
 import { QRCodeComponent } from 'angularx-qrcode';
 import { getInvoiceStatusText } from '../../domain/invoice-status.enum';
@@ -40,6 +40,7 @@ import { getInvoiceStatusText } from '../../domain/invoice-status.enum';
 export class OrderDetailComponent implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
   private orderService = inject(OrderService);
+  private fb = inject(FormBuilder);
   private authService = inject(AuthService);
   private router = inject(Router);
   private toastr = inject(ToastrService);
@@ -63,6 +64,12 @@ export class OrderDetailComponent implements OnInit, OnDestroy {
   isQrCodeZoomed = signal(false);
   zoomedQrCodeUrl = signal<string | null>(null);
   // ****************************************
+
+  // Signals cho modal thông tin chuyển khoản (DÙNG CHUNG cho cả BANK_TRANSFER và INVOICE khi click nút)
+  bankTransferInfoModal = signal<BankTransferInfoResponse | null>(null);
+  isLoadingBankInfoInModal = signal(false);
+  showBankInfoModal = signal(false); // Điều khiển việc hiển thị modal này
+
 
 
   // ****** THÊM CACHE CHO TÊN ĐỊA DANH ******
@@ -174,12 +181,18 @@ export class OrderDetailComponent implements OnInit, OnDestroy {
     next: (response: ApiResponse<OrderResponse>) => {
       if (response.success && response.data) {
         this.order.set(response.data);
-        // Nếu là chuyển khoản và đang chờ thanh toán, thì gọi lấy thông tin chuyển khoản
+        // SỬA ĐIỀU KIỆN Ở ĐÂY:
+        // Nếu là đơn hàng CÔNG NỢ (INVOICE) VÀ đang chờ thanh toán (AWAITING_PAYMENT_TERM hoặc PENDING)
+        // HOẶC là đơn hàng CHUYỂN KHOẢN (BANK_TRANSFER) VÀ đang chờ thanh toán (PENDING)
+        // thì mới load thông tin chuyển khoản.
+        // Nếu là BANK_TRANSFER và PENDING, load thông tin để hiển thị trực tiếp
         if (response.data.paymentMethod === PaymentMethod.BANK_TRANSFER &&
-          (response.data.paymentStatus === PaymentStatus.PENDING || response.data.paymentStatus === PaymentStatus.AWAITING_PAYMENT_TERM)) {
-          this.loadBankTransferDetails(response.data.id);
+          response.data.paymentStatus === PaymentStatus.PENDING &&
+          response.data.id != null) {
+          this.loadBankTransferDetailsAndSetSignal(response.data.id, this.bankTransferInfo, this.isLoadingBankInfo); // Dùng signal cũ cho hiển thị trực tiếp
+        } else {
+          this.bankTransferInfo.set(null); // Reset nếu không phải trường hợp cần hiển thị
         }
-
       } else {
         this.order.set(null);
         this.handleErrorAndRedirect(response.message || 'Không tìm thấy đơn hàng.');
@@ -192,6 +205,99 @@ export class OrderDetailComponent implements OnInit, OnDestroy {
       // if (err.status === 404) this.router.navigate(['/not-found']);
     }
   };
+
+
+  // Hàm load thông tin chuyển khoản và set vào signal được truyền vào
+  private loadBankTransferDetailsAndSetSignal(
+    orderId: number,
+    targetSignal: ReturnType<typeof signal<BankTransferInfoResponse | null>>,
+    loadingSignal: ReturnType<typeof signal<boolean>>
+  ): void {
+    loadingSignal.set(true);
+    targetSignal.set(null); // Xóa thông tin cũ
+    this.orderService.getBankTransferInfo(orderId)
+      .pipe(
+        takeUntil(this.destroy$),
+        finalize(() => loadingSignal.set(false))
+      )
+      .subscribe({
+        next: (res) => {
+          if (res.success && res.data) {
+            targetSignal.set(res.data);
+          } else {
+            this.toastr.error(res.message || 'Không tải được thông tin chuyển khoản.');
+          }
+        },
+        error: (err) => {
+          this.toastr.error(err.error?.message || 'Lỗi tải thông tin chuyển khoản.');
+        }
+      });
+  }
+
+  // Mở modal thông tin chuyển khoản (cho đơn INVOICE hoặc khi click nút)
+  openBankTransferInfoModalForInvoice(): void {
+    const currentOrder = this.order();
+    if (currentOrder && currentOrder.id != null) {
+      this.showBankInfoModal.set(true); // Mở modal
+      // Load thông tin vào signal DÀNH RIÊNG CHO MODAL
+      this.loadBankTransferDetailsAndSetSignal(currentOrder.id, this.bankTransferInfoModal, this.isLoadingBankInfoInModal);
+    } else {
+      this.toastr.error('Không tìm thấy thông tin đơn hàng để hiển thị hướng dẫn thanh toán.');
+    }
+  }
+
+  closeBankInfoModal(): void {
+    this.showBankInfoModal.set(false);
+  }
+
+
+  // THÊM NÚT "TÔI ĐÃ THANH TOÁN" (Cho đơn hàng INVOICE)
+  showNotifyPaymentModal = signal(false);
+  paymentNotificationForm = this.fb.group({ // Thêm FormBuilder vào injects nếu chưa có
+    referenceCode: [''],
+    notes: ['']
+  });
+
+  openNotifyPaymentModal(): void {
+    this.paymentNotificationForm.reset();
+    this.showNotifyPaymentModal.set(true);
+  }
+
+  closeNotifyPaymentModal(): void {
+    this.showNotifyPaymentModal.set(false);
+  }
+
+  submitPaymentNotification(): void {
+    if (!this.order() || !this.order()?.id) return;
+
+    const orderId = this.order()!.id;
+    const payload = {
+      referenceCode: this.paymentNotificationForm.value.referenceCode || null,
+      notes: this.paymentNotificationForm.value.notes || null
+    };
+
+    this.isActionLoading.set(true); // Sử dụng loading chung hoặc tạo signal riêng
+    // Cần tạo service method và API backend cho việc này
+    this.orderService.notifyPaymentMade(orderId, payload)
+      .pipe(
+        takeUntil(this.destroy$),
+        finalize(() => this.isActionLoading.set(false))
+      )
+      .subscribe({
+        next: (res) => {
+          if (res.success) {
+            this.toastr.success('Đã gửi thông báo thanh toán. Quản trị viên sẽ sớm xác nhận.');
+            this.closeNotifyPaymentModal();
+            // Có thể không cần load lại order ngay, vì trạng thái chưa đổi
+          } else {
+            this.toastr.error(res.message || 'Gửi thông báo thất bại.');
+          }
+        },
+        error: (err) => {
+          this.toastr.error(err.error?.message || 'Lỗi khi gửi thông báo thanh toán.');
+        }
+      });
+  }
 
   loadBankTransferDetails(orderId: number): void {
     this.isLoadingBankInfo.set(true);

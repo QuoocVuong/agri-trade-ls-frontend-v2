@@ -94,8 +94,8 @@
               </span>
             <ng-template #noPrice><span class="italic text-base-content/50 dark:text-gray-500">Liên hệ</span></ng-template>
           </td>
-          <td class="text-center">
-              <span class="badge badge-sm" [ngClass]="getStatusCssClass(supply.status)">
+          <td class="p-3 md:p-4 align-middle text-center">
+              <span class="badge badge-sm whitespace-nowrap" [ngClass]="getStatusCssClass(supply.status)">
                 {{ getStatusText(supply.status) }}
               </span>
           </td>

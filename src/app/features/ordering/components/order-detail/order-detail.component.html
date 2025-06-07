@@ -5,8 +5,8 @@
   <div *ngIf="isLoading()" class="flex justify-center items-center min-h-[60vh]">
     <app-loading-spinner size="lg"></app-loading-spinner>
   </div>
-  <app-alert *ngIf="errorMessage() && !isLoading()" type="error" [message]="errorMessage()" class="mb-6 animate-fade-in"></app-alert>
-  <app-alert *ngIf="successMessage()" type="success" [message]="successMessage()" class="mb-6 animate-fade-in"></app-alert>
+  <app-alert *ngIf="errorMessage() && !isLoading()" type="error" [message]="errorMessage()!" class="mb-6 animate-fade-in"></app-alert>
+  <app-alert *ngIf="successMessage()" type="success" [message]="successMessage()!" class="mb-6 animate-fade-in"></app-alert>
 
   <!-- Order Details Content -->
   <div *ngIf="order() as o; else notFound" class="space-y-6 md:space-y-8">
@@ -122,7 +122,7 @@
         <!-- Order Items -->
         <div class="card bg-base-100 dark:bg-gray-800 shadow-lg border border-base-300/30 dark:border-gray-700/30">
           <div class="card-body p-5">
-            <h3 class="card-title text-lg font-semibold text-base-content dark:text-gray-200 mb-4">Chi tiết sản phẩm ({{ o.orderItems.length }})</h3>
+            <h3 class="card-title text-lg font-semibold text-base-content dark:text-gray-200 mb-4">Chi tiết sản phẩm ({{ o.orderItems?.length || 0 }})</h3>
             <div class="space-y-4 max-h-[70vh] overflow-y-auto pr-2 custom-scrollbar">
               <div *ngFor="let item of o.orderItems; trackBy: trackItemById"
                    class="flex items-center gap-4 border-b border-base-200 dark:border-gray-700 pb-4 last:border-b-0 last:pb-0">
@@ -148,11 +148,12 @@
           </div>
         </div>
 
-        <!-- Payment Details & Bank Transfer Info -->
+        <!-- Payment Details -->
         <div class="card bg-base-100 dark:bg-gray-800 shadow-lg border border-base-300/30 dark:border-gray-700/30">
           <div class="card-body p-5">
             <h3 class="card-title text-lg font-semibold text-base-content dark:text-gray-200 mb-4">Thông tin thanh toán</h3>
             <div class="space-y-2 text-sm">
+              <!-- ... (Hiển thị Phương thức, Trạng thái TT, Tạm tính, Phí VC, Giảm giá, Thông tin Công nợ, Tổng cộng) ... -->
               <div class="flex justify-between">
                 <span class="text-base-content/80 dark:text-gray-300">Phương thức:</span>
                 <span class="font-medium text-base-content dark:text-white">{{ getPaymentMethodText(o.paymentMethod) }}</span>
@@ -177,7 +178,6 @@
                 <span class="text-success">- {{ o.discountAmount | formatBigDecimal:'1.0-0' }} ₫</span>
               </div>
 
-              <!-- ****** THÊM ĐOẠN NÀY ĐỂ HIỂN THỊ THÔNG TIN HÓA ĐƠN CÔNG NỢ ****** -->
               <ng-container *ngIf="o.paymentMethod === PaymentMethodEnum.INVOICE && o.invoiceInfo as invoice">
                 <div class="divider my-3 dark:border-gray-700"></div>
                 <h4 class="text-sm font-semibold text-info dark:text-blue-400 mb-1">Thông tin Công nợ:</h4>
@@ -192,9 +192,9 @@
                 <div class="flex justify-between" [ngClass]="{'text-error dark:text-red-400': isInvoiceOverdue(invoice.dueDate, invoice.status)}">
                   <span class="text-base-content/80 dark:text-gray-300">Ngày đáo hạn:</span>
                   <span class="font-bold">
-            {{ invoice.dueDate | date:'dd/MM/yyyy' }}
-                    <span *ngIf="invoice.status === 'OVERDUE'" class="badge badge-error badge-xs ml-1">QUÁ HẠN</span>
-          </span>
+                    {{ invoice.dueDate | date:'dd/MM/yyyy' }}
+                    <span *ngIf="invoice.status === InvoiceStatusEnum.OVERDUE" class="badge badge-error badge-xs ml-1">QUÁ HẠN</span>
+                  </span>
                 </div>
                 <div class="flex justify-between">
                   <span class="text-base-content/80 dark:text-gray-300">Trạng thái HĐ:</span>
@@ -205,7 +205,6 @@
                   Vui lòng thanh toán trước hoặc vào ngày <strong [innerHTML]="invoice.dueDate | date:'dd/MM/yyyy'"></strong>.
                 </p>
               </ng-container>
-              <!-- ******************************************************************** -->
 
               <div class="divider my-2 dark:border-gray-700"></div>
               <div class="flex justify-between font-bold text-lg md:text-xl">
@@ -214,19 +213,19 @@
               </div>
             </div>
 
-            <!-- Bank Transfer Info -->
-            <div *ngIf="o.paymentMethod === PaymentMethodEnum.BANK_TRANSFER && (o.paymentStatus === PaymentStatusEnum.PENDING || o.paymentStatus === PaymentStatusEnum.AWAITING_PAYMENT_TERM)"
-                 class="mt-6 pt-4 border-t border-base-300 dark:border-gray-700">
-              <h4 class="text-base font-semibold text-primary dark:text-green-400 mb-3 flex items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                </svg>
-                Thông tin Chuyển khoản Ngân hàng
-              </h4>
-              <div *ngIf="isLoadingBankInfo()" class="text-center py-4"><app-loading-spinner size="sm"></app-loading-spinner></div>
-              <ng-container *ngIf="bankTransferInfo() as info; else noBankInfoAvailable">
-                <div class="space-y-2 text-sm p-4 bg-primary/5 dark:bg-green-500/5 rounded-lg border border-primary/20 dark:border-green-500/20">
-                  <p>Vui lòng chuyển khoản tổng số tiền đơn hàng đến tài khoản của <strong class="text-accent dark:text-yellow-400">AgriTradeLS</strong> với thông tin sau:</p>
+            <!-- A. HIỂN THỊ TRỰC TIẾP CHO ĐƠN HÀNG BANK_TRANSFER VÀ ĐANG PENDING -->
+            <div *ngIf="o.paymentMethod === PaymentMethodEnum.BANK_TRANSFER && o.paymentStatus === PaymentStatusEnum.PENDING">
+              <div *ngIf="bankTransferInfo() as info; else noBankInfoForDirectDisplay"
+                   class="mt-6 pt-4 border-t border-base-300 dark:border-gray-700">
+                <h4 class="text-base font-semibold text-primary dark:text-green-400 mb-3 flex items-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                  </svg>
+                  Thông tin Chuyển khoản Ngân hàng
+                </h4>
+                <div *ngIf="isLoadingBankInfo()" class="text-center py-4"><app-loading-spinner size="sm"></app-loading-spinner></div>
+                <div *ngIf="!isLoadingBankInfo() && info" class="space-y-2 text-sm p-4 bg-primary/5 dark:bg-green-500/5 rounded-lg border border-primary/20 dark:border-green-500/20">
+                  <p>Vui lòng chuyển khoản tổng số tiền <strong class="text-accent dark:text-yellow-400">{{ o.totalAmount | formatBigDecimal:'1.0-0' }} ₫</strong> đến tài khoản của <strong class="text-accent dark:text-yellow-400">AgriTradeLS</strong> với thông tin sau:</p>
                   <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 mt-2">
                     <p><strong class="font-medium text-base-content/80 dark:text-gray-300">Chủ tài khoản:</strong> <span class="font-semibold text-base-content dark:text-white">{{ info.accountName }}</span></p>
                     <p><strong class="font-medium text-base-content/80 dark:text-gray-300">Số tài khoản:</strong>
@@ -250,14 +249,59 @@
                          (click)="openQrCodeZoomModal(info.qrCodeDataString)">
                   </div>
                 </div>
-              </ng-container>
-              <ng-template #noBankInfoAvailable>
+                <p class="text-xs text-info/80 dark:text-blue-400/80 mt-3 italic">Sau khi chuyển khoản, quản trị viên sẽ xác nhận và cập nhật trạng thái đơn hàng.</p>
+              </div>
+              <ng-template #noBankInfoForDirectDisplay>
                 <p *ngIf="!isLoadingBankInfo()" class="text-sm text-error mt-2 p-3 bg-error/10 rounded-md">
                   Không thể tải thông tin chuyển khoản. Vui lòng thử lại sau hoặc liên hệ hỗ trợ.
                 </p>
               </ng-template>
-              <p class="text-xs text-info/80 dark:text-blue-400/80 mt-3 italic">Sau khi chuyển khoản, hệ thống sẽ tự động xác nhận (thường trong vài phút) và cập nhật trạng thái đơn hàng.</p>
             </div>
+
+            <!-- B. NÚT VÀ MODAL CHO ĐƠN HÀNG CÔNG NỢ (INVOICE) -->
+            <div *ngIf="o.paymentMethod === PaymentMethodEnum.INVOICE && (o.paymentStatus === PaymentStatusEnum.AWAITING_PAYMENT_TERM || o.paymentStatus === PaymentStatusEnum.PENDING)"
+                 class="mt-6 pt-4 border-t border-base-300 dark:border-gray-700 space-y-3">
+              <p class="text-sm text-info dark:text-sky-300">
+                Đây là đơn hàng công nợ. Vui lòng thanh toán hóa đơn <strong class="text-secondary dark:text-teal-300">#{{o.invoiceInfo?.invoiceNumber}}</strong> trước ngày <strong class="text-secondary dark:text-teal-300">{{o.invoiceInfo?.dueDate | date:'dd/MM/yyyy'}}</strong>.
+              </p>
+              <!-- Nút mở Modal hướng dẫn thanh toán công nợ -->
+              <button class="btn btn-info btn-outline w-full rounded-full"
+                      (click)="openBankTransferInfoModalForInvoice()"
+                      [disabled]="isLoadingBankInfoInModal()">
+                <span *ngIf="isLoadingBankInfoInModal()" class="loading loading-spinner loading-xs"></span>
+                <svg *ngIf="!isLoadingBankInfoInModal()" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Xem Hướng Dẫn Thanh Toán Công Nợ
+              </button>
+              <!-- Nút "Tôi Đã Thanh Toán" -->
+              <button *ngIf="isBuyer()"
+                      class="btn btn-accent w-full rounded-full"
+                      (click)="openNotifyPaymentModal()"
+                      [disabled]="isActionLoading()">
+                <span *ngIf="isActionLoading()" class="loading loading-spinner loading-xs"></span>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Tôi Đã Thanh Toán Hóa Đơn Này
+              </button>
+            </div>
+            <ng-template #noBankInfoBlock>
+              <p *ngIf="!isLoadingBankInfo() && o.paymentMethod === PaymentMethodEnum.BANK_TRANSFER && o.paymentStatus === PaymentStatusEnum.PENDING"
+                 class="text-sm text-info mt-2 p-3 bg-info/10 rounded-md dark:text-sky-300 dark:bg-sky-500/10">
+                Thông tin chuyển khoản sẽ được hiển thị khi đơn hàng được xác nhận hoặc bạn có thể liên hệ người bán.
+              </p>
+              <p *ngIf="!isLoadingBankInfo() && o.paymentMethod === PaymentMethodEnum.INVOICE && (o.paymentStatus === PaymentStatusEnum.AWAITING_PAYMENT_TERM || o.paymentStatus === PaymentStatusEnum.PENDING)"
+                 class="text-sm text-info mt-2 p-3 bg-info/10 rounded-md dark:text-sky-300 dark:bg-sky-500/10">
+                Vui lòng thanh toán hóa đơn công nợ theo thông tin đã thỏa thuận.
+                <button *ngIf="isBuyer()"
+                        class="btn btn-xs btn-accent ml-2"
+                        (click)="openNotifyPaymentModal()"
+                        [disabled]="isActionLoading()">
+                  Báo đã thanh toán
+                </button>
+              </p>
+            </ng-template>
 
             <!-- Admin Confirm Payment -->
             <div *ngIf="isAdmin() && o.status !== OrderStatusEnum.CANCELLED && o.paymentStatus !== PaymentStatusEnum.PAID" class="mt-6 pt-4 border-t border-base-300 dark:border-gray-700">
@@ -342,7 +386,7 @@
           <span class="label-text-alt text-error text-xs">Vui lòng chọn trạng thái mới.</span>
         </label>
       </div>
-      <app-alert *ngIf="statusUpdateError()" type="error" [message]="statusUpdateError()" class="mt-3"></app-alert>
+      <app-alert *ngIf="statusUpdateError()" type="error" [message]="statusUpdateError()!" class="mt-3"></app-alert>
     </div>
     <div modal-actions class="flex gap-2">
       <button class="btn btn-sm btn-ghost" (click)="closeStatusModal()" aria-label="Hủy cập nhật trạng thái">Hủy</button>
@@ -354,6 +398,77 @@
       </button>
     </div>
   </app-modal>
+
+
+  <!-- Modal Thông Báo Đã Thanh Toán (Cho Buyer) -->
+  <app-modal title="Thông Báo Đã Thanh Toán Cho Đơn Hàng #{{ order()?.orderCode }}"
+             [isOpen]="showNotifyPaymentModal()" (closed)="closeNotifyPaymentModal()"
+             [showActions]="true" [hideDefaultCancel]="true"
+             modalBoxClasses="w-11/12 max-w-lg">
+    <form [formGroup]="paymentNotificationForm" (ngSubmit)="submitPaymentNotification()" class="space-y-4">
+      <p class="text-sm">Vui lòng cung cấp thông tin tham chiếu nếu có để giúp chúng tôi xác nhận thanh toán nhanh hơn.</p>
+      <div class="form-control">
+        <label class="label"><span class="label-text">Mã giao dịch/tham chiếu (nếu có)</span></label>
+        <input type="text" formControlName="referenceCode" class="input input-bordered">
+      </div>
+      <div class="form-control">
+        <label class="label"><span class="label-text">Ghi chú thêm (tùy chọn)</span></label>
+        <textarea formControlName="notes" class="textarea textarea-bordered h-20"></textarea>
+      </div>
+    </form>
+    <div modal-actions class="flex gap-2">
+      <button class="btn btn-sm btn-ghost" (click)="closeNotifyPaymentModal()">Hủy</button>
+      <button class="btn btn-sm btn-primary" (click)="submitPaymentNotification()" [disabled]="isActionLoading()">
+        <span *ngIf="isActionLoading()" class="loading loading-spinner loading-xs"></span>
+        Gửi Thông Báo
+      </button>
+    </div>
+  </app-modal>
+
+
+  <!-- MODAL HIỂN THỊ THÔNG TIN CHUYỂN KHOẢN (DÙNG CHUNG KHI CLICK NÚT "Xem Hướng Dẫn Thanh Toán Công Nợ") -->
+  <app-modal title="Thông Tin Thanh Toán Đơn Hàng #{{ order()?.orderCode }}"
+             [isOpen]="showBankInfoModal()" (closed)="closeBankInfoModal()"
+             [showActions]="false" modalBoxClasses="w-11/12 max-w-lg">
+    <div *ngIf="isLoadingBankInfoInModal()" class="text-center py-10">
+      <app-loading-spinner size="md"></app-loading-spinner>
+    </div>
+    <div *ngIf="!isLoadingBankInfoInModal() && bankTransferInfoModal() as info; else noBankInfoInModalContent" class="space-y-3 text-sm">
+      <p class="text-base-content/80 dark:text-gray-300">Vui lòng chuyển khoản tổng số tiền <strong class="text-accent dark:text-yellow-400">{{ order()?.totalAmount | formatBigDecimal:'1.0-0' }} ₫</strong> đến tài khoản của <strong class="text-accent dark:text-yellow-400">AgriTradeLS</strong> với thông tin sau:</p>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1.5 mt-2 p-3 bg-base-200 dark:bg-gray-700/50 rounded-md">
+        <p><strong class="font-medium">Chủ tài khoản:</strong> <span class="font-semibold">{{ info.accountName }}</span></p>
+        <p><strong class="font-medium">Số tài khoản:</strong>
+          <span class="font-semibold text-primary dark:text-green-400 cursor-pointer" (click)="copyToClipboard(info.accountNumber)" title="Nhấn để sao chép">
+                  {{ info.accountNumber }} <i class="fas fa-copy text-xs opacity-60"></i>
+                </span>
+        </p>
+        <p><strong class="font-medium">Ngân hàng:</strong> <span class="font-semibold">{{ info.bankNameDisplay }}</span></p>
+        <p><strong class="font-medium">Số tiền:</strong> <span class="font-bold text-lg text-accent dark:text-yellow-400">{{ info.amount | formatBigDecimal:'1.0-0' }} ₫</span></p>
+      </div>
+      <div class="mt-2">
+        <p class="font-medium">Nội dung chuyển khoản:</p>
+        <p class="font-mono bg-base-300 dark:bg-gray-600 px-3 py-2 rounded text-primary-focus dark:text-green-300 text-center text-base cursor-pointer" (click)="copyToClipboard(info.transferContent)" title="Nhấn để sao chép">
+          {{ info.transferContent }} <i class="fas fa-copy text-xs opacity-60 ml-1"></i>
+        </p>
+      </div>
+      <div *ngIf="info.qrCodeDataString" class="mt-4 text-center">
+        <p class="text-xs font-medium mb-1">Hoặc quét mã QR (VietQR):</p>
+        <img [src]="info.qrCodeDataString" alt="Mã QR Chuyển khoản"
+             class="w-40 h-40 sm:w-48 sm:h-48 mx-auto border-2 border-base-300 dark:border-gray-600 rounded-md bg-white p-1 shadow-md cursor-pointer"
+             (click)="openQrCodeZoomModal(info.qrCodeDataString)">
+      </div>
+      <p class="text-xs text-info/80 dark:text-blue-400/80 mt-3 italic text-center">Sau khi chuyển khoản, vui lòng nhấn nút "Tôi Đã Thanh Toán" (nếu có) hoặc chờ hệ thống/quản trị viên xác nhận.</p>
+    </div>
+    <ng-template #noBankInfoInModalContent>
+      <p *ngIf="!isLoadingBankInfoInModal()" class="text-center text-error py-5">
+        Không thể tải thông tin thanh toán. Vui lòng thử lại hoặc liên hệ hỗ trợ.
+      </p>
+    </ng-template>
+    <div class="modal-action mt-4">
+      <button class="btn btn-sm btn-ghost" (click)="closeBankInfoModal()">Đóng</button>
+    </div>
+  </app-modal>
+  <!-- KẾT THÚC MODAL THÔNG TIN CHUYỂN KHOẢN -->
 
   <!-- Modal Zoom QR Code -->
   <input type="checkbox" id="qr-code-zoom-modal" class="modal-toggle"
@@ -377,7 +492,7 @@
 
 <style>
   @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
-  .animate-fade-in { animation: fade-in 0.4s ease-out; }
+  .animate-fade-in { animation: fade-in 0.4s ease-out forwards; }
 
   /* Custom scrollbar (tùy chọn) */
   .custom-scrollbar::-webkit-scrollbar {

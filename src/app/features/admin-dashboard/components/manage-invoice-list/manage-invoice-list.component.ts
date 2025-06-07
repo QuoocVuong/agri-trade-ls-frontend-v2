@@ -3,10 +3,14 @@ import { Component, OnInit, inject, signal, OnDestroy, computed } from '@angular
 import { CommonModule, DatePipe, DecimalPipe } from '@angular/common';
 import {RouterLink, Router, ActivatedRoute} from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, FormGroup } from '@angular/forms';
-import { Subject } from 'rxjs';
+import {Observable, Subject} from 'rxjs';
 import { takeUntil, finalize, debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
-import { AdminInvoiceService, AdminInvoiceSearchParams } from '../../services/admin-invoice.service';
+import {
+  AdminInvoiceService,
+  AdminInvoiceSearchParams,
+  FarmerInvoiceSearchParams
+} from '../../services/admin-invoice.service';
 
 import { Page } from '../../../../core/models/page.model';
 import { PaginatorComponent } from '../../../../shared/components/paginator/paginator.component';
@@ -18,7 +22,29 @@ import { PaymentMethod } from '../../../ordering/domain/payment-method.enum';
 import {InvoiceSummaryResponse} from '../../../ordering/dto/response/InvoiceSummaryResponse';
 import {InvoiceStatus} from '../../../ordering/domain/invoice-status.enum';
 import {AuthService} from '../../../../core/services/auth.service';
+import {BuyerInvoiceSearchParams, OrderService} from '../../../ordering/services/order.service';
+import {PagedApiResponse} from '../../../../core/models/api-response.model';
+import {getPaymentStatusText, PaymentStatus} from '../../../ordering/domain/payment-status.enum';
 
+
+// Định nghĩa các tùy chọn lọc trạng thái thanh toán cho hóa đơn công nợ
+export enum InvoicePaymentFilterStatus {
+  ALL = 'ALL',
+  UNPAID = 'UNPAID', // Bao gồm AWAITING_PAYMENT_TERM và PENDING của Order liên quan đến Invoice
+  PAID = 'PAID',     // Tương ứng Order.paymentStatus = PAID
+  OVERDUE_INVOICE = 'OVERDUE_INVOICE' // Lọc theo Invoice.status = OVERDUE
+}
+
+export function getInvoicePaymentFilterStatusText(status: InvoicePaymentFilterStatus | string | null | undefined): string {
+  if (!status) return 'Tất cả trạng thái TT';
+  switch (status) {
+    case InvoicePaymentFilterStatus.ALL: return 'Tất cả trạng thái TT';
+    case InvoicePaymentFilterStatus.UNPAID: return 'Chưa thanh toán';
+    case InvoicePaymentFilterStatus.PAID: return 'Đã thanh toán';
+    case InvoicePaymentFilterStatus.OVERDUE_INVOICE: return 'Hóa đơn quá hạn';
+    default: return 'Không xác định';
+  }
+}
 
 @Component({
   selector: 'app-manage-invoice-list',
@@ -47,6 +73,8 @@ export class ManageInvoiceListComponent implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute); // Inject ActivatedRoute
   private authService = inject(AuthService); // Inject AuthService
 
+  private orderService = inject(OrderService);
+
   // Signals
   invoicesPage = signal<Page<InvoiceSummaryResponse> | null>(null);
   isLoading = signal(true); // Bắt đầu với isLoading = true
@@ -58,6 +86,9 @@ export class ManageInvoiceListComponent implements OnInit, OnDestroy {
   today = new Date(); // Dùng cho so sánh ngày quá hạn trong template
   InvoiceStatusEnum = InvoiceStatus; // Expose enum cho template
   PaymentMethodEnum = PaymentMethod; // Expose enum cho template
+  paymentStatusOptions = Object.values(PaymentStatus);
+  PaymentStatusEnum = PaymentStatus;
+  getPaymentStatusText = getPaymentStatusText;
 
   // Pagination and Sort
   currentPage = signal(0);
@@ -68,15 +99,20 @@ export class ManageInvoiceListComponent implements OnInit, OnDestroy {
   isActionLoading = signal(false);
   actionInvoiceId = signal<number | null>(null);
 
-  viewMode = signal<'admin' | 'farmer'>('admin'); // Mặc định là admin
+  viewMode = signal<'admin' | 'farmer'| 'buyer'>('admin'); // Mặc định là admin
   isAdminView = computed(() => this.viewMode() === 'admin');
+  isFarmerView = computed(() => this.viewMode() === 'farmer');
+  isBuyerView = computed(() => this.viewMode() === 'buyer');
 
+  invoicePaymentFilterOptions = Object.values(InvoicePaymentFilterStatus);
+  getInvoicePaymentFilterStatusText = getInvoicePaymentFilterStatusText;
 
   constructor() {
     console.log('[ManageInvoiceListComponent] Constructor called.');
     this.filterForm = this.fb.group({
       keyword: [''],
-      status: [''] // Giá trị rỗng cho "Tất cả trạng thái"
+      status: [''], // Giá trị rỗng cho "Tất cả trạng thái"
+      paymentStatusFilter: ['']
     });
     console.log('[ManageInvoiceListComponent] Filter form initialized in constructor.');
   }
@@ -86,6 +122,8 @@ export class ManageInvoiceListComponent implements OnInit, OnDestroy {
     const routeDataViewMode = this.route.snapshot.data['viewMode'];
     if (routeDataViewMode === 'farmer') {
       this.viewMode.set('farmer');
+    } else if (routeDataViewMode === 'buyer') {
+      this.viewMode.set('buyer');
     } else {
       this.viewMode.set('admin'); // Mặc định hoặc nếu không có data
     }
@@ -113,56 +151,111 @@ export class ManageInvoiceListComponent implements OnInit, OnDestroy {
   }
 
   loadInvoices(): void {
-    console.log('[ManageInvoiceListComponent] loadInvoices called. Current page:', this.currentPage(), 'Filters:', this.filterForm.value);
+
     this.isLoading.set(true);
     this.errorMessage.set(null);
     // Không reset invoicesPage.set(null) ở đây vội, để UI không bị giật nếu load lại
     // this.invoicesPage.set(null);
 
     const formValue = this.filterForm.value;
-    const params: AdminInvoiceSearchParams = {
+
+    let targetInvoiceStatus: InvoiceStatus | string | null = formValue.status || null;
+    let targetOrderPaymentStatus: PaymentStatus | string | null = null;
+
+    // Xử lý logic cho paymentStatusFilter
+    const paymentFilter = formValue.paymentStatusFilter as InvoicePaymentFilterStatus | null;
+    if (paymentFilter) {
+      switch (paymentFilter) {
+        case InvoicePaymentFilterStatus.UNPAID:
+          // Khi lọc "Chưa thanh toán", chúng ta muốn các hóa đơn có Order.paymentStatus là AWAITING_PAYMENT_TERM hoặc PENDING
+          // Và Invoice.status không phải là PAID hoặc VOID
+          // API backend cần hỗ trợ lọc theo nhiều PaymentStatus hoặc chúng ta gửi một cờ đặc biệt
+          // Hiện tại, chúng ta có thể gửi AWAITING_PAYMENT_TERM và để backend xử lý OR với PENDING nếu cần
+          targetOrderPaymentStatus = PaymentStatus.AWAITING_PAYMENT_TERM;
+          // Nếu muốn bao gồm cả PENDING cho đơn INVOICE, backend cần xử lý
+          // Hoặc frontend gửi một mảng các status, backend hỗ trợ nhận mảng
+          if (targetInvoiceStatus && targetInvoiceStatus === InvoiceStatus.PAID) {
+            // Nếu người dùng chọn lọc "Hóa đơn đã thanh toán" và "Chưa thanh toán đơn hàng" -> vô lý
+            // Có thể reset một trong hai hoặc ưu tiên một cái. Ở đây ví dụ reset InvoiceStatus.
+            targetInvoiceStatus = null;
+            this.filterForm.get('status')?.setValue('', { emitEvent: false }); // Cập nhật UI
+          }
+          break;
+        case InvoicePaymentFilterStatus.PAID:
+          targetOrderPaymentStatus = PaymentStatus.PAID;
+          // Khi đơn hàng đã thanh toán, hóa đơn cũng nên là PAID
+          if (targetInvoiceStatus && targetInvoiceStatus !== InvoiceStatus.PAID) {
+            targetInvoiceStatus = InvoiceStatus.PAID; // Ưu tiên hiển thị hóa đơn đã thanh toán
+            this.filterForm.get('status')?.setValue(InvoiceStatus.PAID, { emitEvent: false });
+          } else if (!targetInvoiceStatus) {
+            targetInvoiceStatus = InvoiceStatus.PAID; // Nếu chưa chọn InvoiceStatus, mặc định là PAID
+          }
+          break;
+        case InvoicePaymentFilterStatus.OVERDUE_INVOICE:
+          targetInvoiceStatus = InvoiceStatus.OVERDUE; // Lọc trực tiếp theo Invoice.status
+          // Khi hóa đơn quá hạn, đơn hàng thường là chưa thanh toán
+          if (targetOrderPaymentStatus && targetOrderPaymentStatus === PaymentStatus.PAID) {
+            targetOrderPaymentStatus = null; // Không hợp lý nếu HĐ quá hạn mà ĐH đã thanh toán
+            this.filterForm.get('paymentStatusFilter')?.setValue(InvoicePaymentFilterStatus.UNPAID, { emitEvent: false });
+          } else if (!targetOrderPaymentStatus) {
+            targetOrderPaymentStatus = PaymentStatus.AWAITING_PAYMENT_TERM; // Hoặc PENDING
+          }
+          break;
+        default: // ALL
+          targetOrderPaymentStatus = null;
+          break;
+      }
+    }
+
+    const commonParams: AdminInvoiceSearchParams | FarmerInvoiceSearchParams | BuyerInvoiceSearchParams = {
       page: this.currentPage(),
       size: this.pageSize(),
       sort: this.sort(),
       keyword: formValue.keyword?.trim() || null,
-      status: formValue.status || null // Nếu status là chuỗi rỗng, truyền null
+      status: targetInvoiceStatus, // Sử dụng InvoiceStatus đã xử lý
+      paymentStatus: targetOrderPaymentStatus // Sử dụng OrderPaymentStatus đã xử lý
     };
-    console.log('[ManageInvoiceListComponent] Params for API call:', params);
 
-    let apiCall;
+
+    let apiCallObservable: Observable<PagedApiResponse<InvoiceSummaryResponse>>;
+
     if (this.isAdminView()) {
-      apiCall = this.adminInvoiceService.getAllInvoices(params);
-    } else {
-      // Giả sử bạn có FarmerInvoiceService hoặc phương thức trong AdminInvoiceService cho Farmer
-      apiCall = this.adminInvoiceService.getMyInvoicesAsFarmer(params); // Cần tạo service/method này
+      apiCallObservable = this.adminInvoiceService.getAllInvoices(commonParams as AdminInvoiceSearchParams);
+    } else if (this.isFarmerView()) {
+      apiCallObservable = this.adminInvoiceService.getMyInvoicesAsFarmer(commonParams as FarmerInvoiceSearchParams);
+    } else { // Mặc định là Buyer view nếu không phải Admin/Farmer
+      apiCallObservable = this.orderService.getMyDebtInvoices(commonParams as BuyerInvoiceSearchParams);
     }
 
-    apiCall.pipe(
-        takeUntil(this.destroy$),
-        finalize(() => {
-          console.log('[ManageInvoiceListComponent] API call finalized. isLoading set to false.');
-          this.isLoading.set(false);
-        })
-      )
-      .subscribe({
-        next: (res) => {
-          if (res.success && res.data) {
-            this.invoicesPage.set(res.data);
-          } else {
-            const msg = res.message || 'Không tải được danh sách hóa đơn.';
-            this.errorMessage.set(msg);
-            this.invoicesPage.set(null); // Set là null nếu có lỗi logic từ API
+    apiCallObservable.pipe(
+      takeUntil(this.destroy$),
+      finalize(() => {
+        console.log('[ManageInvoiceListComponent] API call finalized. isLoading set to false.');
+        this.isLoading.set(false);
+      })
+    ).subscribe({
+      next: (res) => {
+        console.log('[ManageInvoiceListComponent] API Response received:', JSON.stringify(res, null, 2));
+        if (res.success && res.data) {
+          console.log('[ManageInvoiceListComponent] Setting invoicesPage with data. Content length:', res.data.content?.length);
+          this.invoicesPage.set(res.data);
+          if (res.data.content?.length === 0) {
+            console.log('[ManageInvoiceListComponent] API returned data with empty content.');
           }
-          this.isLoading.set(false);
-        },
-        error: (err) => {
-          // err.error có thể chứa object ApiResponse từ backend nếu là lỗi HTTP 4xx, 5xx
-          const apiErrorMessage = err.error?.message || err.message;
-          console.error('[ManageInvoiceListComponent] API Error:', JSON.stringify(err, null, 2));
-          this.errorMessage.set(apiErrorMessage || 'Lỗi kết nối hoặc lỗi không xác định khi tải danh sách hóa đơn.');
+        } else {
+          const msg = res.message || (this.isAdminView() ? 'Không tải được danh sách hóa đơn (Admin).' : (this.isFarmerView() ? 'Không tải được danh sách hóa đơn của bạn (Farmer).' : 'Không tải được danh sách hóa đơn công nợ của bạn (Buyer).'));
+          console.error('[ManageInvoiceListComponent] API call was not successful or no data:', msg);
+          this.errorMessage.set(msg);
           this.invoicesPage.set(null);
         }
-      });
+      },
+      error: (err) => {
+        const apiErrorMessage = err.error?.message || err.message;
+        console.error('[ManageInvoiceListComponent] API Error:', JSON.stringify(err, null, 2));
+        this.errorMessage.set(apiErrorMessage || 'Lỗi kết nối hoặc lỗi không xác định khi tải danh sách hóa đơn.');
+        this.invoicesPage.set(null);
+      }
+    });
   }
 
   onPageChange(page: number): void {
@@ -173,7 +266,7 @@ export class ManageInvoiceListComponent implements OnInit, OnDestroy {
 
   clearFilters(): void {
     console.log('[ManageInvoiceListComponent] Clearing filters.');
-    this.filterForm.reset({ keyword: '', status: '' });
+    this.filterForm.reset({ keyword: '', status: '', paymentStatusFilter: '' });
     // valueChanges sẽ tự động trigger loadInvoices
   }
 
@@ -272,6 +365,17 @@ export class ManageInvoiceListComponent implements OnInit, OnDestroy {
         });
     } else {
       console.log('[ManageInvoiceListComponent] User cancelled payment confirmation.');
+    }
+  }
+
+  // Điều chỉnh routerLink cho nút xem chi tiết đơn hàng
+  getOrderDetailsLink(orderId: number): string[] {
+    if (this.isAdminView()) {
+      return ['/admin/orders', orderId.toString()];
+    } else if (this.isFarmerView()) {
+      return ['/farmer/orders', orderId.toString()];
+    } else { // Buyer view
+      return ['/user/orders', orderId.toString()]; // Hoặc route chi tiết đơn hàng của user
     }
   }
 

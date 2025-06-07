@@ -95,9 +95,10 @@
     <ng-template #emptyFarmers>
       <div *ngIf="!isLoading() && !errorMessage()"
            class="text-center py-20 px-4 border-2 border-dashed border-base-300 dark:border-gray-700 rounded-xl bg-base-100 dark:bg-gray-800/30 animate-fade-in">
-        <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-20 w-20 text-base-content/25 dark:text-gray-600 mb-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0zM9 12l2 2 4-4m0-3a9 9 0 11-18 0 9 9 0 0118 0" />
+        <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-20 w-20 text-base-content/25 dark:text-gray-600 mb-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M5.121 17.804A9 9 0 0112 15a9 9 0 016.879 2.804M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
         </svg>
+
         <p class="text-xl font-medium text-base-content/80 dark:text-gray-300 mb-4">Không có hồ sơ nông dân nào đang chờ duyệt.</p>
         <p class="text-sm text-base-content/60 dark:text-gray-400">Tất cả hồ sơ đã được xử lý hoặc chưa có đăng ký mới.</p>
       </div>

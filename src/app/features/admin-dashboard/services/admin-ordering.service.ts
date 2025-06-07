@@ -8,6 +8,7 @@ import { OrderSummaryResponse } from '../../ordering/dto/response/OrderSummaryRe
 import { OrderStatusUpdateRequest } from '../../ordering/dto/request/OrderStatusUpdateRequest';
 import { OrderStatus } from '../../ordering/domain/order-status.enum';
 import {PaymentMethod} from '../../ordering/domain/payment-method.enum';
+import {PaymentStatus} from '../../ordering/domain/payment-status.enum';
 
 @Injectable({
   providedIn: 'root'
@@ -16,9 +17,11 @@ export class AdminOrderingService {
   private http = inject(HttpClient);
   private adminOrderApiUrl = `${environment.apiUrl}/admin/orders`;
 
-  getAllOrdersForAdmin(params: { status?: OrderStatus | string | null, buyerId?: number | null, farmerId?: number | null, keyword?: string | null, page?: number, size?: number, sort?: string }): Observable<PagedApiResponse<OrderSummaryResponse>> {
+  getAllOrdersForAdmin(params: { status?: OrderStatus | string | null, paymentMethod?: PaymentMethod | string | null, paymentStatus?: PaymentStatus | string | null, buyerId?: number | null, farmerId?: number | null, keyword?: string | null, page?: number, size?: number, sort?: string }): Observable<PagedApiResponse<OrderSummaryResponse>> {
     let httpParams = new HttpParams();
     if (params.status) httpParams = httpParams.set('status', params.status.toString());
+    if (params.paymentMethod) httpParams = httpParams.set('paymentMethod', params.paymentMethod.toString());
+    if (params.paymentStatus) httpParams = httpParams.set('paymentStatus', params.paymentStatus.toString());
     if (params.buyerId) httpParams = httpParams.set('buyerId', params.buyerId.toString());
     if (params.farmerId) httpParams = httpParams.set('farmerId', params.farmerId.toString());
     if (params.keyword) httpParams = httpParams.set('keyword', params.keyword); // Thêm tìm kiếm (vd: theo mã đơn)

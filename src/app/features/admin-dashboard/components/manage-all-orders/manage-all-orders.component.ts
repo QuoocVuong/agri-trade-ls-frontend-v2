@@ -10,11 +10,16 @@ import { LoadingSpinnerComponent } from '../../../../shared/components/loading-s
 import { AlertComponent } from '../../../../shared/components/alert/alert.component';
 import { PaginatorComponent } from '../../../../shared/components/paginator/paginator.component';
 import { OrderStatus, getOrderStatusText, getOrderStatusCssClass } from '../../../ordering/domain/order-status.enum'; // Import OrderStatus
-import {  getPaymentStatusText, getPaymentStatusCssClass } from '../../../ordering/domain/payment-status.enum';
+import {
+  getPaymentStatusText,
+  getPaymentStatusCssClass,
+  PaymentStatus
+} from '../../../ordering/domain/payment-status.enum';
 import { ToastrService } from 'ngx-toastr';
 import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
 import {FormatBigDecimalPipe} from '../../../../shared/pipes/format-big-decimal.pipe';
+import {getPaymentMethodText, PaymentMethod} from '../../../ordering/domain/payment-method.enum';
 
 @Component({
   selector: 'app-manage-all-orders',
@@ -33,12 +38,20 @@ export class ManageAllOrdersComponent implements OnInit, OnDestroy {
   isLoading = signal(true);
   errorMessage = signal<string | null>(null);
 
+  paymentMethods = Object.values(PaymentMethod);
+  paymentStatuses = Object.values(PaymentStatus);
+
+  getPaymentMethodText = getPaymentMethodText;
+
   // Filter form
   filterForm = this.fb.group({
     keyword: [''], // Tìm theo mã đơn hàng, tên người mua/bán?
     status: [''], // Lọc theo OrderStatus
+    paymentMethod: [''],
+    paymentStatus: [''],
     buyerId: [''],
-    farmerId: ['']
+    farmerId: [''],
+
   });
 
   // Phân trang & Sắp xếp
@@ -82,6 +95,8 @@ export class ManageAllOrdersComponent implements OnInit, OnDestroy {
       sort: this.sort(),
       keyword: formValue.keyword || undefined,
       status: formValue.status || undefined,
+      paymentMethod: formValue.paymentMethod || undefined,
+      paymentStatus: formValue.paymentStatus || undefined,
       buyerId: formValue.buyerId ? +formValue.buyerId : undefined,
       farmerId: formValue.farmerId ? +formValue.farmerId : undefined
     };
@@ -150,6 +165,8 @@ export class ManageAllOrdersComponent implements OnInit, OnDestroy {
     this.filterForm.reset({
       keyword: '',
       status: '',
+      paymentMethod: '',
+      paymentStatus: '',
       buyerId: '',
       farmerId: ''
     });
@@ -168,4 +185,6 @@ export class ManageAllOrdersComponent implements OnInit, OnDestroy {
   trackOrderById(index: number, item: OrderSummaryResponse): number {
     return item.id;
   }
+
+
 }

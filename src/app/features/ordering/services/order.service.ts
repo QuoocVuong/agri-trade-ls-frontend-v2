@@ -12,7 +12,11 @@ import {OrderCalculationResponse} from '../dto/response/OrderCalculationResponse
 import {PaymentMethod} from '../domain/payment-method.enum';
 import {PaymentUrlResponse} from '../dto/response/PaymentUrlResponse';
 import {BankTransferInfoResponse} from '../dto/response/BankTransferInfoResponse';
-import {AgreedOrderRequest} from '../dto/request/AgreedOrderRequest'; // Import Enum
+import {AgreedOrderRequest} from '../dto/request/AgreedOrderRequest';
+import {InvoiceStatus} from '../domain/invoice-status.enum';
+import {InvoiceSummaryResponse} from '../dto/response/InvoiceSummaryResponse';
+import {PaymentNotificationRequest} from '../dto/request/PaymentNotificationRequest';
+import {PaymentStatus} from '../domain/payment-status.enum'; // Import Enum
 
 // Interface cho tham số tìm kiếm đơn hàng của Farmer
 export interface FarmerOrderSearchParams {
@@ -21,6 +25,8 @@ export interface FarmerOrderSearchParams {
   sort?: string;
   keyword?: string | null; // Tìm theo mã đơn hàng, tên người mua
   status?: OrderStatus | string | null; // Lọc theo OrderStatus
+  paymentMethod?: PaymentMethod | string | null;
+  paymentStatus?: PaymentStatus | string | null;
 }
 
 export interface BuyerOrderSearchParams {
@@ -29,7 +35,19 @@ export interface BuyerOrderSearchParams {
   sort?: string;
   keyword?: string | null;
   status?: OrderStatus | string | null;
+  paymentMethod?: PaymentMethod | string | null;
+  paymentStatus?: PaymentStatus | string | null;
 }
+
+export interface BuyerInvoiceSearchParams { // Có thể giống FarmerInvoiceSearchParams
+  page?: number;
+  size?: number;
+  sort?: string;
+  keyword?: string | null;
+  status?: InvoiceStatus | string | null;
+  paymentStatus?: PaymentStatus | string | null;
+}
+
 
 
 @Injectable({
@@ -55,6 +73,8 @@ export class OrderService {
       if (params.sort) httpParams = httpParams.set('sort', params.sort);
       if (params.keyword?.trim()) httpParams = httpParams.set('keyword', params.keyword.trim());
       if (params.status) httpParams = httpParams.set('status', params.status.toString());
+      if (params.paymentMethod) httpParams = httpParams.set('paymentMethod', params.paymentMethod.toString());
+      if (params.paymentStatus) httpParams = httpParams.set('paymentStatus', params.paymentStatus.toString());
       return this.http.get<PagedApiResponse<OrderSummaryResponse>>(`${this.orderApiUrl}/my`, { params: httpParams });
     }
 
@@ -63,7 +83,7 @@ export class OrderService {
   }
 
   getMyOrderDetailsByCode(orderCode: string): Observable<ApiResponse<OrderResponse>> {
-    return this.http.get<ApiResponse<OrderResponse>>(`${this.orderApiUrl}/code/${orderCode}`);
+    return this.http.get<ApiResponse<OrderResponse>>(`${this.orderApiUrl}/code/${orderCode}`, {});
   }
 
   cancelMyOrder(orderId: number): Observable<ApiResponse<OrderResponse>> {
@@ -89,6 +109,19 @@ export class OrderService {
     return this.http.get<ApiResponse<BankTransferInfoResponse>>(`${this.orderApiUrl}/${orderId}/bank-transfer-info`);
   }
 
+  getMyDebtInvoices(params: BuyerInvoiceSearchParams): Observable<PagedApiResponse<InvoiceSummaryResponse>> {
+    let httpParams = new HttpParams();
+    // Xây dựng httpParams tương tự như các hàm khác
+    if (params.page !== undefined) httpParams = httpParams.set('page', params.page.toString());
+    if (params.size !== undefined) httpParams = httpParams.set('size', params.size.toString());
+    if (params.sort) httpParams = httpParams.set('sort', params.sort);
+    if (params.keyword?.trim()) httpParams = httpParams.set('keyword', params.keyword.trim());
+    if (params.status) httpParams = httpParams.set('status', params.status.toString());
+    if (params.paymentStatus) httpParams = httpParams.set('paymentStatus', params.paymentStatus.toString());
+
+    return this.http.get<PagedApiResponse<InvoiceSummaryResponse>>(`${this.orderApiUrl}/my/invoices`, { params: httpParams });
+  }
+
   // --- Farmer APIs ---
   getMyOrdersAsFarmer(params: FarmerOrderSearchParams): Observable<PagedApiResponse<OrderSummaryResponse>> {
     let httpParams  = new HttpParams()
@@ -103,6 +136,10 @@ export class OrderService {
     if (params.status) {
       httpParams = httpParams.set('status', params.status.toString()); // Gửi status dưới dạng string
     }
+    if (params.paymentMethod) {
+      httpParams = httpParams.set('paymentMethod', params.paymentMethod.toString()); // Gửi status dưới dạng string
+    }
+    if (params.paymentStatus) httpParams = httpParams.set('paymentStatus', params.paymentStatus.toString());
 
     return this.http.get<PagedApiResponse<OrderSummaryResponse>>(`${this.farmerOrderApiUrl}/my`, { params: httpParams });
   }
@@ -185,6 +222,17 @@ export class OrderService {
   downloadInvoiceByInvoiceId(invoiceId: number): Observable<Blob> {
     const url = `${this.invoiceDownloadApiUrl}/${invoiceId}/download`; // API backend: /api/invoices/{invoiceId}/download
     return this.http.get(url, { responseType: 'blob' });
+  }
+
+  /**
+   * Gửi thông báo từ Buyer rằng họ đã thực hiện thanh toán cho một đơn hàng.
+   * @param orderId ID của đơn hàng.
+   * @param payload Dữ liệu thông báo (mã tham chiếu, ghi chú).
+   * @returns Observable chứa ApiResponse (có thể là void nếu không cần data trả về).
+   */
+  notifyPaymentMade(orderId: number, payload: PaymentNotificationRequest): Observable<ApiResponse<void>> {
+    const url = `${this.orderApiUrl}/${orderId}/notify-payment-made`;
+    return this.http.post<ApiResponse<void>>(url, payload);
   }
 
 }

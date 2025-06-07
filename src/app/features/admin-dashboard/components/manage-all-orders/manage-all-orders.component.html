@@ -12,7 +12,7 @@
 
     <!-- Filter Form -->
     <form [formGroup]="filterForm" class="mb-8 p-5 bg-base-100 dark:bg-gray-800 rounded-xl shadow-lg border border-base-300/30 dark:border-gray-700/30">
-      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-x-6 gap-y-4 items-end">
+      <div class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-x-6 gap-y-4 items-end">
         <div class="form-control w-full">
           <label class="label pb-1"><span class="label-text font-medium text-base-content dark:text-gray-200">Tìm kiếm</span></label>
           <input type="text" placeholder="Mã ĐH, Tên KH/Nông dân..."
@@ -20,13 +20,34 @@
                  formControlName="keyword" />
         </div>
         <div class="form-control w-full">
-          <label class="label pb-1"><span class="label-text font-medium text-base-content dark:text-gray-200">Trạng thái ĐH</span></label>
+          <label class="label pb-1"><span class="label-text font-medium text-base-content dark:text-gray-200">Trạng thái Đơn Hàng</span></label>
           <select class="select select-bordered w-full dark:bg-gray-700 dark:border-gray-600 focus:ring-1 focus:ring-primary dark:focus:ring-green-500 rounded-lg"
                   formControlName="status">
             <option value="">Tất cả trạng thái</option>
             <option *ngFor="let status of orderStatuses" [value]="status">{{ getStatusText(status) }}</option>
           </select>
         </div>
+
+        <!-- Payment Method Filter (Loại đơn hàng) -->
+        <div class="form-control w-full">
+          <label class="label pb-1"><span class="label-text font-medium text-base-content dark:text-gray-200">Loại đơn hàng</span></label>
+          <select class="select select-bordered w-full dark:bg-gray-700 dark:border-gray-600 focus:ring-1 focus:ring-primary dark:focus:ring-green-500 rounded-lg"
+                  formControlName="paymentMethod">
+            <option value="">Tất cả trạng thái</option>
+            <option *ngFor="let paymentMethod of paymentMethods" [value]="paymentMethod">{{ getPaymentMethodText(paymentMethod) }}</option>
+          </select>
+        </div>
+        <!-- Payment Status Filter (Trạng thái thanh toán) - MỚI -->
+        <div class="form-control w-full">
+          <label class="label pb-1"><span class="label-text font-medium text-base-content dark:text-gray-200">Trạng thái Thanh toán</span></label>
+          <select class="select select-bordered w-full dark:bg-gray-700 dark:border-gray-600 focus:ring-1 focus:ring-primary dark:focus:ring-green-500 rounded-lg"
+                  formControlName="paymentStatus">
+            <option value="">Tất cả trạng thái</option>
+            <option *ngFor="let paymentStatus of paymentStatuses" [value]="paymentStatus">{{ getPaymentStatusText(paymentStatus) }}</option>
+          </select>
+        </div>
+
+
         <div class="form-control w-full">
           <label class="label pb-1"><span class="label-text font-medium text-base-content dark:text-gray-200">ID Người mua</span></label>
           <input type="number" placeholder="Nhập ID người mua"
@@ -39,13 +60,16 @@
                  class="input input-bordered w-full dark:bg-gray-700 dark:border-gray-600 focus:ring-1 focus:ring-primary dark:focus:ring-green-500 rounded-lg"
                  formControlName="farmerId" />
         </div>
-        <button type="button" class="btn btn-ghost lg:self-end w-full lg:w-auto rounded-full text-base-content/70 dark:text-gray-400 hover:bg-base-200 dark:hover:bg-gray-700"
-                (click)="resetFilters()">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-          </svg>
-          Xóa Bộ Lọc
-        </button>
+        <div class="col-span-full flex justify-center">
+          <button type="button"
+                  class="btn btn-ghost rounded-full text-base-content/70 dark:text-gray-400 hover:bg-base-200 dark:hover:bg-gray-700"
+                  (click)="resetFilters()">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+            Xóa Bộ Lọc
+          </button>
+        </div>
       </div>
     </form>
 

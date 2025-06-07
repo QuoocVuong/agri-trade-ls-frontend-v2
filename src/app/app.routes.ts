@@ -64,6 +64,14 @@ export const routes: Routes = [
         loadComponent: () => import('./features/notification/components/notification-list/notification-list.component').then(m => m.NotificationListComponent), // Component trang thông báo
         title: 'Tất cả thông báo'
       },
+
+      {
+        path: 'my-debt-invoices', // URL: /user/my-debt-invoices
+        loadComponent: () => import('./features/admin-dashboard/components/manage-invoice-list/manage-invoice-list.component').then(m => m.ManageInvoiceListComponent),
+        // Tái sử dụng ManageInvoiceListComponent
+        data: { viewMode: 'buyer' }, // Truyền dữ liệu để component biết ai đang xem
+        title: 'Hóa Đơn Công Nợ Của Tôi'
+      },
       // Các route đăng ký profile có thể nằm trong user-profile.routes.ts hoặc để ở đây nếu muốn URL riêng
       // { path: 'register-farmer', ... },
       // { path: 'register-business', ... },

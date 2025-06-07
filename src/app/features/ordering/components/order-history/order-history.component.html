@@ -12,7 +12,7 @@
 
     <!-- Filters and Search -->
     <div class="mb-6 md:mb-8 p-4 card bg-base-100 dark:bg-gray-800 shadow rounded-lg">
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
         <!-- Search Input -->
         <div>
           <label for="searchOrder" class="label pb-1 pt-0">
@@ -53,6 +53,41 @@
             </option>
           </select>
         </div>
+        <!-- Payment Method Filter (Loại đơn hàng) -->
+        <div>
+          <label for="paymentMethodFilter" class="label pb-1 pt-0">
+            <span class="label-text font-medium text-sm">Loại đơn hàng</span>
+          </label>
+          <select
+            id="paymentMethodFilter"
+            class="select select-bordered select-sm md:select-md w-full"
+            [ngModel]="selectedPaymentMethod()"
+            (ngModelChange)="filterByPaymentMethod($event)">
+            <option [ngValue]="null">Tất cả đơn hàng</option>
+            <option *ngFor="let paymentMethodKey of objectKeys(PaymentMethodEnum)" [value]="PaymentMethodEnum[paymentMethodKey]">
+              {{ getPaymentMethodText(PaymentMethodEnum[paymentMethodKey]) }}
+            </option>
+          </select>
+        </div>
+
+        <!-- Payment Status Filter (Trạng thái thanh toán) - MỚI -->
+        <div>
+          <label for="paymentStatusFilter" class="label pb-1 pt-0">
+            <span class="label-text font-medium text-sm">Trạng thái Thanh Toán</span>
+          </label>
+          <select
+            id="paymentStatusFilter"
+            class="select select-bordered select-sm md:select-md w-full"
+            [ngModel]="selectedPaymentStatus()"
+            (ngModelChange)="filterByPaymentStatus($event)">
+            <option [ngValue]="null">Tất cả Trạng thái</option>
+            <option *ngFor="let psKey of objectKeys(PaymentStatusEnum)" [value]="PaymentStatusEnum[psKey]">
+              {{ getPaymentStatusText(PaymentStatusEnum[psKey]) }}
+            </option>
+          </select>
+        </div>
+
+
       </div>
     </div>
 

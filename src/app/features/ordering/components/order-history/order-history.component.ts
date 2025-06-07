@@ -14,7 +14,8 @@ import {Observable, Subject} from 'rxjs';
 import {PagedApiResponse} from '../../../../core/models/api-response.model';
 import {FormatBigDecimalPipe} from '../../../../shared/pipes/format-big-decimal.pipe';
 import {debounceTime, distinctUntilChanged, takeUntil} from 'rxjs/operators';
-import {FormsModule} from '@angular/forms'; // Import Enum và helpers
+import {FormBuilder, FormsModule, ReactiveFormsModule} from '@angular/forms';
+import {getPaymentMethodText, PaymentMethod} from '../../domain/payment-method.enum'; // Import Enum và helpers
 
 
 // Interface cho Page (tương tự PageData nhưng đơn giản hơn)
@@ -30,13 +31,14 @@ interface PageData<T> {
 @Component({
   selector: 'app-order-history',
   standalone: true,
-  imports: [CommonModule, RouterLink, PaginatorComponent, LoadingSpinnerComponent, AlertComponent, DatePipe, DecimalPipe, FormatBigDecimalPipe, FormsModule],
+  imports: [CommonModule, RouterLink, PaginatorComponent, LoadingSpinnerComponent, AlertComponent, DatePipe, DecimalPipe, FormatBigDecimalPipe, FormsModule, ReactiveFormsModule],
   templateUrl: './order-history.component.html',
 })
 export class OrderHistoryComponent implements OnInit, OnDestroy  {
   private orderService = inject(OrderService);
   private authService = inject(AuthService);
   private router = inject(Router); // Inject Router
+  private fb = inject(FormBuilder);
 
   // Sử dụng signal để lưu trữ dữ liệu phân trang
   orderPage: WritableSignal<PageData<OrderSummaryResponse> | null> = signal(null);
@@ -60,6 +62,12 @@ export class OrderHistoryComponent implements OnInit, OnDestroy  {
   OrderStatusEnum = OrderStatus;
   objectKeys = Object.keys as <T extends object>(obj: T) => Array<keyof T>;
 
+  selectedPaymentMethod = signal<PaymentMethod | null>(null);
+  PaymentMethodEnum = PaymentMethod; // Expose cho template
+
+  selectedPaymentStatus = signal<PaymentStatus | null>(null);
+  PaymentStatusEnum = PaymentStatus;
+
   constructor() {
     // Effect để tự động load lại đơn hàng khi trang hoặc sắp xếp thay đổi
     effect(() => {
@@ -68,7 +76,10 @@ export class OrderHistoryComponent implements OnInit, OnDestroy  {
         this.pageSize(),
         this.sort(),
         this.selectedStatus(),
+        this.selectedPaymentMethod(),
+        this.selectedPaymentStatus(),
         this.searchKeyword()
+
       );
     });
   }
@@ -90,35 +101,34 @@ export class OrderHistoryComponent implements OnInit, OnDestroy  {
   }
 
 
-  loadOrders(page: number, size: number, sort: string, status: OrderStatus | null = null, keyword: string = '' ): void {
+  loadOrders(
+    page: number,
+    size: number,
+    sort: string,
+    status: OrderStatus | null = null,
+    paymentMethod: PaymentMethod | null = null,
+    paymentStatus: PaymentStatus | null = null,
+    keyword: string = ''
+
+  ): void {
     this.isLoading.set(true);
     this.errorMessage.set(null);
 
     let apiCall: Observable<PagedApiResponse<OrderSummaryResponse>>;
 
-    if (this.isFarmer()) {
-      // TẠO OBJECT PARAMS CHO FARMER
-      const farmerParams: FarmerOrderSearchParams = {
-        page: page,
-        size: size,
-        sort: sort,
-        status: status ?? undefined,
-        keyword: keyword || undefined
 
-      };
-
-      apiCall = this.orderService.getMyOrdersAsFarmer(farmerParams);
-    } else {
       const buyerParams: BuyerOrderSearchParams = {
         page: page,
         size: size,
         sort: sort,
         status: status ?? undefined,
+        paymentMethod: paymentMethod ?? undefined,
+        paymentStatus: paymentStatus ?? undefined,
         keyword: keyword || undefined
       };
       // Mặc định là Buyer (Consumer hoặc Business Buyer)
       apiCall = this.orderService.getMyOrdersAsBuyer(buyerParams);
-    }
+
 
     apiCall.pipe(takeUntil(this.destroy$)).subscribe({ // Thêm takeUntil
       next: (response) => {
@@ -136,6 +146,17 @@ export class OrderHistoryComponent implements OnInit, OnDestroy  {
         this.isLoading.set(false);
       }
     });
+  }
+
+  filterByPaymentMethod(method: PaymentMethod | null): void {
+    this.selectedPaymentMethod.set(method);
+    this.currentPage.set(0); // Reset về trang đầu
+    // Effect sẽ tự động gọi loadOrders
+  }
+
+  filterByPaymentStatus(status: PaymentStatus | null): void { // <<<< HÀM MỚI
+    this.selectedPaymentStatus.set(status);
+    this.currentPage.set(0);
   }
 
   onPageChange(page: number): void {
@@ -165,15 +186,18 @@ export class OrderHistoryComponent implements OnInit, OnDestroy  {
   getPaymentStatusText = getPaymentStatusText;
   getPaymentStatusClass = getPaymentStatusCssClass;
 
+  getPaymentMethodText = getPaymentMethodText;
+
   // Điều hướng đến chi tiết đơn hàng
   viewDetails(orderId: number): void {
-    const basePath = this.isFarmer() ? '/farmer/orders' : '/user/orders'; // Hoặc chỉ /orders nếu dùng layout public
-    this.router.navigate([basePath, orderId]);
-    // Hoặc dùng order code: this.router.navigate([basePath, 'code', orderCode]);
+    // Trang lịch sử đơn hàng của user (buyer) sẽ điều hướng đến chi tiết đơn hàng của user
+    this.router.navigate(['/user/orders', orderId]);
   }
 
   // ... trong OrderHistoryComponent
   trackOrderById(index: number, item: OrderSummaryResponse): number {
     return item.id;
   }
+
+
 }

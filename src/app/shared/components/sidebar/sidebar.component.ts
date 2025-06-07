@@ -26,6 +26,9 @@ export class SidebarComponent {
   isFarmer = this.authService.hasRoleSignal('ROLE_FARMER'); // Giả sử có hàm này trả về signal
   isBusinessBuyer = this.authService.hasRoleSignal('ROLE_BUSINESS_BUYER');
 
+
+  isConsumerBuyer = this.authService.hasRoleSignal( 'ROLE_CONSUMER');
+
   isDesktopView = signal(window.innerWidth >= 1024); // 1024px là breakpoint lg của Tailwind
 
   logout(): void {

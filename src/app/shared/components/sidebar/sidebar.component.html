@@ -26,6 +26,9 @@
           <li><app-sidebar-item icon="fas fa-user-circle" link="/user/profile" label="Trang Cá Nhân" (itemClick)="onMenuItemClick()"></app-sidebar-item></li>
           <li><app-sidebar-item icon="fas fa-receipt" link="/user/orders" label="Đơn Hàng Của Tôi" (itemClick)="onMenuItemClick()"></app-sidebar-item></li>
           <li><app-sidebar-item icon="fas fa-paper-plane" link="/user/my-supply-requests" label="Yêu Cầu Đã Gửi" (itemClick)="onMenuItemClick()"></app-sidebar-item></li>
+          <li *ngIf="isBusinessBuyer() || isConsumerBuyer()"> <!-- Chỉ hiển thị nếu là Business Buyer và ConsumerBuyer hoặc có quyền xem -->
+            <app-sidebar-item icon="fas fa-file-invoice-dollar" link="/user/my-debt-invoices" label="Hóa Đơn Công Nợ" (itemClick)="onMenuItemClick()"></app-sidebar-item>
+          </li>
           <li><app-sidebar-item icon="fas fa-map-marker-alt" link="/user/addresses" label="Sổ Địa Chỉ" (itemClick)="onMenuItemClick()"></app-sidebar-item></li>
           <li><app-sidebar-item icon="fas fa-heart" link="/user/favorites" label="Sản Phẩm Yêu Thích" (itemClick)="onMenuItemClick()"></app-sidebar-item></li>
           <li><app-sidebar-item icon="fas fa-star-half-alt" link="/user/my-reviews" label="Đánh Giá Của Tôi" (itemClick)="onMenuItemClick()"></app-sidebar-item></li>

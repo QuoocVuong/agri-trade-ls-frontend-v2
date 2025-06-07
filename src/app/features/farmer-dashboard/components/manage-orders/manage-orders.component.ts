@@ -18,7 +18,8 @@ import { ToastrService } from 'ngx-toastr';
 import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged, takeUntil, finalize } from 'rxjs/operators';
 import { AuthService } from '../../../../core/services/auth.service';
-import {FormatBigDecimalPipe} from '../../../../shared/pipes/format-big-decimal.pipe'; // Import AuthService
+import {FormatBigDecimalPipe} from '../../../../shared/pipes/format-big-decimal.pipe';
+import {getPaymentMethodText, PaymentMethod} from '../../../ordering/domain/payment-method.enum'; // Import AuthService
 
 @Component({
   selector: 'app-manage-orders',
@@ -41,7 +42,10 @@ export class ManageOrdersComponent implements OnInit, OnDestroy {
   // Filter form
   filterForm = this.fb.group({
     keyword: [''], // Tìm theo mã đơn hàng, tên người mua?
-    status: [''] // Lọc theo OrderStatus
+    status: [''], // Lọc theo OrderStatus
+    paymentMethod: [''], // Lọc theo paymentMethod
+    paymentStatus: ['']
+
   });
 
   // Phân trang & Sắp xếp
@@ -51,10 +55,14 @@ export class ManageOrdersComponent implements OnInit, OnDestroy {
 
   // Lấy danh sách OrderStatus để hiển thị trong dropdown filter
   orderStatuses = Object.values(OrderStatus);
-  getStatusText = getOrderStatusText;
+  getOrderStatusText = getOrderStatusText;
   getStatusClass = getOrderStatusCssClass;
   getPaymentStatusText = getPaymentStatusText; // Import và dùng nếu cần hiển thị PaymentStatus
   getPaymentStatusClass = getPaymentStatusCssClass;
+  paymentMethods = Object.values(PaymentMethod);
+  paymentStatuses = Object.values(PaymentStatus);
+
+  getPaymentMethodText = getPaymentMethodText;
 
   // State cho modal cập nhật trạng thái
   showStatusModal = signal(false);
@@ -100,13 +108,18 @@ export class ManageOrdersComponent implements OnInit, OnDestroy {
       size: this.pageSize(),
       sort: this.sort(),
       keyword: formValue.keyword?.trim() || undefined, // undefined nếu rỗng để HttpParams bỏ qua
-      status: formValue.status || undefined          // undefined nếu rỗng
+      status: formValue.status || undefined,          // undefined nếu rỗng
+      paymentMethod: formValue.paymentMethod || undefined, // undefined nếu rỗng
+      paymentStatus: formValue.paymentStatus || undefined
     };
 
 
     // Xóa các thuộc tính undefined để không gửi lên API nếu không cần thiết
     if (!params.keyword) delete params.keyword;
     if (!params.status) delete params.status;
+    if (!params.paymentMethod) delete params.paymentMethod;
+    if (!params.paymentStatus) delete params.paymentStatus;
+
 
 
     this.orderService.getMyOrdersAsFarmer(params)
@@ -183,7 +196,7 @@ export class ManageOrdersComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (res) => {
           if (res.success) {
-            this.toastr.success(`Đã cập nhật trạng thái đơn hàng #${order.orderCode} thành ${this.getStatusText(newStatus)}`);
+            this.toastr.success(`Đã cập nhật trạng thái đơn hàng #${order.orderCode} thành ${this.getOrderStatusText(newStatus)}`);
             this.closeStatusModal();
             this.loadMyOrders(); // Load lại danh sách
           } else {
@@ -213,4 +226,5 @@ export class ManageOrdersComponent implements OnInit, OnDestroy {
   trackOrderById(index: number, item: OrderSummaryResponse): number {
     return item.id;
   }
+
 }
