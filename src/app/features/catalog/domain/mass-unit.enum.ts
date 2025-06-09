@@ -36,3 +36,11 @@ export function convertPriceToPerKg(pricePerUnit: number, unit: MassUnit | strin
   if (factor === 0) return 0; // Tránh chia cho 0
   return pricePerUnit / factor;
 }
+
+
+export function convertKgToUnit(kgValue: number, targetUnit: MassUnit | string): number {
+  if (kgValue == null || targetUnit == null) throw new Error("Invalid input for kg to unit conversion");
+  const factor = MASS_UNIT_FACTORS[targetUnit as MassUnit];
+  if (factor == null || factor === 0) throw new Error(`Invalid or zero factor for unit ${targetUnit}`);
+  return kgValue / factor;
+}

@@ -16,6 +16,7 @@ import { AlertComponent } from '../../../../shared/components/alert/alert.compon
 import { PaginatorComponent } from '../../../../shared/components/paginator/paginator.component';
 import { FormatBigDecimalPipe } from '../../../../shared/pipes/format-big-decimal.pipe';
 import {FormsModule} from '@angular/forms';
+import {convertKgToUnit, getMassUnitText, MassUnit} from '../../../catalog/domain/mass-unit.enum';
 
 @Component({
   selector: 'app-manage-supply',
@@ -57,6 +58,8 @@ export class FarmerSupplyListComponent implements OnInit, OnDestroy {
   getStatusText = getProductStatusText;
   getStatusCssClass = getProductStatusCssClass;
   objectKeys = Object.keys as <T extends object>(obj: T) => Array<keyof T>;
+
+  getUnitText = getMassUnitText;
 
 
   constructor() {
@@ -175,6 +178,25 @@ export class FarmerSupplyListComponent implements OnInit, OnDestroy {
           }
         });
     }
+  }
+
+  // Trong template hoặc một hàm helper:
+  getDisplayStock(supply: ProductSummaryResponse): string {
+    if (supply.stockQuantity == null) return 'N/A';
+    const stockInBase = supply.stockQuantity; // Giả sử đây là KG
+    const targetUnit = (supply.wholesaleUnit || supply.b2bUnit || supply.unit) as MassUnit;
+
+    if (targetUnit && targetUnit !== MassUnit.KG) { // Chỉ quy đổi nếu đơn vị sỉ không phải KG
+      try {
+        // Cần hàm convertKgToUnit(kgValue: number, targetUnit: MassUnit): number
+        const stockInTargetUnit = convertKgToUnit(stockInBase, targetUnit);
+        return `${stockInTargetUnit.toLocaleString()} ${this.getUnitText(targetUnit)}`;
+      } catch (e) {
+        // Nếu lỗi quy đổi, hiển thị theo đơn vị gốc
+        return `${stockInBase.toLocaleString()} ${this.getUnitText(MassUnit.KG)} (Lỗi quy đổi đơn vị sỉ)`;
+      }
+    }
+    return `${stockInBase.toLocaleString()} ${this.getUnitText(MassUnit.KG)}`; // Mặc định là KG
   }
 
   trackSupplyById(index: number, item: ProductSummaryResponse): number {

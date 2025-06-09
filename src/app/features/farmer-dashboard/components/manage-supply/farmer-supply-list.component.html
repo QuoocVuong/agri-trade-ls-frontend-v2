@@ -86,8 +86,10 @@
               <span *ngIf="supply.harvestDate">Thu hoạch: {{ supply.harvestDate | date:'dd/MM/yy' }}</span>
             </div>
           </td>
-          <td class="text-right font-semibold text-accent dark:text-yellow-400">{{ supply.stockQuantity | number }}</td>
-          <td>{{ supply.wholesaleUnit || supply.b2bUnit || supply.unit }}</td>
+          <td class="text-right font-semibold text-accent dark:text-yellow-400">
+            {{ getDisplayStock(supply) }}
+          </td>
+          <td>{{ getUnitText(supply.wholesaleUnit || supply.b2bUnit || supply.unit) }}</td>
           <td class="text-right">
               <span *ngIf="supply.referenceWholesalePrice || supply.b2bBasePrice; else noPrice">
                 {{ (supply.referenceWholesalePrice || supply.b2bBasePrice) | formatBigDecimal:'1.0-0' }} ₫
