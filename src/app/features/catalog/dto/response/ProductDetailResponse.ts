@@ -29,10 +29,7 @@ export interface ProductDetailResponse {
 
   // B2B
   b2bEnabled: boolean;
-  b2bUnit: string | null;
-  minB2bQuantity: number | null;
-  b2bBasePrice: number | string | BigDecimal | null;
-  pricingTiers?: ProductPricingTierResponse[] | null;
+
 
   // Sản phẩm liên quan
   relatedProducts?: ProductSummaryResponse[] | null;

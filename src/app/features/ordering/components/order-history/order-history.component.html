@@ -12,7 +12,7 @@
 
     <!-- Filters and Search -->
     <div class="mb-6 md:mb-8 p-4 card bg-base-100 dark:bg-gray-800 shadow rounded-lg">
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+      <div class="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
         <!-- Search Input -->
         <div>
           <label for="searchOrder" class="label pb-1 pt-0">
@@ -83,6 +83,22 @@
             <option [ngValue]="null">Tất cả Trạng thái</option>
             <option *ngFor="let psKey of objectKeys(PaymentStatusEnum)" [value]="PaymentStatusEnum[psKey]">
               {{ getPaymentStatusText(PaymentStatusEnum[psKey]) }}
+            </option>
+          </select>
+        </div>
+
+        <div>
+          <label for="orderTypeFilter" class="label pb-1 pt-0">
+            <span class="label-text font-medium text-sm">Loại Hóa đơn</span>
+          </label>
+          <select
+            id="orderTypeFilter"
+            class="select select-bordered select-sm md:select-md w-full"
+            [ngModel]="selectedOrderType()"
+            (ngModelChange)="filterOrderType($event)">
+            <option [ngValue]="null">Tất cả Hóa đơn</option>
+            <option *ngFor="let orderTypeKey of objectKeys(OrderTypeEnum)" [value]="OrderTypeEnum[orderTypeKey]">
+              {{ getOrderTypeText(OrderTypeEnum[orderTypeKey]) }}
             </option>
           </select>
         </div>

@@ -71,7 +71,8 @@
         </tr>
         </thead>
         <tbody>
-        <tr *ngFor="let supply of supplies(); trackBy: trackSupplyById" class="hover:bg-base-200/50 dark:hover:bg-gray-700/50 transition-colors">
+        <tr *ngFor="let supply of supplies(); trackBy: trackSupplyById" class="hover:bg-base-200/50 dark:hover:bg-gray-700/50 transition-colors"
+            [class.opacity-60]="supply.stockQuantity <= 0"> <!-- Làm mờ cả hàng nếu hết hàng -->
           <td>
             <div class="avatar">
               <div class="w-12 h-12 rounded">
@@ -86,7 +87,11 @@
               <span *ngIf="supply.harvestDate">Thu hoạch: {{ supply.harvestDate | date:'dd/MM/yy' }}</span>
             </div>
           </td>
-          <td class="text-right font-semibold text-accent dark:text-yellow-400">
+          <td class="text-right font-semibold"
+              [ngClass]="{
+              'text-accent dark:text-yellow-400': supply.stockQuantity > 0,
+              'text-error dark:text-red-500': supply.stockQuantity <= 0
+            }">
             {{ getDisplayStock(supply) }}
           </td>
           <td>{{ getUnitText(supply.wholesaleUnit || supply.b2bUnit || supply.unit) }}</td>
@@ -97,9 +102,17 @@
             <ng-template #noPrice><span class="italic text-base-content/50 dark:text-gray-500">Liên hệ</span></ng-template>
           </td>
           <td class="p-3 md:p-4 align-middle text-center">
-              <span class="badge badge-sm whitespace-nowrap" [ngClass]="getStatusCssClass(supply.status)">
-                {{ getStatusText(supply.status) }}
-              </span>
+            <!-- Ưu tiên hiển thị "Hết hàng" nếu stock <= 0 -->
+            <ng-container *ngIf="supply.stockQuantity <= 0; else normalStatus">
+            <span class="badge badge-sm whitespace-nowrap badge-error">
+              Hết Hàng
+            </span>
+            </ng-container>
+            <ng-template #normalStatus>
+            <span class="badge badge-sm whitespace-nowrap" [ngClass]="getStatusCssClass(supply.status)">
+              {{ getStatusText(supply.status) }}
+            </span>
+            </ng-template>
           </td>
           <td class="text-center">
             <div class="dropdown dropdown-left dropdown-end">

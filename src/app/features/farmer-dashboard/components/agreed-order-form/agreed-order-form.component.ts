@@ -1,9 +1,17 @@
 
 import { Component, OnInit, inject, signal, OnDestroy } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, FormGroup, FormArray, Validators, AbstractControl } from '@angular/forms';
+import {
+  ReactiveFormsModule,
+  FormBuilder,
+  FormGroup,
+  FormArray,
+  Validators,
+  AbstractControl,
+  ValidationErrors, ValidatorFn
+} from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { Subject } from 'rxjs';
+import {startWith, Subject} from 'rxjs';
 import { takeUntil, finalize, debounceTime, switchMap, filter, tap } from 'rxjs/operators';
 import { ToastrService } from 'ngx-toastr';
 
@@ -27,6 +35,7 @@ import {
 } from '../../../../shared/components/product-search-select/product-search-select.component';
 import {AgreedOrderItemRequest} from '../../../ordering/dto/request/AgreedOrderItemRequest';
 import {UserProfileService} from '../../../user-profile/services/user-profile.service';
+import BigDecimal from 'js-big-decimal';
 
 
 
@@ -57,6 +66,7 @@ export class AgreedOrderFormComponent implements OnInit, OnDestroy {
   private toastr = inject(ToastrService);
   private locationService = inject(LocationService);
   private destroy$ = new Subject<void>();
+  private selectedProductsInfo = new Map<number, { stockQuantity: number, unit: string }>();
 
   agreedOrderForm!: FormGroup;
   isSubmitting = signal(false);
@@ -122,6 +132,8 @@ export class AgreedOrderFormComponent implements OnInit, OnDestroy {
     this.loadInitialLocations();
     this.setupLocationCascades();
 
+    this.subscribeToItemChangesToCalculateTotal();
+
     // Nếu là farmer, tự điền farmerId
     const currentUserId = this.currentUser()?.id;
 
@@ -141,7 +153,7 @@ export class AgreedOrderFormComponent implements OnInit, OnDestroy {
   }
 
   createItemFormGroup(item?: AgreedOrderItemRequest): FormGroup {
-    return this.fb.group({
+    const group =  this.fb.group({
       productId: [item?.productId || null, Validators.required],
       productDisplay: [{value: item?.productName || '', disabled: true}], // Để hiển thị tên sản phẩm đã chọn
       productName: [item?.productName || '', Validators.required], // Cho phép sửa tên
@@ -149,7 +161,40 @@ export class AgreedOrderFormComponent implements OnInit, OnDestroy {
       quantity: [item?.quantity || 1, [Validators.required, Validators.min(1)]],
       pricePerUnit: [item?.pricePerUnit || '', [Validators.required, Validators.min(0.01)]]
     });
+    // Thêm validator động cho 'quantity'
+    group.get('quantity')?.setValidators([
+      Validators.required,
+      Validators.min(1),
+      this.maxQuantityValidator(group) // Truyền vào cả form group của item
+    ]);
+
+    return group;
   }
+
+  // *** THÊM VALIDATOR FUNCTION NÀY VÀO TRONG CLASS ***
+  private maxQuantityValidator(itemGroup: FormGroup): ValidatorFn {
+    return (control: AbstractControl): ValidationErrors | null => {
+      const productId = itemGroup.get('productId')?.value;
+      if (!productId) {
+        return null; // Bỏ qua nếu chưa chọn sản phẩm
+      }
+
+      const productInfo = this.selectedProductsInfo.get(productId);
+      if (!productInfo) {
+        return null; // Bỏ qua nếu không có thông tin tồn kho
+      }
+
+      const maxQuantity = productInfo.stockQuantity;
+      const enteredQuantity = control.value;
+
+      if (enteredQuantity > maxQuantity) {
+        return { maxQuantityExceeded: { max: maxQuantity, actual: enteredQuantity } };
+      }
+
+      return null;
+    };
+  }
+
 
   addItem(): void {
     this.itemsFormArray.push(this.createItemFormGroup());
@@ -197,24 +242,64 @@ export class AgreedOrderFormComponent implements OnInit, OnDestroy {
       buyerId: user?.id || null,
       buyerDisplay: user?.fullName || ''
     });
+
+    // Reset các trường địa chỉ trước khi điền mới
+    this.agreedOrderForm.patchValue({
+      shippingFullName: '',
+      shippingPhoneNumber: '',
+      shippingAddressDetail: '',
+      shippingProvinceCode: '',
+      shippingDistrictCode: '',
+      shippingWardCode: ''
+    });
+    this.districts.set([]);
+    this.wards.set([]);
+
     if (user && user.id) {
-      // Tự động điền thông tin giao hàng từ địa chỉ mặc định của người mua (nếu có)
-      // Cần thêm API lấy địa chỉ mặc định của user trong UserService
-      this.userProfileService.getDefaultAddress(user.id) // Giả sử có hàm này
+      this.userProfileService.getDefaultAddress(user.id)
         .pipe(takeUntil(this.destroy$))
-        .subscribe(address => {
-          if (address && address.success && address.data) {
+        .subscribe(addressRes => {
+          if (addressRes.success && addressRes.data) {
+            const address = addressRes.data;
+
+            // Điền các thông tin text trước
             this.agreedOrderForm.patchValue({
-              shippingFullName: address.data.fullName,
-              shippingPhoneNumber: address.data.phoneNumber,
-              shippingAddressDetail: address.data.addressDetail,
-              shippingProvinceCode: address.data.provinceCode,
-              // Cần load lại district và ward sau khi patch provinceCode
+              shippingFullName: address.fullName,
+              shippingPhoneNumber: address.phoneNumber,
+              shippingAddressDetail: address.addressDetail,
             });
-            // Trigger value change cho provinceCode để load district
-            this.agreedOrderForm.get('shippingProvinceCode')?.updateValueAndValidity();
-            // Sau đó, khi district được load, có thể patch districtCode và wardCode
-            // Hoặc bạn có thể làm logic này phức tạp hơn để tự động chọn.
+
+            // *** BẮT ĐẦU CHUỖI XỬ LÝ BẤT ĐỒNG BỘ CHO ĐỊA CHỈ ***
+            if (address.provinceCode) {
+              // 1. Gán giá trị cho Tỉnh
+              this.agreedOrderForm.get('shippingProvinceCode')?.setValue(address.provinceCode);
+
+              // 2. Sau khi gán, gọi API lấy danh sách Huyện
+              this.locationService.getDistricts(address.provinceCode).subscribe(districts => {
+                this.districts.set(districts);
+
+                // 3. Sau khi có danh sách Huyện, gán giá trị cho Huyện
+                if (address.districtCode && districts.some(d => d.idDistrict === address.districtCode)) {
+                  this.agreedOrderForm.get('shippingDistrictCode')?.setValue(address.districtCode);
+
+                  // 4. Sau khi gán Huyện, gọi API lấy danh sách Xã
+                  this.locationService.getWards(address.districtCode).subscribe(wards => {
+                    this.wards.set(wards);
+
+                    // 5. Sau khi có danh sách Xã, gán giá trị cho Xã
+                    if (address.wardCode && wards.some(w => w.idWard === address.wardCode)) {
+                      this.agreedOrderForm.get('shippingWardCode')?.setValue(address.wardCode);
+                    }
+                  });
+                }
+              });
+            }
+          } else {
+            // Nếu không có địa chỉ mặc định, có thể điền tên và sđt của user
+            this.agreedOrderForm.patchValue({
+              shippingFullName: user.fullName,
+              shippingPhoneNumber: user.phoneNumber
+            });
           }
         });
     }
@@ -223,6 +308,14 @@ export class AgreedOrderFormComponent implements OnInit, OnDestroy {
   onProductSelected(product: ProductSummaryResponse | null, itemIndex: number): void {
     const itemGroup = this.itemsFormArray.at(itemIndex) as FormGroup;
     if (product) {
+
+      // *** LƯU LẠI THÔNG TIN TỒN KHO ***
+      this.selectedProductsInfo.set(product.id, {
+        stockQuantity: product.stockQuantity,
+        unit: product.unit
+      });
+
+
       itemGroup.patchValue({
         productId: product.id,
         productDisplay: product.name,
@@ -230,7 +323,15 @@ export class AgreedOrderFormComponent implements OnInit, OnDestroy {
         unit: product.wholesaleUnit || product.unit,
         pricePerUnit: product.referenceWholesalePrice || product.price // Ưu tiên giá sỉ tham khảo
       });
+
+      // Cập nhật lại validator cho ô số lượng sau khi đã có thông tin tồn kho
+      itemGroup.get('quantity')?.updateValueAndValidity();
+
     } else {
+      const oldProductId = itemGroup.get('productId')?.value;
+      if (oldProductId) {
+        this.selectedProductsInfo.delete(oldProductId);
+      }
       itemGroup.patchValue({
         productId: null,
         productDisplay: '',
@@ -238,7 +339,17 @@ export class AgreedOrderFormComponent implements OnInit, OnDestroy {
         unit: '',
         pricePerUnit: ''
       });
+      itemGroup.get('quantity')?.updateValueAndValidity();
     }
+  }
+  // *** THÊM HÀM HELPER NÀY ĐỂ DÙNG TRONG TEMPLATE ***
+  getProductStockInfo(itemIndex: number): { stockQuantity: number, unit: string } | undefined {
+    const itemGroup = this.itemsFormArray.at(itemIndex) as FormGroup;
+    const productId = itemGroup.get('productId')?.value;
+    if (productId) {
+      return this.selectedProductsInfo.get(productId);
+    }
+    return undefined;
   }
 
 
@@ -307,5 +418,32 @@ export class AgreedOrderFormComponent implements OnInit, OnDestroy {
           this.toastr.error(err.error?.message || 'Đã có lỗi xảy ra.');
         }
       });
+  }
+
+  // *** THÊM PHƯƠNG THỨC MỚI NÀY ***
+  subscribeToItemChangesToCalculateTotal(): void {
+    this.itemsFormArray.valueChanges.pipe(
+      startWith(this.itemsFormArray.value), // Kích hoạt lần đầu ngay lập tức để tính toán giá trị ban đầu
+      takeUntil(this.destroy$)
+    ).subscribe(items => {
+      let total = new BigDecimal(0);
+      if (items && Array.isArray(items)) {
+        items.forEach(item => {
+          const qty = item.quantity;
+          const price = item.pricePerUnit;
+          // Chỉ tính toán nếu cả số lượng và giá đều hợp lệ và lớn hơn 0
+          if (qty && price && +qty > 0 && +price > 0) {
+            try {
+              total = total.add(new BigDecimal(qty).multiply(new BigDecimal(price)));
+            } catch (e) {
+              console.error("Lỗi khi tính toán tổng tiền cho item:", item, e);
+            }
+          }
+        });
+      }
+      // Cập nhật giá trị cho form control 'agreedTotalAmount'
+      // Dùng emitEvent: false để tránh gây ra vòng lặp nếu có logic khác lắng nghe valueChanges của cả form
+      this.agreedOrderForm.get('agreedTotalAmount')?.setValue(total.getValue(), { emitEvent: false });
+    });
   }
 }

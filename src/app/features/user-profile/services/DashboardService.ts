@@ -9,7 +9,9 @@ import { TopProductResponse } from '../../catalog/dto/response/TopProductRespons
 import { RecentActivityResponse } from '../dto/response/RecentActivityResponse';
 import { TimeSeriesDataPoint } from '../dto/response/TimeSeriesDataPoint';
 import  BigDecimal  from 'js-big-decimal'; // Import nếu dùng
-import { LocalDate } from '@js-joda/core'; // Import nếu dùng JS Joda
+import { LocalDate } from '@js-joda/core';
+import {UserResponse} from '../dto/response/UserResponse';
+import {FarmerSummaryResponse} from '../dto/response/FarmerSummaryResponse'; // Import nếu dùng JS Joda
 
 @Injectable({
   providedIn: 'root' // Cung cấp ở root để Admin/Farmer đều dùng được
@@ -89,5 +91,25 @@ export class DashboardService { // Không implements interface nào
   getPendingApprovalCounts(): Observable<ApiResponse<{[key: string]: number}>> {
     // Backend API cần trả về Map hoặc một cấu trúc tương đương
     return this.http.get<ApiResponse<{[key: string]: number}>>(`${this.adminApiUrl}/pending-approvals`);
+  }
+
+  // Thêm các phương thức mới
+
+
+  getTopPerformingFarmers(limit: number): Observable<ApiResponse<FarmerSummaryResponse[]>> {
+    const params = new HttpParams().set('limit', limit.toString());
+    return this.http.get<ApiResponse<FarmerSummaryResponse[]>>(`${this.adminApiUrl}/top-farmers`, { params });
+  }
+
+  getTopSpendingBuyers(limit: number): Observable<ApiResponse<UserResponse[]>> {
+    const params = new HttpParams().set('limit', limit.toString());
+    return this.http.get<ApiResponse<UserResponse[]>>(`${this.adminApiUrl}/top-buyers`, { params });
+  }
+
+  getDailyUserRegistrations(startDate: LocalDate, endDate: LocalDate): Observable<ApiResponse<TimeSeriesDataPoint<number>[]>> {
+    const params = new HttpParams()
+      .set('startDate', startDate.toString())
+      .set('endDate', endDate.toString());
+    return this.http.get<ApiResponse<TimeSeriesDataPoint<number>[]>>(`${this.adminApiUrl}/user-growth-chart`, { params });
   }
 }

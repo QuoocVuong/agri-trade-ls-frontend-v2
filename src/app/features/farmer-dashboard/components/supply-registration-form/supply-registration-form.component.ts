@@ -138,7 +138,9 @@ export class SupplyRegistrationFormComponent implements OnInit, OnDestroy {
   loadSupplyDataForEdit(id: number): void {
     this.isFetchingInitialData.set(true);
     this.productService.getMyProductById(id) // Dùng API lấy sản phẩm của farmer
-      .pipe(takeUntil(this.destroy$), finalize(() => this.isFetchingInitialData.set(false)))
+      .pipe(
+        takeUntil(this.destroy$),
+        finalize(() => this.isFetchingInitialData.set(false)))
       .subscribe({
         next: (res) => {
           if (res.success && res.data) {
@@ -148,10 +150,10 @@ export class SupplyRegistrationFormComponent implements OnInit, OnDestroy {
               categoryId: product.category?.id,
               description: product.description,
               stockQuantity: product.stockQuantity,
-              harvestDate: product.harvestDate ? (product.harvestDate as unknown as Date).toISOString().split('T')[0] : null, // Format YYYY-MM-DD
+              harvestDate: product.harvestDate,
               negotiablePrice: product.negotiablePrice,
-              wholesaleUnit: product.wholesaleUnit || product.b2bUnit, // Ưu tiên wholesaleUnit
-              referenceWholesalePrice: product.referenceWholesalePrice || product.b2bBasePrice
+              wholesaleUnit: product.wholesaleUnit, // Ưu tiên wholesaleUnit
+              referenceWholesalePrice: product.referenceWholesalePrice
             });
             this.imagesArray.clear();
             product.images?.forEach(img => this.addImageControl(img));
@@ -282,7 +284,7 @@ export class SupplyRegistrationFormComponent implements OnInit, OnDestroy {
       images: imageRequests,
 
       // Các trường mới cho nguồn cung
-      harvestDate: formValue.harvestDate ? new Date(formValue.harvestDate).toISOString().split('T')[0] as any : null, // Ngày thu hoạch
+      harvestDate: formValue.harvestDate || null, // Ngày thu hoạch
       negotiablePrice: formValue.negotiablePrice,// giá thương lượng
       wholesaleUnit: formValue.wholesaleUnit,// đơn vị bán sll
       referenceWholesalePrice: formValue.referenceWholesalePrice,//giá tham khảo của đơn vị bán sll
@@ -293,10 +295,7 @@ export class SupplyRegistrationFormComponent implements OnInit, OnDestroy {
 
       // Các trường B2B phức tạp có thể bỏ qua hoặc set mặc định
       b2bEnabled: true, // Mặc định là true cho nguồn cung
-      b2bUnit: formValue.wholesaleUnit,
-      minB2bQuantity: 1, // Hoặc một giá trị hợp lý
-      b2bBasePrice: formValue.referenceWholesalePrice,
-      pricingTiers: [], // Không dùng bậc giá phức tạp ở đây
+
 
       status: ProductStatus.PENDING_APPROVAL, // Luôn gửi duyệt khi tạo/sửa nguồn cung
       // slug sẽ được tạo ở backend

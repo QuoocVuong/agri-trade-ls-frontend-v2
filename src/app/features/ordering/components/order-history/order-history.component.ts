@@ -15,7 +15,8 @@ import {PagedApiResponse} from '../../../../core/models/api-response.model';
 import {FormatBigDecimalPipe} from '../../../../shared/pipes/format-big-decimal.pipe';
 import {debounceTime, distinctUntilChanged, takeUntil} from 'rxjs/operators';
 import {FormBuilder, FormsModule, ReactiveFormsModule} from '@angular/forms';
-import {getPaymentMethodText, PaymentMethod} from '../../domain/payment-method.enum'; // Import Enum và helpers
+import {getPaymentMethodText, PaymentMethod} from '../../domain/payment-method.enum';
+import {getOrderTypeText, OrderType} from '../../domain/order-type.enum'; // Import Enum và helpers
 
 
 // Interface cho Page (tương tự PageData nhưng đơn giản hơn)
@@ -68,6 +69,12 @@ export class OrderHistoryComponent implements OnInit, OnDestroy  {
   selectedPaymentStatus = signal<PaymentStatus | null>(null);
   PaymentStatusEnum = PaymentStatus;
 
+  selectedOrderType =signal<OrderType | null>(null);
+  OrderTypeEnum = OrderType;
+
+  // Thêm các biến cho OrderType
+  getOrderTypeText = getOrderTypeText;
+
   constructor() {
     // Effect để tự động load lại đơn hàng khi trang hoặc sắp xếp thay đổi
     effect(() => {
@@ -78,6 +85,7 @@ export class OrderHistoryComponent implements OnInit, OnDestroy  {
         this.selectedStatus(),
         this.selectedPaymentMethod(),
         this.selectedPaymentStatus(),
+        this.selectedOrderType(),
         this.searchKeyword()
 
       );
@@ -108,7 +116,8 @@ export class OrderHistoryComponent implements OnInit, OnDestroy  {
     status: OrderStatus | null = null,
     paymentMethod: PaymentMethod | null = null,
     paymentStatus: PaymentStatus | null = null,
-    keyword: string = ''
+    orderTypes: OrderType | null = null,
+  keyword: string = ''
 
   ): void {
     this.isLoading.set(true);
@@ -124,6 +133,7 @@ export class OrderHistoryComponent implements OnInit, OnDestroy  {
         status: status ?? undefined,
         paymentMethod: paymentMethod ?? undefined,
         paymentStatus: paymentStatus ?? undefined,
+        orderType: orderTypes ?? undefined,
         keyword: keyword || undefined
       };
       // Mặc định là Buyer (Consumer hoặc Business Buyer)
@@ -164,6 +174,10 @@ export class OrderHistoryComponent implements OnInit, OnDestroy  {
   }
   filterByStatus(status: OrderStatus | null): void {
     this.selectedStatus.set(status);
+    this.currentPage.set(0);
+  }
+  filterOrderType(status: OrderType | null): void {
+    this.selectedOrderType.set(status);
     this.currentPage.set(0);
   }
 

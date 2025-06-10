@@ -373,7 +373,10 @@ export class OrderDetailComponent implements OnInit, OnDestroy {
     // Xác định các trạng thái tiếp theo hợp lệ
     this.availableNextStatuses.set(this.getAllowedNextStatuses(currentOrder.status));
 
-    this.newStatusControl.reset(currentOrder.status); // Đặt trạng thái hiện tại
+    // *** SỬA LẠI LOGIC RESET ***
+    // Reset control về null và xóa trạng thái lỗi để nó "sạch" hoàn toàn.
+    this.newStatusControl.reset(null);
+
     this.statusUpdateError.set(null);
     this.showStatusModal.set(true);
   }
@@ -385,7 +388,11 @@ export class OrderDetailComponent implements OnInit, OnDestroy {
 
   // Lưu trạng thái mới
   saveNewStatus(): void {
-    if (this.newStatusControl.invalid || !this.order()) return;
+    // Thêm kiểm tra trạng thái hiện tại của control
+    if (this.newStatusControl.invalid || !this.order() || !this.newStatusControl.value) {
+      this.toastr.warning('Vui lòng chọn một trạng thái mới.');
+      return;
+    }
 
     const order = this.order()!;
     const newStatus = this.newStatusControl.value!;
@@ -413,10 +420,11 @@ export class OrderDetailComponent implements OnInit, OnDestroy {
         if (res.success && res.data) {
           this.order.set(res.data); // Cập nhật đơn hàng
           this.toastr.success(`Đã cập nhật trạng thái đơn hàng thành ${this.getStatusText(newStatus)}`);
-          this.closeStatusModal();
+          this.closeStatusModal(); // Đóng modal sau khi thành công
         } else {
-          this.statusUpdateError.set(res.message || 'Lỗi cập nhật trạng thái.');
-          this.toastr.error(res.message || 'Lỗi cập nhật trạng thái.');
+          const message = res.message || 'Lỗi cập nhật trạng thái.';
+          this.statusUpdateError.set(message);
+          this.toastr.error(message);
         }
       },
       error: (err) => {

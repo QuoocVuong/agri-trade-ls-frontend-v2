@@ -12,7 +12,7 @@
 
     <!-- Filter Form -->
     <form [formGroup]="filterForm" class="mb-8 p-5 bg-base-100 dark:bg-gray-800 rounded-xl shadow-lg border border-base-300/30 dark:border-gray-700/30">
-      <div class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-x-6 gap-y-4 items-end">
+      <div class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-4 items-end">
         <div class="form-control w-full">
           <label class="label pb-1"><span class="label-text font-medium text-base-content dark:text-gray-200">Tìm kiếm</span></label>
           <input type="text" placeholder="Mã ĐH, Tên KH/Nông dân..."
@@ -30,7 +30,7 @@
 
         <!-- Payment Method Filter (Loại đơn hàng) -->
         <div class="form-control w-full">
-          <label class="label pb-1"><span class="label-text font-medium text-base-content dark:text-gray-200">Loại đơn hàng</span></label>
+          <label class="label pb-1"><span class="label-text font-medium text-base-content dark:text-gray-200">Loại Thanh toán</span></label>
           <select class="select select-bordered w-full dark:bg-gray-700 dark:border-gray-600 focus:ring-1 focus:ring-primary dark:focus:ring-green-500 rounded-lg"
                   formControlName="paymentMethod">
             <option value="">Tất cả trạng thái</option>
@@ -44,6 +44,16 @@
                   formControlName="paymentStatus">
             <option value="">Tất cả trạng thái</option>
             <option *ngFor="let paymentStatus of paymentStatuses" [value]="paymentStatus">{{ getPaymentStatusText(paymentStatus) }}</option>
+          </select>
+        </div>
+
+        <!-- Order Type Filter -->
+        <div class="form-control w-full">
+          <label class="label pb-1"><span class="label-text font-medium text-base-content dark:text-gray-200">Loại Đơn hàng</span></label>
+          <select class="select select-bordered w-full dark:bg-gray-700 dark:border-gray-600 focus:ring-1 focus:ring-primary dark:focus:ring-green-500 rounded-lg"
+                  formControlName="orderType">
+            <option value="">Tất cả loại</option>
+            <option *ngFor="let type of orderTypes" [value]="type">{{ getOrderTypeText(type) }}</option>
           </select>
         </div>
 
@@ -68,6 +78,11 @@
               <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
             Xóa Bộ Lọc
+          </button>
+          <button type="button" class="btn btn-outline btn-accent rounded-full" (click)="exportToExcel()" [disabled]="isExporting()">
+            <span *ngIf="isExporting()" class="loading loading-spinner loading-xs"></span>
+            <svg *ngIf="!isExporting()" ...> <!-- Icon Excel --> </svg>
+            Xuất Excel
           </button>
         </div>
       </div>

@@ -17,9 +17,10 @@ import {
 } from '../../../ordering/domain/payment-status.enum';
 import { ToastrService } from 'ngx-toastr';
 import { Subject } from 'rxjs';
-import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
+import {debounceTime, distinctUntilChanged, finalize, takeUntil} from 'rxjs/operators';
 import {FormatBigDecimalPipe} from '../../../../shared/pipes/format-big-decimal.pipe';
 import {getPaymentMethodText, PaymentMethod} from '../../../ordering/domain/payment-method.enum';
+import {getOrderTypeText, OrderType} from '../../../ordering/domain/order-type.enum';
 
 @Component({
   selector: 'app-manage-all-orders',
@@ -34,6 +35,7 @@ export class ManageAllOrdersComponent implements OnInit, OnDestroy {
   private router = inject(Router);
   private destroy$ = new Subject<void>();
 
+
   ordersPage = signal<Page<OrderSummaryResponse> | null>(null);
   isLoading = signal(true);
   errorMessage = signal<string | null>(null);
@@ -43,6 +45,12 @@ export class ManageAllOrdersComponent implements OnInit, OnDestroy {
 
   getPaymentMethodText = getPaymentMethodText;
 
+  orderTypes = Object.values(OrderType);
+  getOrderTypeText = getOrderTypeText;
+
+  isExporting = signal(false);
+
+
   // Filter form
   filterForm = this.fb.group({
     keyword: [''], // Tìm theo mã đơn hàng, tên người mua/bán?
@@ -51,6 +59,7 @@ export class ManageAllOrdersComponent implements OnInit, OnDestroy {
     paymentStatus: [''],
     buyerId: [''],
     farmerId: [''],
+    orderType: ['']
 
   });
 
@@ -97,6 +106,7 @@ export class ManageAllOrdersComponent implements OnInit, OnDestroy {
       status: formValue.status || undefined,
       paymentMethod: formValue.paymentMethod || undefined,
       paymentStatus: formValue.paymentStatus || undefined,
+      orderType: formValue.orderType || undefined,
       buyerId: formValue.buyerId ? +formValue.buyerId : undefined,
       farmerId: formValue.farmerId ? +formValue.farmerId : undefined
     };
@@ -184,6 +194,44 @@ export class ManageAllOrdersComponent implements OnInit, OnDestroy {
 
   trackOrderById(index: number, item: OrderSummaryResponse): number {
     return item.id;
+  }
+
+  exportToExcel(): void {
+    if (this.isExporting()) return;
+    this.isExporting.set(true);
+    this.toastr.info('Đang chuẩn bị file để xuất...', 'Vui lòng chờ');
+
+    const formValue = this.filterForm.value;
+    const params = { // Lấy các tham số lọc hiện tại
+      keyword: formValue.keyword || undefined,
+      status: formValue.status || undefined,
+      paymentMethod: formValue.paymentMethod || undefined,
+      paymentStatus: formValue.paymentStatus || undefined,
+      buyerId: formValue.buyerId ? +formValue.buyerId : undefined,
+      farmerId: formValue.farmerId ? +formValue.farmerId : undefined,
+      orderType: formValue.orderType || undefined
+    };
+
+    this.adminOrderingService.exportOrders(params) // Gọi API export mới
+      .pipe(finalize(() => this.isExporting.set(false)))
+      .subscribe({
+        next: (blob) => {
+          // Tạo link và kích hoạt tải xuống
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `don_hang_${new Date().toISOString().slice(0, 10)}.xlsx`;
+          document.body.appendChild(a);
+          a.click();
+          window.URL.revokeObjectURL(url);
+          a.remove();
+          this.toastr.success('Xuất file Excel thành công!');
+        },
+        error: (err) => {
+          this.toastr.error('Có lỗi xảy ra khi xuất file.');
+          console.error(err);
+        }
+      });
   }
 
 

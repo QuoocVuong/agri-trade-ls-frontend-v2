@@ -38,17 +38,12 @@ export class ChatLayoutComponent implements OnDestroy {
         if (restoredRoomId && rooms && rooms.length > 0) {
           const foundRoom = rooms.find(r => r.id === restoredRoomId);
           if (foundRoom) {
-            // Cập nhật lại signal với đầy đủ thông tin phòng
+            // Cập nhật lại signal với đầy đủ thông tin
             this.selectedRoom.set(foundRoom);
-            this.showMobileChatList.set(false); // Ẩn list nếu đã khôi phục phòng
-            this.chatService.setCurrentChatRoom(foundRoom.id); // Báo cho service
           } else {
             // Nếu ID đã lưu không còn tồn tại trong danh sách mới -> reset
             this.clearSelectedRoom();
           }
-        } else if (this.selectedRoom()?.id && (!rooms || rooms.length === 0)) {
-          // Nếu có ID lưu nhưng danh sách phòng rỗng -> reset
-          this.clearSelectedRoom();
         }
       });
   }
@@ -61,20 +56,19 @@ export class ChatLayoutComponent implements OnDestroy {
   }
 
   onRoomSelected(room: ChatRoomResponse): void {
-    console.log('Room selected:', room);
     this.selectedRoom.set(room);
     this.showMobileChatList.set(false);
-    this.chatService.setCurrentChatRoom(room.id);
-    // Lưu ID vào sessionStorage
-    sessionStorage.setItem(SELECTED_ROOM_ID_KEY, room.id.toString());
-    // Cập nhật URL (tùy chọn)
-    // this.router.navigate([], { relativeTo: this.route, queryParams: { roomId: room.id }, queryParamsHandling: 'merge' });
 
-    // Đánh dấu đã đọc
+    // *** CẬP NHẬT URL KHI CHỌN PHÒNG ***
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { roomId: room.id },
+      queryParamsHandling: 'merge'
+    });
+
+    // Logic đánh dấu đã đọc giữ nguyên
     if (room.myUnreadCount && room.myUnreadCount > 0) {
-      this.chatService.markMessagesAsRead(room.id)
-        .pipe(takeUntil(this.destroy$))
-        .subscribe({ error: (err) => console.error("Error marking room as read", err) });
+      this.chatService.markMessagesAsRead(room.id).subscribe();
     }
   }
 
@@ -85,32 +79,32 @@ export class ChatLayoutComponent implements OnDestroy {
   }
 
   private restoreSelectedRoom(): void {
-    // Ưu tiên query param trước
     const queryRoomId = this.route.snapshot.queryParamMap.get('roomId');
-    const storageRoomId = sessionStorage.getItem(SELECTED_ROOM_ID_KEY);
-    const roomIdToRestore = queryRoomId ? +queryRoomId : (storageRoomId ? +storageRoomId : null);
+    const roomIdToRestore = queryRoomId ? +queryRoomId : null;
 
 
-    if (roomIdToRestore !== null && !isNaN(roomIdToRestore)) {
-      console.log("Restoring selected room ID:", roomIdToRestore);
-      // Tạm thời chỉ lưu ID, thông tin đầy đủ sẽ được cập nhật khi chatRooms$ phát ra
-      this.selectedRoom.set({ id: roomIdToRestore } as ChatRoomResponse); // Ép kiểu tạm thời
-      this.showMobileChatList.set(false); // Giả định ẩn list
-      this.chatService.setCurrentChatRoom(roomIdToRestore);
+    if (roomIdToRestore) {
+      console.log("Restoring selected room ID from URL:", roomIdToRestore);
+      // Không cần gọi API ở đây. Chỉ cần set ID tạm thời.
+      // `chatRooms$` subscription ở trên sẽ tìm và điền đầy đủ thông tin sau.
+      this.selectedRoom.set({ id: roomIdToRestore } as ChatRoomResponse);
+      this.showMobileChatList.set(false);
     } else {
       this.selectedRoom.set(null);
       this.showMobileChatList.set(true);
-      this.chatService.setCurrentChatRoom(null);
     }
   }
 
   private clearSelectedRoom(): void {
     this.selectedRoom.set(null);
     this.showMobileChatList.set(true);
-    this.chatService.setCurrentChatRoom(null);
-    sessionStorage.removeItem(SELECTED_ROOM_ID_KEY);
-    // Xóa query param khỏi URL (tùy chọn)
-    // this.router.navigate([], { relativeTo: this.route, queryParams: { roomId: null }, queryParamsHandling: 'merge' });
+
+    // *** XÓA roomId KHỎI URL KHI QUAY LẠI LIST ***
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { roomId: null },
+      queryParamsHandling: 'merge'
+    });
   }
 }
 // Cần thêm hàm setCurrentChatRoom(roomId: number | null) vào ChatService

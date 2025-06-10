@@ -19,7 +19,8 @@ import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged, takeUntil, finalize } from 'rxjs/operators';
 import { AuthService } from '../../../../core/services/auth.service';
 import {FormatBigDecimalPipe} from '../../../../shared/pipes/format-big-decimal.pipe';
-import {getPaymentMethodText, PaymentMethod} from '../../../ordering/domain/payment-method.enum'; // Import AuthService
+import {getPaymentMethodText, PaymentMethod} from '../../../ordering/domain/payment-method.enum';
+import {getOrderTypeText, OrderType} from '../../../ordering/domain/order-type.enum'; // Import AuthService
 
 @Component({
   selector: 'app-manage-orders',
@@ -44,7 +45,8 @@ export class ManageOrdersComponent implements OnInit, OnDestroy {
     keyword: [''], // Tìm theo mã đơn hàng, tên người mua?
     status: [''], // Lọc theo OrderStatus
     paymentMethod: [''], // Lọc theo paymentMethod
-    paymentStatus: ['']
+    paymentStatus: [''],
+    orderType: ['']
 
   });
 
@@ -63,6 +65,10 @@ export class ManageOrdersComponent implements OnInit, OnDestroy {
   paymentStatuses = Object.values(PaymentStatus);
 
   getPaymentMethodText = getPaymentMethodText;
+
+  // Thêm các biến cho OrderType
+  orderTypes = Object.values(OrderType);
+  getOrderTypeText = getOrderTypeText;
 
   // State cho modal cập nhật trạng thái
   showStatusModal = signal(false);
@@ -110,7 +116,8 @@ export class ManageOrdersComponent implements OnInit, OnDestroy {
       keyword: formValue.keyword?.trim() || undefined, // undefined nếu rỗng để HttpParams bỏ qua
       status: formValue.status || undefined,          // undefined nếu rỗng
       paymentMethod: formValue.paymentMethod || undefined, // undefined nếu rỗng
-      paymentStatus: formValue.paymentStatus || undefined
+      paymentStatus: formValue.paymentStatus || undefined,
+      orderType: formValue.orderType || undefined
     };
 
 
@@ -119,6 +126,7 @@ export class ManageOrdersComponent implements OnInit, OnDestroy {
     if (!params.status) delete params.status;
     if (!params.paymentMethod) delete params.paymentMethod;
     if (!params.paymentStatus) delete params.paymentStatus;
+    if (!params.orderType) delete params.orderType;
 
 
 

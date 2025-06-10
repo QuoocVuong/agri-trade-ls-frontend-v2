@@ -7,6 +7,7 @@ import { ApiResponse, PagedApiResponse } from '../../../core/models/api-response
 import { SupplyOrderPlacementRequest } from '../dto/request/SupplyOrderPlacementRequest'; // Tạo DTO này
 import { SupplyOrderRequestResponse } from '../dto/response/SupplyOrderRequestResponse'; // Tạo DTO này
 import { OrderResponse } from '../dto/response/OrderResponse';
+import {SupplyOrderRequestStatus} from '../domain/supply-order-request-status.enum';
 
 @Injectable({
   providedIn: 'root'
@@ -19,15 +20,17 @@ export class SupplyOrderRequestService {
     return this.http.post<ApiResponse<SupplyOrderRequestResponse>>(this.apiUrl, request);
   }
 
-  getMySentRequests(page: number, size: number, sort?: string): Observable<PagedApiResponse<SupplyOrderRequestResponse>> {
+  getMySentRequests(page: number, size: number, sort?: string, status?: SupplyOrderRequestStatus | null): Observable<PagedApiResponse<SupplyOrderRequestResponse>> {
     let params = new HttpParams().set('page', page.toString()).set('size', size.toString());
     if (sort) params = params.set('sort', sort);
+    if (status) params = params.set('status', status);
     return this.http.get<PagedApiResponse<SupplyOrderRequestResponse>>(`${this.apiUrl}/my-sent`, { params });
   }
 
-  getMyReceivedRequests(page: number, size: number, sort?: string): Observable<PagedApiResponse<SupplyOrderRequestResponse>> {
+  getMyReceivedRequests(page: number, size: number, sort?: string, status?: SupplyOrderRequestStatus | null): Observable<PagedApiResponse<SupplyOrderRequestResponse>> {
     let params = new HttpParams().set('page', page.toString()).set('size', size.toString());
     if (sort) params = params.set('sort', sort);
+    if (status) params = params.set('status', status);
     return this.http.get<PagedApiResponse<SupplyOrderRequestResponse>>(`${this.apiUrl}/my-received`, { params });
   }
 

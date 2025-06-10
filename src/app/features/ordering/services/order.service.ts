@@ -16,7 +16,8 @@ import {AgreedOrderRequest} from '../dto/request/AgreedOrderRequest';
 import {InvoiceStatus} from '../domain/invoice-status.enum';
 import {InvoiceSummaryResponse} from '../dto/response/InvoiceSummaryResponse';
 import {PaymentNotificationRequest} from '../dto/request/PaymentNotificationRequest';
-import {PaymentStatus} from '../domain/payment-status.enum'; // Import Enum
+import {PaymentStatus} from '../domain/payment-status.enum';
+import {OrderType} from '../domain/order-type.enum'; // Import Enum
 
 // Interface cho tham số tìm kiếm đơn hàng của Farmer
 export interface FarmerOrderSearchParams {
@@ -27,6 +28,7 @@ export interface FarmerOrderSearchParams {
   status?: OrderStatus | string | null; // Lọc theo OrderStatus
   paymentMethod?: PaymentMethod | string | null;
   paymentStatus?: PaymentStatus | string | null;
+  orderType?: OrderType | string | null;
 }
 
 export interface BuyerOrderSearchParams {
@@ -37,6 +39,7 @@ export interface BuyerOrderSearchParams {
   status?: OrderStatus | string | null;
   paymentMethod?: PaymentMethod | string | null;
   paymentStatus?: PaymentStatus | string | null;
+  orderType?: OrderType | string | null;
 }
 
 export interface BuyerInvoiceSearchParams { // Có thể giống FarmerInvoiceSearchParams
@@ -75,6 +78,9 @@ export class OrderService {
       if (params.status) httpParams = httpParams.set('status', params.status.toString());
       if (params.paymentMethod) httpParams = httpParams.set('paymentMethod', params.paymentMethod.toString());
       if (params.paymentStatus) httpParams = httpParams.set('paymentStatus', params.paymentStatus.toString());
+      if (params.orderType) {
+        httpParams = httpParams.set('orderType', params.orderType.toString());
+      }
       return this.http.get<PagedApiResponse<OrderSummaryResponse>>(`${this.orderApiUrl}/my`, { params: httpParams });
     }
 
@@ -140,6 +146,9 @@ export class OrderService {
       httpParams = httpParams.set('paymentMethod', params.paymentMethod.toString()); // Gửi status dưới dạng string
     }
     if (params.paymentStatus) httpParams = httpParams.set('paymentStatus', params.paymentStatus.toString());
+    if (params.orderType) {
+      httpParams = httpParams.set('orderType', params.orderType.toString());
+    }
 
     return this.http.get<PagedApiResponse<OrderSummaryResponse>>(`${this.farmerOrderApiUrl}/my`, { params: httpParams });
   }

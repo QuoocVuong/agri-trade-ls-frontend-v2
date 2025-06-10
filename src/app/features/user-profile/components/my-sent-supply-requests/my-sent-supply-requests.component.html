@@ -14,6 +14,18 @@
   </div>
   <app-alert *ngIf="errorMessage() && !isLoading()" type="error" [message]="errorMessage()!" class="mb-6"></app-alert>
 
+  <div class="mb-6 p-4 bg-base-100 dark:bg-gray-800 rounded-xl shadow">
+    <form [formGroup]="filterForm" class="flex items-center gap-4">
+      <div class="form-control w-full max-w-xs">
+        <label class="label pb-1"><span class="label-text font-medium">Lọc theo trạng thái</span></label>
+        <select formControlName="status" class="select select-bordered select-sm">
+          <option value="">Tất cả</option>
+          <option *ngFor="let s of requestStatuses" [value]="s">{{ getBuyerViewStatusText(s) }}</option>
+        </select>
+      </div>
+    </form>
+  </div>
+
   <ng-container *ngIf="!isLoading()">
     <div *ngIf="requestsPage()?.content?.length && requestsPage()!.content!.length > 0; else emptyRequests"
          class="bg-base-100 dark:bg-gray-800 shadow-xl rounded-xl border border-base-300/30 dark:border-gray-700/30 overflow-hidden">

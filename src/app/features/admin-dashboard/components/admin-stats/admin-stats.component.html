@@ -6,9 +6,9 @@
   <app-alert *ngIf="errorMessage()" type="error" [message]="errorMessage()"></app-alert>
 
   <!-- Stats Cards -->
-  <div *ngIf="stats() as s; else noStats"> <!-- Dùng alias 's' -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-
+  <div *ngIf="stats() as s; else noStats">
+    <!-- HÀNG 1: CÁC CHỈ SỐ TỔNG QUAN -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
       <!-- Doanh thu Tháng này -->
       <div class="stat shadow rounded-box">
         <div class="stat-figure text-primary">
@@ -16,11 +16,29 @@
         </div>
         <div class="stat-title text-sm">Doanh thu (Tháng)</div>
         <div class="stat-value text-primary">{{ (s.totalRevenueThisMonth ?? 0) | formatBigDecimal:'1.0-0' }} đ</div>
-        <div class="stat-desc text-xs">Tổng doanh thu tháng này</div>
+        <div class="stat-desc text-xs">
+          <ng-container *ngIf="s.totalRevenuePreviousMonth != null">
+            <span [ngClass]="{
+              'text-success': isGrowthOrEqual(s.totalRevenueThisMonth, s.totalRevenuePreviousMonth),
+              'text-error': isDecline(s.totalRevenueThisMonth, s.totalRevenuePreviousMonth)
+            }">
+              <ng-container *ngIf="isGrowthOrEqual(s.totalRevenueThisMonth, s.totalRevenuePreviousMonth)">
+                ↑ {{ calculateGrowthPercentage(s.totalRevenueThisMonth, s.totalRevenuePreviousMonth) }}%
+              </ng-container>
+              <ng-container *ngIf="isDecline(s.totalRevenueThisMonth, s.totalRevenuePreviousMonth)">
+                ↓ {{ calculateGrowthPercentage(s.totalRevenueThisMonth, s.totalRevenuePreviousMonth) }}%
+              </ng-container>
+            </span>
+            so với tháng trước
+          </ng-container>
+          <ng-container *ngIf="s.totalRevenuePreviousMonth == null">
+            Tổng doanh thu tháng này
+          </ng-container>
+        </div>
       </div>
 
       <!-- Đơn hàng Tháng này -->
-      <div class="stat  shadow rounded-box">
+      <div class="stat shadow rounded-box">
         <div class="stat-figure text-secondary">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="inline-block w-8 h-8 stroke-current"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
         </div>
@@ -30,17 +48,21 @@
       </div>
 
       <!-- Tổng Người dùng -->
-      <div class="stat  shadow rounded-box">
+      <div class="stat shadow rounded-box">
         <div class="stat-figure text-info">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="inline-block w-8 h-8 stroke-current"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
         </div>
         <div class="stat-title text-sm">Tổng Người dùng</div>
         <div class="stat-value text-info">{{ s.totalUsers ?? 0 }}</div>
-        <div class="stat-desc text-xs">Farmers: {{s.totalFarmers ?? 0}}, Buyers: {{s.totalConsumers ?? 0}} + {{s.totalBusinessBuyers ?? 0}}</div>
+        <div class="stat-desc text-xs flex flex-col">
+          <span>Nông dân: {{s.totalFarmers ?? 0}}</span>
+          <span>Người mua lẻ: {{s.totalConsumers ?? 0}}</span>
+          <span>Doanh nghiệp: {{s.totalBusinessBuyers ?? 0}}</span>
+        </div>
       </div>
 
       <!-- Chờ duyệt -->
-      <div class="stat  shadow rounded-box">
+      <div class="stat shadow rounded-box">
         <div class="stat-figure text-warning">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="inline-block w-8 h-8 stroke-current"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
         </div>
@@ -48,29 +70,113 @@
         <div class="stat-value text-warning">{{ (s.pendingFarmerApprovals ?? 0) + (s.pendingProductApprovals ?? 0) + (s.pendingReviews ?? 0) }}</div>
         <div class="stat-desc text-xs flex flex-col">
           <a routerLink="/admin/farmers/pending" class="link link-hover link-warning">Nông dân: {{s.pendingFarmerApprovals ?? 0}}</a>
-          <a routerLink="/admin/products" [queryParams]="{ status: 'PENDING_APPROVAL' }" class="link link-hover link-warning">Sản phẩm: {{s.pendingProductApprovals ?? 0}}</a>
-          <a routerLink="/admin/reviews/pending" class="link link-hover link-warning">Đánh giá: {{s.pendingReviews ?? 0}}</a>
+          <a routerLink="/admin/products" [queryParams]="{ status: 'PENDING_APPROVAL' }" class="link link-hover link-warning">Sản phẩm và nguồn cung: {{s.pendingProductApprovals ?? 0}}</a>
+
+
         </div>
       </div>
-
     </div>
 
-    <!-- Thêm các khu vực khác cho biểu đồ, hoạt động gần đây -->
-    <div class="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <div class="card  shadow">
+    <!-- HÀNG 2: BIỂU ĐỒ DOANH THU & PHÂN BỔ TRẠNG THÁI -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+      <!-- Biểu đồ doanh thu (chiếm 2/3) -->
+      <div class="card shadow lg:col-span-2">
         <div class="card-body">
           <h3 class="card-title text-lg">Doanh thu gần đây</h3>
-          <!-- TODO: Thêm biểu đồ doanh thu (gọi API getDailyRevenueForAdminChart) -->
           <canvas baseChart [data]="lineChartData" [options]="lineChartOptions" [type]="lineChartType"></canvas>
         </div>
       </div>
-      <div class="card  shadow">
+      <!-- Biểu đồ phân bổ trạng thái (chiếm 1/3) -->
+      <div class="card shadow">
+        <div class="card-body">
+          <h3 class="card-title text-lg">Phân bổ Trạng thái Đơn hàng</h3>
+          <div class="flex justify-center items-center h-64">
+            <canvas baseChart [data]="pieChartData" [type]="pieChartType" [options]="pieChartOptions"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- HÀNG 3: TOP LISTS & TĂNG TRƯỞNG USER -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+      <!-- Widget: Top Nông dân -->
+      <div class="card shadow">
+        <div class="card-body">
+          <h3 class="card-title text-lg">Top Nông dân (Tháng)</h3>
+          <div class="overflow-x-auto">
+            <table class="table table-sm">
+              <tbody>
+              <tr *ngFor="let farmer of topFarmers()" class="hover">
+                <td>
+                  <div class="flex items-center gap-3">
+                    <div class="avatar">
+                      <div class="mask mask-squircle w-10 h-10">
+                        <img [src]="farmer.avatarUrl || 'assets/images/default-avatar.png'" [alt]="farmer.fullName" />
+                      </div>
+                    </div>
+                    <div>
+                      <div class="font-bold">{{ farmer.farmName || farmer.fullName }}</div>
+                      <div class="text-xs opacity-50">ID: {{ farmer.userId }}</div>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Widget: Top Người mua -->
+      <div class="card shadow">
+        <div class="card-body">
+          <h3 class="card-title text-lg">Top Người mua (Tháng)</h3>
+          <div class="overflow-x-auto">
+            <table class="table table-sm">
+              <tbody>
+              <tr *ngFor="let buyer of topBuyers()" class="hover">
+                <td>
+                  <div class="flex items-center gap-3">
+                    <div class="avatar">
+                      <div class="mask mask-squircle w-10 h-10">
+                        <img [src]="buyer.avatarUrl || 'assets/images/default-avatar.png'" [alt]="buyer.fullName" />
+                      </div>
+                    </div>
+                    <div>
+                      <div class="font-bold">{{ buyer.fullName }}</div>
+                      <div class="text-xs opacity-50">{{ buyer.email }}</div>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Widget: Biểu đồ Tăng trưởng Người dùng mới -->
+      <div class="card shadow">
+        <div class="card-body">
+          <h3 class="card-title text-lg">Tăng trưởng Người dùng mới</h3>
+          <div class="h-64">
+            <canvas baseChart [data]="userGrowthChartData" [options]="lineChartOptions" [type]="userGrowthChartType"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- HÀNG 4: HOẠT ĐỘNG GẦN ĐÂY -->
+    <div class="grid grid-cols-1">
+      <div class="card shadow">
         <div class="card-body">
           <h3 class="card-title text-lg">Hoạt động gần đây</h3>
-          <!-- TODO: Thêm danh sách hoạt động (gọi API getRecentActivitiesForAdmin) -->
-          <ul *ngIf="recentActivities().length > 0; else noActivities" class="list-disc pl-5">
-            <li *ngFor="let activity of recentActivities()">
-              {{ activity.description  }} <span class="text-sm text-gray-500">({{ activity.timestamp  | date:'HH:mm dd/MM/yyyy' }})</span>
+          <ul *ngIf="recentActivities().length > 0; else noActivities" class="space-y-2">
+            <li *ngFor="let activity of recentActivities()" class="text-sm">
+              <a [routerLink]="activity.link" class="link link-hover">
+                {{ activity.description }}
+              </a>
+              <span class="block text-xs text-gray-500">({{ activity.timestamp | date:'HH:mm dd/MM/yyyy' }})</span>
             </li>
           </ul>
           <ng-template #noActivities>

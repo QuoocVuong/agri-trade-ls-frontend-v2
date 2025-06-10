@@ -27,7 +27,8 @@ import {OrderResponse} from '../../../ordering/dto/response/OrderResponse';
 import {getMassUnitText} from '../../../catalog/domain/mass-unit.enum';
 import {
   FinalizeSupplyRequestModalComponent
-} from '../finalize-supply-request-modal/finalize-supply-request-modal.component'; // Import TimeAgoPipe
+} from '../finalize-supply-request-modal/finalize-supply-request-modal.component';
+import {FormBuilder, ReactiveFormsModule} from '@angular/forms'; // Import TimeAgoPipe
 
 @Component({
   selector: 'app-manage-supply-requests',
@@ -44,6 +45,7 @@ import {
     ModalComponent,
     AgreedOrderFormComponent,
     FinalizeSupplyRequestModalComponent,
+    ReactiveFormsModule
     // Thêm TimeAgoPipe
   ],
   templateUrl: './manage-supply-requests.component.html',
@@ -55,6 +57,7 @@ export class ManageSupplyRequestsComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
   // Inject ChatService
   private chatService = inject(ChatService);
+  private fb = inject(FormBuilder);
 
   requestsPage = signal<PageData<SupplyOrderRequestResponse> | null>(null);
   isLoading = signal(true);
@@ -79,7 +82,7 @@ export class ManageSupplyRequestsComponent implements OnInit, OnDestroy {
 
 
   // Helpers cho template
-  RequestStatusEnum = SupplyOrderRequestStatus;
+  // RequestStatusEnum = SupplyOrderRequestStatus;
   getStatusText = getSupplyOrderRequestStatusText;
   getUnitText = getMassUnitText;
 
@@ -94,15 +97,30 @@ export class ManageSupplyRequestsComponent implements OnInit, OnDestroy {
     return getSupplyOrderRequestStatusText(status, true); // Luôn truyền true vì đây là view của Farmer
   }
 
+  // Thêm các thuộc tính cho bộ lọc
+  filterForm = this.fb.group({
+    status: ['']
+  });
+  RequestStatusEnum = SupplyOrderRequestStatus;
+  requestStatuses = Object.values(SupplyOrderRequestStatus);
 
-  constructor() {
-    effect(() => {
-      this.loadReceivedRequests();
-    });
-  }
+
+  // constructor() {
+  //   effect(() => {
+  //     this.loadReceivedRequests();
+  //   });
+  // }
 
   ngOnInit(): void {
-    // Không cần gọi load ở đây vì effect sẽ làm
+    this.loadReceivedRequests(); // Load lần đầu
+
+    // Lắng nghe thay đổi của form để load lại
+    this.filterForm.get('status')?.valueChanges.pipe(
+      takeUntil(this.destroy$)
+    ).subscribe(() => {
+      this.currentPage.set(0); // Reset về trang đầu khi lọc
+      this.loadReceivedRequests();
+    });
   }
 
   ngOnDestroy(): void {
@@ -113,7 +131,10 @@ export class ManageSupplyRequestsComponent implements OnInit, OnDestroy {
   loadReceivedRequests(): void {
     this.isLoading.set(true);
     this.errorMessage.set(null);
-    this.requestService.getMyReceivedRequests(this.currentPage(), this.pageSize(), this.sort())
+
+    const status = this.filterForm.get('status')?.value as SupplyOrderRequestStatus | null;
+
+    this.requestService.getMyReceivedRequests(this.currentPage(), this.pageSize(), this.sort(), status)
       .pipe(
         takeUntil(this.destroy$),
         finalize(() => this.isLoading.set(false))

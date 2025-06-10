@@ -80,7 +80,7 @@ export class ProductSearchSelectComponent implements OnChanges {
           status: 'PUBLISHED', // Chỉ tìm sản phẩm đang bán
           sort: 'name,asc'
         };
-        return this.productService.getMyProducts(params).pipe( // Gọi API lấy sản phẩm của farmer
+        return this.productService.getMySupplyProducts(params).pipe( // Gọi API lấy sản phẩm của farmer
           catchError(() => {
             this.isLoading.set(false);
             this.foundProducts.set([]);

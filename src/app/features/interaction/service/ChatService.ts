@@ -89,14 +89,10 @@ export class ChatService {
   // ****** TÁCH LOGIC CONNECT VÀ SUBSCRIBE ******
   private connectWebSocketAndSubscribe(): void {
     if (this.rxStomp.active) { // Dùng active thay vì connected để kiểm tra trạng thái mong muốn
-      console.log("WS connection process already active or connected.");
-      // Đảm bảo các subscription vẫn tồn tại (RxStomp thường tự xử lý)
-      // Nếu cần chắc chắn, có thể kiểm tra và gọi lại các hàm subscribe ở đây
+
       return;
     }
-    console.log("Activating WS connection and subscribing...");
-    // Cập nhật lại header trước khi activate (mặc dù đã dùng getter)
-    // this.rxStomp.configure({ connectHeaders: { Authorization: `Bearer ${this.authService.getAccessToken() || ''}` } });
+
     this.rxStomp.activate();
 
     // Subscribe vào các kênh cần thiết
@@ -135,55 +131,7 @@ export class ChatService {
     this.rxStomp.configure(stompConfig);
   }
 
-  // private connectWebSocket(): void {
-  //   if (this.rxStomp.connected()) {
-  //     console.log("WebSocket already connected.");
-  //     return;
-  //   }
-  //   // Cập nhật lại connectHeaders với token mới nhất trước khi connect
-  //   this.rxStomp.configure({ connectHeaders: { Authorization: `Bearer ${this.authService.connectWebSocket() || ''}` } });
-  //   this.rxStomp.activate(); // Bắt đầu kết nối
-  //
-  //   // Lắng nghe các message từ server gửi về private queue của user
-  //   this.rxStomp.watch(`/user/queue/messages`)
-  //     .pipe(takeUntil(this.destroy$)) // Cần destroy$ để unsubscribe
-  //     .subscribe((message: IMessage) => {
-  //       try {
-  //         const chatMessage: ChatMessageResponse = JSON.parse(message.body);
-  //         console.log("Received new message via WS:", chatMessage);
-  //         // TODO: Cập nhật UI (thêm vào danh sách tin nhắn nếu phòng đang mở, cập nhật unread count...)
-  //         this.handleIncomingMessage(chatMessage);
-  //       } catch (e) {
-  //         console.error("Error parsing incoming WS message:", e);
-  //       }
-  //     });
-  //
-  //   // Lắng nghe thông báo đã đọc
-  //   this.rxStomp.watch(`/user/queue/read`)
-  //     .pipe(takeUntil(this.destroy$))
-  //     .subscribe((message: IMessage) => {
-  //       try {
-  //         const readEvent = JSON.parse(message.body); // Giả sử là MessageReadEvent
-  //         console.log("Received read notification via WS:", readEvent);
-  //         // TODO: Cập nhật trạng thái 'đã xem' trên UI của tin nhắn tương ứng
-  //       } catch (e) {
-  //         console.error("Error parsing read notification:", e);
-  //       }
-  //     });
-  //
-  //   // Lắng nghe lỗi từ server (nếu có)
-  //   this.rxStomp.watch(`/user/queue/errors`)
-  //     .pipe(takeUntil(this.destroy$))
-  //     .subscribe((message: IMessage) => {
-  //       try {
-  //         const errorEvent = JSON.parse(message.body); // Giả sử là WebSocketErrorEvent
-  //         console.log("Received error via WS:", errorEvent);
-  //         this.toastr.error(`Lỗi chat: ${errorEvent.message || 'Lỗi không xác định'}`);
-  //       } catch (e) {
-  //         console.error("Error parsing error event:", e);
-  //       }
-  //     });
-  // }
+
 
   private disconnectWebSocket(): void {
     if (this.rxStomp.active) {
@@ -193,98 +141,72 @@ export class ChatService {
   }
 
   // Xử lý tin nhắn đến
+  // Xử lý tin nhắn đến từ WebSocket
   private handleIncomingMessage(newMessage: ChatMessageResponse): void {
-    // Cập nhật danh sách phòng chat (đưa phòng có tin nhắn mới lên đầu, tăng unread count)
-    const currentRooms = this.chatRoomsSubject.value || [];
-    let roomUpdated = false;
-
-    // *** SỬA Ở ĐÂY: Lấy ID phòng đang mở từ SIGNAL ***
+    const myUserId = this.authService.currentUser()?.id;
     const currentOpenRoomId = this.currentRoomIdSignal();
+
+    this.updateChatRoomList(newMessage);
+
+    if (newMessage.roomId === currentOpenRoomId) {
+      const updatedMessages = [...this.currentMessagesSubject.getValue(), newMessage];
+      this.currentMessagesSubject.next(updatedMessages);
+
+      if (myUserId === newMessage.recipient?.id) {
+        this.markMessagesAsRead(newMessage.roomId).subscribe();
+      }
+    } else {
+      if (myUserId === newMessage.recipient?.id) {
+        this.toastr.info(`Có tin nhắn mới từ ${newMessage.sender?.fullName || 'Ai đó'}`);
+      }
+    }
+  }
+
+  // Hàm helper để cập nhật danh sách phòng chat
+  private updateChatRoomList(newMessage: ChatMessageResponse): void {
+    const currentRooms = this.chatRoomsSubject.getValue();
+    let roomFound = false;
     const myUserId = this.authService.currentUser()?.id;
 
     const updatedRooms = currentRooms.map(room => {
       if (room.id === newMessage.roomId) {
-        roomUpdated = true;
-        // // Chỉ tăng unread nếu user hiện tại là người nhận và không đang mở phòng đó
-        // const isRecipient = room.user1?.id === newMessage.recipient?.id || room.user2?.id === newMessage.recipient?.id;
-        // const isCurrentUserRecipient = this.authService.getCurrentUser()?.id === newMessage.recipient?.id;
-        //
-        // let newUnreadCount = room.myUnreadCount; // Giữ nguyên nếu mình là người gửi
-        // if (isCurrentUserRecipient && room.id !== this.currentRoomId) { // Tăng nếu mình là người nhận và KHÔNG đang mở phòng
-        //   newUnreadCount = (room.myUnreadCount || 0) + 1;
-        // }
-        const isCurrentUserRecipient = myUserId === newMessage.recipient?.id;
-        let newUnreadCount = room.myUnreadCount ?? 0; // Lấy giá trị hiện tại
+        roomFound = true;
+        const isRecipient = myUserId === newMessage.recipient?.id;
+        const isRoomOpen = this.currentRoomIdSignal() === room.id;
 
-        // Chỉ tăng unread nếu mình là người nhận VÀ phòng này KHÔNG đang mở
-        if (isCurrentUserRecipient && room.id !== currentOpenRoomId) {
-          newUnreadCount++;
+        // Chỉ tăng unread count nếu là người nhận và phòng không mở
+        if (isRecipient && !isRoomOpen) {
+          // Khởi tạo myUnreadCount nếu nó chưa tồn tại
+          if (room.myUnreadCount === undefined || room.myUnreadCount === null) {
+            room.myUnreadCount = 0;
+          }
+
+          // Bây giờ có thể tăng một cách an toàn
+          room.myUnreadCount++;
+
+          // Cập nhật cả các trường gốc nếu cần
+          if (room.user1?.id === myUserId) {
+            room.user1UnreadCount = (room.user1UnreadCount ?? 0) + 1;
+          } else if (room.user2?.id === myUserId) {
+            room.user2UnreadCount = (room.user2UnreadCount ?? 0) + 1;
+          }
         }
 
-        // Xác định otherUser một lần ở đây nếu chưa có
-        if (!room.otherUser && myUserId) {
-          room.otherUser = room.user1?.id === myUserId ? room.user2 : room.user1;
-        }
-        // Cập nhật myUnreadCount để component dùng
-        if(room.user1?.id === myUserId) room.user1UnreadCount = newUnreadCount;
-        else if (room.user2?.id === myUserId) room.user2UnreadCount = newUnreadCount;
-        room.myUnreadCount = newUnreadCount;
-
-
-        return { ...room, lastMessage: newMessage, lastMessageTime: newMessage.sentAt, myUnreadCount: newUnreadCount };
+        // Trả về object mới với các thông tin đã cập nhật
+        return { ...room, lastMessage: newMessage, lastMessageTime: newMessage.sentAt };
       }
       return room;
     });
 
-    // Nếu là phòng chat mới hoàn toàn (chưa có trong list) -> load lại list? Hoặc thêm vào?
-    if (!roomUpdated) {
-      // Tạm thời load lại toàn bộ list để đơn giản
-      this.loadMyChatRooms().subscribe();
+    if (!roomFound) {
+      this.loadMyChatRooms().subscribe(); // Load lại nếu là phòng mới
     } else {
-      // Sắp xếp lại để đưa phòng mới nhất lên đầu
+      // Sắp xếp lại để đưa phòng có tin nhắn mới lên đầu
       updatedRooms.sort((a, b) => new Date(b.lastMessageTime || 0).getTime() - new Date(a.lastMessageTime || 0).getTime());
       this.chatRoomsSubject.next(updatedRooms);
     }
-
-
-    // Nếu phòng chat đang mở, thêm tin nhắn vào danh sách hiện tại
-    console.log(`Current open room ID: ${currentOpenRoomId}, Message room ID: ${newMessage.roomId}`);
-    if (newMessage.roomId === currentOpenRoomId) {
-      console.log("Adding message to current view:", newMessage);
-      const currentMessages = this.currentMessagesSubject.value;
-
-      const updatedMessages = [...currentMessages, newMessage];
-      // **SẮP XẾP LẠI THEO sentAt TĂNG DẦN**
-      updatedMessages.sort((a, b) => new Date(a.sentAt).getTime() - new Date(b.sentAt).getTime());
-      this.currentMessagesSubject.next(updatedMessages);
-
-      // Tự động đánh dấu đã đọc nếu đang mở phòng?
-       this.markMessagesAsRead(newMessage.roomId).subscribe(); // Gọi API đánh dấu đã đọc
-
-
-      // Tự động đánh dấu đã đọc nếu mình là người nhận và đang mở phòng
-      if (myUserId === newMessage.recipient?.id) {
-        console.log("Auto-marking message as read because room is open.");
-        // Không cần subscribe lồng nhau, chỉ cần gọi API
-        this.markMessagesAsRead(newMessage.roomId).subscribe(
-          () => {}, // Xử lý thành công (không cần làm gì)
-          err => console.error("Error auto-marking read:", err) // Log lỗi nếu có
-        );
-      }
-    } else {
-      console.log("Message is for a different room or no room is open.");
-      // Thông báo toast cho tin nhắn mới ở phòng khác (nếu muốn)
-      if (myUserId === newMessage.recipient?.id) {
-        const senderName = newMessage.sender?.fullName || 'Ai đó';
-        this.toastr.info(`Có tin nhắn mới từ ${senderName}`, undefined, {
-          tapToDismiss: true,
-          // Có thể thêm action để mở phòng chat đó
-          // onActivateTick: true,
-          // toastComponent: MyCustomToastComponent // Component tùy chỉnh nếu cần action
-        });
-      }
-    }
   }
+
 
 
   // --- Phương thức mới ---
@@ -296,11 +218,7 @@ export class ChatService {
    */
   public setCurrentChatRoom(roomId: number | null): void {
     this.currentRoomIdSignal.set(roomId);
-    console.log(`Current chat room set to: ${roomId}`);
-    // Có thể thêm logic tự động đánh dấu đã đọc ở đây nếu muốn
-    // if (roomId !== null) {
-    //     this.markMessagesAsRead(roomId).subscribe();
-    // }
+
   }
 
 
@@ -339,7 +257,6 @@ export class ChatService {
   isUserOnline(userId: number | null | undefined): boolean {
     if (userId == null) return false;
     const isOnline = this.onlineUsers().get(userId);
-    // console.log(`Checking online status for ${userId}: ${isOnline}`); // Bỏ log này để tránh spam console
     return isOnline ?? false; // Trả về false nếu không tìm thấy trong map
   }
   // *************************************
@@ -498,36 +415,24 @@ export class ChatService {
   // Lấy lịch sử tin nhắn (API)
   getChatMessages(roomId: number, page: number, size: number): Observable<PagedApiResponse<ChatMessageResponse>> {
     this.isLoadingMessages.set(true);
-    //his.currentRoomId = roomId;
-    this.currentRoomIdSignal.set(roomId);
     let params = new HttpParams()
       .set('page', page.toString())
       .set('size', size.toString())
-      .set('sort', 'sentAt,desc'); // Lấy tin nhắn mới nhất trước
+      .set('sort', 'sentAt,desc');
 
     return this.http.get<PagedApiResponse<ChatMessageResponse>>(`${this.apiUrl}/rooms/${roomId}/messages`, { params }).pipe(
       tap(response => {
         if (response.success && response.data) {
           const messagesFromApi = response.data.content.reverse();
-          // *** Cập nhật Subject khi load trang đầu tiên ***
+
           if (page === 0) {
-            messagesFromApi.sort((a, b) => new Date(a.sentAt).getTime() - new Date(b.sentAt).getTime());
-            this.currentMessagesSubject.next(messagesFromApi)
+            this.currentMessagesSubject.next(messagesFromApi);
           } else {
-            // Khi load trang cũ hơn, để component xử lý việc thêm vào đầu
-          }
-          // Đánh dấu đã đọc sau khi load thành công trang đầu
-          if (page === 0) {
-            this.markMessagesAsRead(roomId).subscribe(
-              () => {},
-              err => console.error("Error marking read after loading history:", err)
-            );
+            const currentMessages = this.currentMessagesSubject.getValue();
+            this.currentMessagesSubject.next([...messagesFromApi, ...currentMessages]);
           }
         } else {
-          // Nếu load trang đầu lỗi/rỗng thì reset subject
-          if (page === 0) {
-            this.currentMessagesSubject.next([]);
-          }
+          if (page === 0) this.currentMessagesSubject.next([]);
         }
       }),
       finalize(() => this.isLoadingMessages.set(false))

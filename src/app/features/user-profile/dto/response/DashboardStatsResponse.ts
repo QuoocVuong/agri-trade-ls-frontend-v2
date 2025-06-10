@@ -15,6 +15,8 @@ export interface DashboardStatsResponse {
   pendingOrders?: number | null;           // Đơn hàng mới/đang xử lý của farmer
   lowStockProducts?: number | null;        // Sản phẩm sắp hết hàng của farmer
   pendingReviewsOnMyProducts?: number | null; // Review mới cho sp của farmer
+  lowStockSupplies?: number | null;
+  pendingSupplyRequests?: number | null;
 
   // --- Số liệu riêng cho Admin ---
   totalUsers?: number | null;              // Tổng user (cần làm rõ active hay total)
@@ -24,7 +26,10 @@ export interface DashboardStatsResponse {
   pendingFarmerApprovals?: number | null;  // Farmer chờ duyệt
   pendingProductApprovals?: number | null; // Sản phẩm chờ duyệt
   pendingReviews?: number | null;          // Tổng review chờ duyệt
+
+  totalRevenuePreviousMonth?: number;
+  orderStatusDistribution?: { [key: string]: number }; // Kiểu dữ liệu là một object với key là string và value là number
+
 }
 
-// Có thể dùng @Builder ở backend để dễ tạo response hơn,
-// nhưng ở frontend chỉ cần interface là đủ.
+

@@ -24,6 +24,7 @@ import {getMassUnitText} from '../../../catalog/domain/mass-unit.enum';
 import {ChatService} from '../../../interaction/service/ChatService';
 import {ToastrService} from 'ngx-toastr';
 import {AuthService} from '../../../../core/services/auth.service';
+import {FormBuilder, ReactiveFormsModule} from '@angular/forms';
 
 @Component({
   selector: 'app-my-sent-supply-requests',
@@ -37,7 +38,8 @@ import {AuthService} from '../../../../core/services/auth.service';
     DatePipe,
     FormatBigDecimalPipe,
     TimeAgoPipe,
-    ModalComponent
+    ModalComponent,
+    ReactiveFormsModule
   ],
   templateUrl: './my-sent-supply-requests.component.html',
 })
@@ -48,6 +50,7 @@ export class MySentSupplyRequestsComponent implements OnInit, OnDestroy {
   private toastr = inject(ToastrService);
   private authService = inject(AuthService);
   private router = inject(Router);
+  private fb = inject(FormBuilder);
 
   requestsPage = signal<PageData<SupplyOrderRequestResponse> | null>(null);
   isLoading = signal(true);
@@ -58,7 +61,7 @@ export class MySentSupplyRequestsComponent implements OnInit, OnDestroy {
   sort = signal('createdAt,desc');
 
   getStatusText = getSupplyOrderRequestStatusText;
-  RequestStatusEnum = SupplyOrderRequestStatus;
+
   getUnitText = getMassUnitText;
   getStatusClass = getSupplyOrderRequestStatusCssClass; // Expose hàm mới
 
@@ -72,6 +75,13 @@ export class MySentSupplyRequestsComponent implements OnInit, OnDestroy {
   selectedRequestDetail = signal<SupplyOrderRequestResponse | null>(null);
   showDetailModal = signal(false);
   actionLoadingMap = signal<{[requestId: number]: boolean}>({}); // Để theo dõi loading cho từng request
+
+  // Thêm các thuộc tính cho bộ lọc
+  filterForm = this.fb.group({
+    status: ['']
+  });
+  RequestStatusEnum = SupplyOrderRequestStatus;
+  requestStatuses = Object.values(SupplyOrderRequestStatus);
 
 
 
@@ -128,14 +138,21 @@ export class MySentSupplyRequestsComponent implements OnInit, OnDestroy {
 
 
 
-  constructor() {
-    effect(() => {
-      this.loadSentRequests();
-    });
-  }
+  // constructor() {
+  //   effect(() => {
+  //     this.loadSentRequests();
+  //   });
+  // }
 
   ngOnInit(): void {
-    // Load lần đầu
+    this.loadSentRequests();
+
+    this.filterForm.get('status')?.valueChanges.pipe(
+      takeUntil(this.destroy$)
+    ).subscribe(() => {
+      this.currentPage.set(0);
+      this.loadSentRequests();
+    });
   }
 
   ngOnDestroy(): void {
@@ -146,7 +163,8 @@ export class MySentSupplyRequestsComponent implements OnInit, OnDestroy {
   loadSentRequests(): void {
     this.isLoading.set(true);
     this.errorMessage.set(null);
-    this.requestService.getMySentRequests(this.currentPage(), this.pageSize(), this.sort())
+    const status = this.filterForm.get('status')?.value as SupplyOrderRequestStatus | null;
+    this.requestService.getMySentRequests(this.currentPage(), this.pageSize(), this.sort(), status)
       .pipe(
         takeUntil(this.destroy$),
         finalize(() => this.isLoading.set(false))
