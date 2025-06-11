@@ -92,32 +92,14 @@
               <span class="text-3xl font-bold text-primary dark:text-green-400">{{ p.price | formatBigDecimal:'1.0-0' }} ₫</span>
               <span class="text-base-content/70 dark:text-gray-400 text-sm"> / {{ p.unit }}</span>
             </div>
-            <div *ngIf="isBusinessBuyer() && p.b2bEnabled" class="space-y-2">
-              <p class="text-xs font-medium text-secondary dark:text-teal-400 uppercase tracking-wider">Giá Doanh Nghiệp</p>
-              <div>
-                <span class="text-3xl font-bold text-secondary dark:text-teal-400">{{ p.b2bBasePrice | formatBigDecimal:'1.0-0' }} ₫</span>
-                <span class="text-base-content/70 dark:text-gray-400 text-sm"> / {{ p.b2bUnit }}</span>
-                <span class="text-xs text-base-content/60 dark:text-gray-500"> (Giá cơ bản)</span>
-              </div>
-              <p *ngIf="p.minB2bQuantity != null && p.minB2bQuantity > 1" class="text-xs text-warning dark:text-yellow-500">
-                Số lượng đặt tối thiểu: {{ p.minB2bQuantity }} {{ p.b2bUnit }}
-              </p>
-              <div *ngIf="p.pricingTiers && p.pricingTiers.length > 0" class="text-xs space-y-0.5">
-                <p class="text-info dark:text-sky-400 font-medium">Ưu đãi theo số lượng:</p>
-                <ul class="list-disc list-inside text-base-content/80 dark:text-gray-300 pl-2">
-                  <li *ngFor="let tier of p.pricingTiers">
-                    Từ {{ tier.minQuantity }} {{ p.b2bUnit }}: <span class="font-semibold">{{ tier.pricePerUnit | formatBigDecimal:'1.0-0' }} ₫/{{ p.b2bUnit }}</span>
-                  </li>
-                </ul>
-              </div>
-            </div>
+
           </div>
 
           <!-- Stock Status -->
           <div class="mb-6 text-sm">
             <span *ngIf="p.stockQuantity > 0" class="badge badge-lg badge-success badge-outline dark:border-green-500/70 dark:text-green-400">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>
-              Còn hàng ({{ p.stockQuantity }} {{ (isBusinessBuyer() && p.b2bEnabled) ? p.b2bUnit : p.unit }})
+              Còn hàng ({{ p.stockQuantity }} )
             </span>
             <span *ngIf="p.stockQuantity <= 0" class="badge badge-lg badge-error badge-outline dark:border-red-500/70 dark:text-red-400">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
@@ -132,11 +114,11 @@
               <div class="join border border-base-300 dark:border-gray-600 rounded-full">
                 <button type="button" class="btn btn-ghost btn-sm join-item rounded-l-full px-3"
                         (click)="changeQuantity(-1)"
-                        [disabled]="(quantityForm.controls.quantity.value ?? 1) <= ((isBusinessBuyer() && p.b2bEnabled) ? (p.minB2bQuantity || 1) : 1)"
+                        [disabled]="(quantityForm.controls.quantity.value ?? 1)"
                         aria-label="Giảm số lượng">-</button>
                 <input type="number" id="quantity" formControlName="quantity"
                        class="input input-sm w-16 text-center join-item bg-transparent focus:outline-none dark:text-white"
-                       [min]="(isBusinessBuyer() && p.b2bEnabled) ? (p.minB2bQuantity || 1) : 1"
+                       [min]="1"
                        [max]="p.stockQuantity" aria-label="Số lượng sản phẩm">
                 <button type="button" class="btn btn-ghost btn-sm join-item rounded-r-full px-3"
                         (click)="changeQuantity(1)"
