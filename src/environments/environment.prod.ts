@@ -1,12 +1,8 @@
-// Khai báo để TypeScript không báo lỗi 'process'
-declare var process: {
-  env: {
-    [key: string]: string | undefined;
-  };
-};
+// src/environments/environment.prod.ts
 
 export const environment = {
   production: true,
-  apiUrl: process.env['NG_APP_API_URL'],
-  wsUrl: process.env['NG_APP_WS_URL'],
+  // *** ĐIỀN TRỰC TIẾP URL VÀO ĐÂY ***
+  apiUrl: 'http://13.211.168.11:8080/api',
+  wsUrl: 'ws://13.211.168.11:8080/ws',
 };
