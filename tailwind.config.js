@@ -1,4 +1,6 @@
 /** @type {import('tailwindcss').Config} */
+
+const defaultTheme = require('tailwindcss/defaultTheme');
 module.exports = {
   darkMode: 'class', // Kích hoạt dark mode dựa trên class
   content: [
@@ -17,6 +19,7 @@ module.exports = {
       fontFamily: {
         // Ví dụ thêm font Inter
         // sans: ['Inter', 'sans-serif'],
+        sans: ['"Be Vietnam Pro"', ...defaultTheme.fontFamily.sans],
       }
     },
   },
