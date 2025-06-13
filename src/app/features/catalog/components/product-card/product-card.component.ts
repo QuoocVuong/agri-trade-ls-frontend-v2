@@ -284,48 +284,6 @@ export class ProductCardComponent {
   }
   // *****************************************************
 
-  // THÊM PHƯƠG THỨC NÀY
-  buyNow(event: MouseEvent): void {
-    event.preventDefault();
-    event.stopPropagation();
-
-    if (!this.isAuthenticated()) {
-      this.toastr.info('Vui lòng đăng nhập để mua hàng.');
-      this.router.navigate(['/auth/login'], { queryParams: { returnUrl: this.router.url } });
-      return;
-    }
-
-    if (this.product.stockQuantity <= 0) {
-      this.toastr.error(`${this.product.name} đã hết hàng.`);
-      return;
-    }
-
-    this.isAddingToCart.set(true); // Tận dụng signal loading có sẵn
-    const request: CartItemRequest = { productId: this.product.id, quantity: 1 };
-
-    this.cartService.addItem(request)
-      .pipe(
-        takeUntil(this.destroy$),
-        finalize(() => {
-          this.isAddingToCart.set(false);
-          this.cdr.markForCheck();
-        })
-      )
-      .subscribe({
-        next: () => {
-          // Sau khi thêm vào giỏ hàng thành công, điều hướng ngay đến trang checkout
-          this.router.navigate(['/checkout']);
-        },
-        error: (err: any) => {
-          // Xử lý lỗi tương tự như addToCart
-          const apiResponseError = err.error as ApiResponse<null>;
-          const message = apiResponseError?.message || err?.message || 'Lỗi khi thực hiện mua ngay.';
-          this.toastr.error(message);
-          console.error('Error during buyNow:', err);
-        }
-      });
-  }
-
   // Hàm trackBy (nếu component này dùng *ngFor, mặc dù hiện tại không)
   trackById(index: number, item: any): number {
     return item.id;
