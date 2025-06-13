@@ -1,4 +1,5 @@
 <style>
+  /* Giữ lại animation cũ nếu bạn vẫn cần */
   @keyframes fadeInDown {
     from {
       opacity: 0;
@@ -15,58 +16,65 @@
   }
 </style>
 
-<!-- Header -->
-<!-- sticky top-0 z-50 đã có sẵn để giữ header -->
-<header class="navbar shadow-lg sticky top-0 z-50  dark:bg-gradient-to-r dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 dark:text-gray-100 relative">
+<!--
+  HEADER ĐÃ SỬA LỖI RESPONSIVE
+  FIX 1: Giảm padding ngang trên màn hình nhỏ nhất (px-2 sm:px-4) để có thêm không gian.
+-->
+<header class="navbar sticky top-0 z-50 px-2 sm:px-4 lg:px-6 shadow-md
+               bg-white/80 dark:bg-gray-950/80 backdrop-blur-md
+               border-b border-gray-200/80 dark:border-gray-800/80
+               transition-all duration-300">
 
   <div class="navbar-start">
-    <!-- Nút Hamburger: Hành vi thay đổi dựa trên showSidebarToggle Input -->
-    <label tabindex="0" class="btn btn-ghost lg:hidden" (click)="handleMobileMenuToggle()">
-      <!-- Icon Hamburger (khi cả sidebar và dropdown header đều đóng, hoặc khi không có sidebar toggle) -->
-      <svg *ngIf="(!showSidebarToggle && !isHeaderDropdownOpen()) || (showSidebarToggle && !isSidebarCurrentlyOpen())"
-           xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h8m-8 6h16" />
-      </svg>
-      <!-- Icon "X" (khi sidebar mở HOẶC dropdown header mở) -->
-      <svg *ngIf="(showSidebarToggle && isSidebarCurrentlyOpen()) || (!showSidebarToggle && isHeaderDropdownOpen())"
-           xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-      </svg>
+    <!-- Nút Hamburger -->
+    <label tabindex="0" class="btn btn-ghost lg:hidden -ml-2" (click)="handleMobileMenuToggle()">
+      <svg *ngIf="(!showSidebarToggle && !isHeaderDropdownOpen()) || (showSidebarToggle && !isSidebarCurrentlyOpen())" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h8m-8 6h16" /></svg>
+      <svg *ngIf="(showSidebarToggle && isSidebarCurrentlyOpen()) || (!showSidebarToggle && isHeaderDropdownOpen())" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
     </label>
 
-
-
-
-    <!-- Logo - Giảm kích thước chữ trên mobile -->
-    <a routerLink="/" class="btn btn-ghost normal-case text-xl sm:text-2xl font-bold text-green-400 ">AgriTrade</a>
+    <!-- Logo -->
+    <a routerLink="/" class="flex items-center transition-opacity hover:opacity-80 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 rounded-md">
+      <!--
+        THAY ĐỔI QUAN TRỌNG:
+        - Thay "assets/images/logo.svg" bằng đường dẫn đến file logo của bạn.
+        - class "h-8 sm:h-9" để điều chỉnh chiều cao logo trên mobile (32px) và desktop (36px).
+      -->
+      <img src="assets/images/logo.png"
+           alt="AgriTrade Logo"
+           class="h-12 sm:h-14 w-auto">
+    </a>
   </div>
 
   <!-- Menu chính trên Desktop -->
   <div class="navbar-center hidden lg:flex">
-    <!-- Giảm kích thước chữ menu desktop một chút nếu cần -->
-    <ul class="menu menu-horizontal px-1 text-base dark:text-gray-100 text-gray-700">
-      <li><a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="hover:text-green-400 transition-colors">Trang chủ</a></li>
-      <li><a routerLink="/products" routerLinkActive="active" class="hover:text-green-400 transition-colors ">Sản phẩm</a></li>
-
-      <li><a routerLink="/supply-sources" routerLinkActive="active" class="hover:text-green-400 transition-colors ">Tìm Nguồn Cung</a></li>
-
-      <li *ngIf="isFarmer()"><a routerLink="/farmer/dashboard" routerLinkActive="active" class="hover:text-green-400 transition-colors">Kênh người bán</a></li>
-      <li *ngIf="isAdmin()"><a routerLink="/admin/dashboard" routerLinkActive="active" class="hover:text-green-400 transition-colors">Quản trị</a></li>
+    <ul class="menu menu-horizontal px-1 text-base font-medium text-gray-600 dark:text-gray-300">
+      <li><a routerLink="/" routerLinkActive="text-green-500 dark:text-green-400" [routerLinkActiveOptions]="{exact: true}" class="hover:text-green-500 transition-colors">Trang chủ</a></li>
+      <li><a routerLink="/products" routerLinkActive="text-green-500 dark:text-green-400" class="hover:text-green-500 transition-colors">Sản phẩm</a></li>
+      <li><a routerLink="/supply-sources" routerLinkActive="text-green-500 dark:text-green-400" class="hover:text-green-500 transition-colors">Tìm Nguồn Cung</a></li>
+      <li *ngIf="isFarmer()"><a routerLink="/farmer/dashboard" routerLinkActive="text-green-500 dark:text-green-400" class="hover:text-green-500 transition-colors">Kênh người bán</a></li>
+      <li *ngIf="isAdmin()"><a routerLink="/admin/dashboard" routerLinkActive="text-green-500 dark:text-green-400" class="hover:text-green-500 transition-colors">Quản trị</a></li>
     </ul>
   </div>
 
-  <!-- navbar-end: Giảm khoảng cách trên mobile -->
+  <!--
+    FIX 2: Giảm khoảng cách giữa các icon trên mobile (space-x-0 sm:space-x-1)
+  -->
   <div class="navbar-end space-x-1 sm:space-x-2">
-    <!-- Thanh tìm kiếm Desktop: Ẩn trên mobile -->
-    <div class="form-control hidden sm:block">
-      <!-- Điều chỉnh lại width: nhỏ hơn trên sm, lớn dần -->
+    <!-- Thanh tìm kiếm Desktop -->
+    <div class="form-control hidden sm:block relative">
+      <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+        <svg class="h-4 w-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+      </span>
       <input #desktopSearchInput type="text" placeholder="Tìm kiếm..."
-             class="input input-bordered w-24 md:w-48 lg:w-64 input-sm bg-gray-200 text-gray-800 placeholder-gray-500 border-gray-300 focus:border-green-400 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500 dark:border-gray-700 dark:focus:border-green-500"
+             class="input input-bordered w-32 md:w-48 input-sm pl-9
+                    bg-gray-100/80 dark:bg-gray-800/80
+                    focus:ring-2 focus:ring-green-400 focus:border-green-400
+                    border-gray-300 dark:border-gray-700
+                    transition-all duration-300"
              (keyup.enter)="performSearch(desktopSearchInput.value); desktopSearchInput.value=''" />
-      <!-- Thêm (keyup.enter) và clear input sau khi search -->
     </div>
-    <!-- Icon tìm kiếm Mobile: Hiện trên mobile, ẩn từ sm -->
-    <!-- Thêm *ngIf và (click) -->
+
+    <!-- Icon tìm kiếm Mobile -->
     <button *ngIf="!isMobileSearchVisible()" class="btn btn-ghost btn-circle sm:hidden" (click)="toggleMobileSearch()">
       <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
     </button>
@@ -75,25 +83,16 @@
     <div class="dropdown dropdown-end">
       <label tabindex="0" class="btn btn-ghost btn-circle indicator">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341A6.002 6.002 0 006 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
-        <!-- Thay đổi kích thước badge trên mobile -->
-        <span *ngIf="unreadNotificationCount() > 0"
-              class="badge badge-xs sm:badge-sm indicator-item bg-green-500 border-none text-white transform -translate-x-0.5 translate-y-0.5">
-          {{ unreadNotificationCount() > 9 ? '9+' : unreadNotificationCount() }}
-        </span>
+        <span *ngIf="unreadNotificationCount() > 0" class="badge badge-xs sm:badge-sm indicator-item bg-green-500 border-none text-white">{{ unreadNotificationCount() > 9 ? '9+' : unreadNotificationCount() }}</span>
       </label>
-      <!-- Tăng z-index cho dropdown. bg-base-100 và text-base-content cần dark mode tương ứng -->
-      <div tabindex="0" class="dropdown-content z-[51] card card-compact w-64 p-2 shadow bg-white text-gray-800 rounded-box mt-3 border border-gray-200 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700">
-        <div class="card-body text-center p-3 sm:p-4"> <!-- Điều chỉnh padding -->
+      <div tabindex="0" class="dropdown-content z-[51] card card-compact w-64 p-2 shadow-xl bg-white/90 dark:bg-gray-800/90 backdrop-blur-lg rounded-xl mt-4 border border-gray-200 dark:border-gray-700">
+        <div class="card-body text-center p-3">
           <ng-container *ngIf="unreadNotificationCount() > 0; else noUnread">
-            <!-- Điều chỉnh kích thước chữ -->
             <p class="font-semibold text-sm">Bạn có {{ unreadNotificationCount() }} thông báo mới.</p>
           </ng-container>
-          <ng-template #noUnread>
-            <p class="text-sm">Bạn không có thông báo mới.</p>
-          </ng-template>
+          <ng-template #noUnread><p class="text-sm">Không có thông báo mới.</p></ng-template>
           <div class="card-actions mt-2">
-            <!-- Điều chỉnh kích thước nút -->
-            <a routerLink="/user/notifications" class="btn btn-primary btn-xs sm:btn-sm btn-block dark:bg-green-700 dark:hover:bg-green-800">Xem tất cả</a>
+            <a routerLink="/user/notifications" class="btn btn-primary btn-sm btn-block bg-green-600 hover:bg-green-700 border-none">Xem tất cả</a>
           </div>
         </div>
       </div>
@@ -104,100 +103,83 @@
       <label tabindex="0" class="btn btn-ghost btn-circle">
         <div class="indicator">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
-          <!-- Thay đổi kích thước badge trên mobile -->
-          <span *ngIf="cartItemCount() > 0"
-                class="badge badge-xs sm:badge-sm indicator-item bg-green-500 border-none text-white transform -translate-x-0.5 translate-y-0.5">
-            {{ cartItemCount() }}
-          </span>
+          <span *ngIf="cartItemCount() > 0" class="badge badge-xs sm:badge-sm indicator-item bg-green-500 border-none text-white">{{ cartItemCount() }}</span>
         </div>
       </label>
-      <!-- Tăng z-index cho dropdown. bg-gray-700 và text-white cần dark mode tương ứng -->
-      <div tabindex="0" class="mt-3 z-[51] card card-compact dropdown-content w-52 bg-white text-gray-800 shadow dark:bg-gray-800 dark:text-gray-100">
-        <!-- Điều chỉnh padding và kích thước chữ -->
-        <div class="card-body p-3">
-          <span class="font-bold text-base dark:text-gray-50">{{ cartItemCount() }} Items</span>
-          <span class="text-green-400 text-sm">Subtotal: {{ cartSubTotal() | formatBigDecimal:'1.0-0' }} ₫</span>
-          <div class="card-actions mt-2">
-            <!-- Điều chỉnh kích thước nút -->
-            <a routerLink="/cart" class="btn btn-primary btn-block btn-xs sm:btn-sm bg-green-600 hover:bg-green-700">Xem giỏ hàng</a>
+      <div tabindex="0" class="mt-4 z-[51] card card-compact dropdown-content w-56 bg-white/90 dark:bg-gray-800/90 backdrop-blur-lg shadow-xl rounded-xl border border-gray-200 dark:border-gray-700">
+        <div class="card-body p-4">
+          <span class="font-bold text-lg">{{ cartItemCount() }} sản phẩm</span>
+          <span class="text-green-500">Tổng phụ: {{ cartSubTotal() | formatBigDecimal:'1.0-0' }} ₫</span>
+          <div class="card-actions mt-3">
+            <a routerLink="/cart" class="btn btn-primary btn-block btn-sm bg-green-600 hover:bg-green-700 border-none">Xem giỏ hàng</a>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Dark Mode Toggle Button -->
+    <!-- Icon Dark Mode -->
     <button class="btn btn-ghost btn-circle" (click)="toggleDarkMode()">
-      {{ isDarkMode ? '🌞' : '🌙' }}
+      <svg *ngIf="!isDarkMode" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>
+      <svg *ngIf="isDarkMode" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
     </button>
 
     <!-- User Avatar / Login Button -->
     <ng-container *ngIf="isLoggedIn(); else loginButton">
       <div class="dropdown dropdown-end">
         <label tabindex="0" class="btn btn-ghost btn-circle avatar">
-          <!-- Điều chỉnh kích thước avatar và ring offset -->
-          <div class="w-8 sm:w-10 rounded-full ring ring-green-400 ring-offset-base-100 ring-offset-1 sm:ring-offset-2">
+          <div class="w-9 rounded-full ring ring-green-400 ring-offset-base-100 ring-offset-2">
             <img [src]="user()?.avatarUrl || 'assets/images/default-avatar.png'" alt="User Avatar" />
           </div>
         </label>
-        <!-- Tăng z-index cho dropdown -->
-        <ul tabindex="0" class="menu menu-sm dropdown-content mt-3 z-[51] p-2 shadow bg-white text-gray-800 rounded-box w-52 dark:bg-gray-800 dark:text-gray-100">
-          <li><a routerLink="/user/profile" class="hover:bg-green-600 hover:text-white dark:hover:bg-green-700 dark:hover:text-gray-50">Trang cá nhân</a></li>
-          <li><a routerLink="/user/orders" class="hover:bg-green-600 hover:text-white dark:hover:bg-green-700 dark:hover:text-gray-50">Đơn hàng của tôi</a></li>
-          <li><a (click)="logout()" class="hover:bg-green-600 hover:text-white">Đăng xuất</a></li>
+        <ul tabindex="0" class="menu menu-sm dropdown-content mt-4 z-[51] p-2 shadow-xl bg-white/90 dark:bg-gray-800/90 backdrop-blur-lg rounded-xl w-52 border border-gray-200 dark:border-gray-700">
+          <li><a routerLink="/user/profile" class="hover:bg-green-500 hover:text-white dark:hover:bg-green-600">Trang cá nhân</a></li>
+          <li><a routerLink="/user/orders" class="hover:bg-green-500 hover:text-white dark:hover:bg-green-600">Đơn hàng của tôi</a></li>
+          <li><a (click)="logout()" class="hover:bg-red-500 hover:text-white dark:hover:bg-red-600">Đăng xuất</a></li>
         </ul>
       </div>
     </ng-container>
     <ng-template #loginButton>
-      <!-- Điều chỉnh kích thước nút và ẩn nút Đăng ký trên màn hình siêu nhỏ -->
-      <a routerLink="/auth/login" class="btn btn-primary btn-xs sm:btn-sm bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-800 text-white">Đăng nhập</a>
-      <a routerLink="/auth/register" class="btn btn-ghost btn-xs sm:btn-sm text-gray-300 hover:text-green-400 hidden sm:inline-flex dark:text-gray-400 dark:hover:text-green-500">Đăng ký</a>
+      <!--
+        FIX 3: Thay đổi kích thước nút thành btn-xs trên màn hình nhỏ nhất và sm:btn-sm trên màn hình lớn hơn.
+        Đây là thay đổi quan trọng nhất để giải quyết vấn đề.
+      -->
+      <a routerLink="/auth/login" class="btn btn-primary btn-xs sm:btn-sm bg-green-600 hover:bg-green-700 border-none text-white">Đăng nhập</a>
+      <a routerLink="/auth/register" class="btn btn-ghost btn-xs sm:btn-sm hidden sm:inline-flex">Đăng ký</a>
     </ng-template>
   </div>
 
-  <!-- *** Ô Tìm kiếm Mobile Overlay *** -->
-  <!-- Hiển thị khi isMobileSearchVisible là true, chỉ trên mobile (sm:hidden) -->
-  <div *ngIf="isMobileSearchVisible()"
-       class="absolute inset-0 bg-gray-900 bg-opacity-95 p-2 flex items-center z-[52] sm:hidden animate-fade-in-down">
-    <!-- Thêm hiệu ứng nếu muốn. Thêm dark mode styles cho input -->
+  <!-- Ô Tìm kiếm Mobile Overlay -->
+  <div *ngIf="isMobileSearchVisible()" class="absolute inset-0 bg-gray-900/95 p-4 flex items-center z-[52] sm:hidden animate-fade-in-down">
     <input #mobileSearchInput type="text" placeholder="Nhập từ khóa tìm kiếm..."
-           class="input input-bordered input-sm flex-grow bg-gray-700 text-white placeholder-gray-400 border-gray-600 focus:border-green-400"
+           class="input input-bordered w-full bg-gray-700 text-white placeholder-gray-400 border-gray-600 focus:border-green-400"
            (keyup.enter)="performSearch(mobileSearchInput.value); mobileSearchInput.value=''" />
-    <!-- Thêm clear input sau khi search -->
-    <button class="btn btn-ghost btn-sm ml-2" (click)="toggleMobileSearch()">
-      <!-- Icon Đóng (X) -->
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-      </svg>
+    <button class="btn btn-ghost btn-circle ml-2" (click)="toggleMobileSearch()">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
     </button>
   </div>
-  <!-- ******************************** -->
 
-  <!-- ****** MENU DROPDOWN CHO HEADER (ĐƯA RA NGOÀI CÙNG CẤP VỚI NAVBAR-START, CENTER, END) ****** -->
-  <!-- Chỉ hiển thị trên mobile và khi không có sidebar toggle VÀ dropdown đang mở -->
+  <!-- Menu Dropdown Mobile -->
   <div *ngIf="!showSidebarToggle && isHeaderDropdownOpen()"
-       class="absolute top-full left-0 w-full lg:hidden <!-- Định vị tuyệt đối so với header -->
-              z-[55] <!-- z-index cao hơn header một chút nhưng thấp hơn ô search mobile -->
-              animate-fade-in-down">
-    <ul  tabindex="0"
-        class="menu menu-sm p-2 shadow-lg rounded-box w-56 <!-- Tăng chiều rộng một chút -->
-               mx-2 my-1 <!-- Thêm margin để không dính sát lề -->
-               bg-gray-100 dark:bg-gray-900">
-      <li><a routerLink="/" (click)="closeHeaderDropdown()">Trang chủ</a></li>
-
-      <li><a routerLink="/supply-sources" (click)="closeHeaderDropdown()">Tìm Nguồn Cung</a></li>
-
-      <li><a routerLink="/products" (click)="closeHeaderDropdown()">Sản phẩm</a></li>
+       class="absolute top-full left-0 w-full lg:hidden z-[49] animate-fade-in-down">
+    <ul tabindex="0"
+        class="menu p-4 space-y-2 shadow-xl rounded-xl
+               mx-4 my-2
+               bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm
+               border border-gray-200/80 dark:border-gray-800/80">
+      <li><a routerLink="/" (click)="closeHeaderDropdown()" class="text-base hover:text-green-500">Trang chủ</a></li>
+      <li><a routerLink="/products" (click)="closeHeaderDropdown()" class="text-base hover:text-green-500">Sản phẩm</a></li>
+      <li><a routerLink="/supply-sources" (click)="closeHeaderDropdown()" class="text-base hover:text-green-500">Tìm Nguồn Cung</a></li>
+      <div class="divider my-1"></div>
       <ng-container *ngIf="!isLoggedIn()">
-        <li><a routerLink="/auth/login" (click)="closeHeaderDropdown()">Đăng nhập</a></li>
-        <li><a routerLink="/auth/register" (click)="closeHeaderDropdown()">Đăng ký</a></li>
+        <li><a routerLink="/auth/login" (click)="closeHeaderDropdown()" class="text-base">Đăng nhập</a></li>
+        <li><a routerLink="/auth/register" (click)="closeHeaderDropdown()" class="text-base">Đăng ký</a></li>
       </ng-container>
       <ng-container *ngIf="isLoggedIn()">
-        <li *ngIf="isFarmer()"><a routerLink="/farmer/dashboard" (click)="closeHeaderDropdown()">Kênh người bán</a></li>
-        <li *ngIf="isAdmin()"><a routerLink="/admin/dashboard" (click)="closeHeaderDropdown()">Quản trị</a></li>
-        <li><a routerLink="/user/profile" (click)="closeHeaderDropdown()">Trang cá nhân</a></li>
+        <li *ngIf="isFarmer()"><a routerLink="/farmer/dashboard" (click)="closeHeaderDropdown()" class="text-base">Kênh người bán</a></li>
+        <li *ngIf="isAdmin()"><a routerLink="/admin/dashboard" (click)="closeHeaderDropdown()" class="text-base">Quản trị</a></li>
+        <li><a routerLink="/user/profile" (click)="closeHeaderDropdown()" class="text-base">Trang cá nhân</a></li>
       </ng-container>
     </ul>
   </div>
-  <!-- ************************************************************************************** -->
 
 </header>
