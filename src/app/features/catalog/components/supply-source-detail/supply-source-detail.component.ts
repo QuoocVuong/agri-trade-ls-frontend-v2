@@ -17,6 +17,9 @@ import { LoadingSpinnerComponent } from '../../../../shared/components/loading-s
 import { AlertComponent } from '../../../../shared/components/alert/alert.component';
 import { FormatBigDecimalPipe } from '../../../../shared/pipes/format-big-decimal.pipe';
 import { SafeHtmlPipe } from '../../../../shared/pipes/safe-html.pipe';
+import {ConfirmationService} from '../../../../shared/services/confirmation.service';
+import {SupplyOrderRequestService} from '../../../ordering/services/supply-order-request.service';
+import {HttpErrorResponse} from '@angular/common/http';
 // Không cần ReviewList, ReviewForm nếu không hiển thị review ở đây
 // Không cần ProductCardComponent cho sản phẩm liên quan ở đây (trừ khi bạn muốn)
 
@@ -45,6 +48,9 @@ export class SupplySourceDetailComponent implements OnInit, OnDestroy {
   private toastr = inject(ToastrService);
   private locationService = inject(LocationService);
   private destroy$ = new Subject<void>();
+
+  private supplyRequestService = inject(SupplyOrderRequestService);
+  private confirmationService = inject(ConfirmationService);
 
   supplyDetail = signal<ProductDetailResponse | null>(null); // Dùng lại ProductDetailResponse
   isLoading = signal(true);
@@ -196,13 +202,71 @@ export class SupplySourceDetailComponent implements OnInit, OnDestroy {
       return;
     }
 
-    this.router.navigate(['/user/orders/supply-request/new'], { // Route đến form mới
-      queryParams: {
-        farmerId: farmerId,
-        productId: productId
-        // Không cần truyền productName, slug ở đây, form sẽ tự lấy khi load productContext
-      }
-    });
-  }
+    // Gọi API kiểm tra quyền
+    this.supplyRequestService.checkCreateRequestPermission()
+      .subscribe({
+        next: (response) => {
+          if (response.success) {
+            this.router.navigate(['/user/orders/supply-request/new'], {
+              queryParams: { farmerId, productId }
+            });
+          } else {
+            this.toastr.error(response.message || 'Không thể thực hiện hành động này.');
+          }
+        },
+        error: (err: HttpErrorResponse) => {
+          const apiError = err.error as ApiResponse<null>;
+          const errorCode = apiError?.details?.['errorCode'];
 
+          if (err.status === 403 && errorCode === 'BUSINESS_ACCOUNT_REQUIRED') {
+            this.confirmationService.open({
+              title: 'Chức năng dành cho Đối tác',
+              message: 'Tính năng này chỉ dành cho các tài khoản Nông dân hoặc Doanh nghiệp đã được xác thực. Bạn có muốn đăng ký hồ sơ Doanh nghiệp không?',
+              confirmText: 'Nâng cấp ngay',
+              cancelText: 'Để sau',
+              confirmButtonClass: 'btn-primary',
+              iconClass: 'fas fa-briefcase',
+              iconColorClass: 'text-primary'
+            }).subscribe(confirmed => {
+              if (confirmed) {
+                this.router.navigate(['/user/profile/business-profile']);
+              }
+            });
+          } else if (err.status === 400 && errorCode === 'BUSINESS_PROFILE_REQUIRED') {
+            this.confirmationService.open({
+              title: 'Hoàn Thiện Hồ Sơ Doanh Nghiệp',
+              message: 'Bạn cần hoàn thiện hồ sơ doanh nghiệp của mình trước khi có thể gửi yêu cầu. Đi đến trang hồ sơ ngay?',
+              confirmText: 'Đến trang hồ sơ',
+              cancelText: 'Để sau',
+              confirmButtonClass: 'btn-info',
+              iconClass: 'fas fa-file-alt',
+              iconColorClass: 'text-info'
+            }).subscribe(confirmed => {
+              if (confirmed) {
+                this.router.navigate(['/user/profile/business-profile']);
+              }
+            });
+          }
+          else if (err.status === 400 && errorCode === 'FARMER_PROFILE_REQUIRED') {
+            // Xử lý lỗi "Cần hoàn thiện hồ sơ nông dân"
+            this.confirmationService.open({
+              title: 'Hoàn Thiện Hồ Sơ Nông Dân',
+              message: 'Bạn cần hoàn thiện hồ sơ nông dân của mình trước khi có thể gửi yêu cầu cung ứng. Đi đến trang hồ sơ ngay?',
+              confirmText: 'Đến trang hồ sơ',
+              cancelText: 'Để sau',
+              confirmButtonClass: 'btn-accent', // Dùng màu khác
+              iconClass: 'fas fa-seedling',
+              iconColorClass: 'text-accent'
+            }).subscribe(confirmed => {
+              if (confirmed) {
+                this.router.navigate(['/user/profile/farmer-profile']);
+              }
+            });
+          }
+          else {
+            this.toastr.error(apiError?.message || 'Đã có lỗi xảy ra, vui lòng thử lại.');
+          }
+        }
+      });
+  }
 }

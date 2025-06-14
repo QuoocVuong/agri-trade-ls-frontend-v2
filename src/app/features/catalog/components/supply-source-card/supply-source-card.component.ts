@@ -9,7 +9,12 @@ import { ToastrService } from 'ngx-toastr';
 import { Subject } from 'rxjs';
 import { takeUntil, finalize } from 'rxjs/operators';
 import { FormatBigDecimalPipe } from '../../../../shared/pipes/format-big-decimal.pipe';
-import { LocationService } from '../../../../core/services/location.service'; // Import LocationService
+import { LocationService } from '../../../../core/services/location.service';
+import {SupplyOrderRequestService} from '../../../ordering/services/supply-order-request.service';
+import {HttpErrorResponse} from '@angular/common/http';
+import {ApiResponse} from '../../../../core/models/api-response.model';
+import {SupplyOrderPlacementRequest} from '../../../ordering/dto/request/SupplyOrderPlacementRequest';
+import {ConfirmationService} from '../../../../shared/services/confirmation.service'; // Import LocationService
 
 @Component({
   selector: 'app-supply-source-card',
@@ -27,6 +32,10 @@ export class SupplySourceCardComponent implements OnInit, OnDestroy {
   private toastr = inject(ToastrService);
   private locationService = inject(LocationService); // Inject LocationService
   private destroy$ = new Subject<void>();
+
+  private supplyRequestService = inject(SupplyOrderRequestService);
+
+  private confirmationService = inject(ConfirmationService);
 
   isContactingSupplier = signal(false);
   isAuthenticated = this.authService.isAuthenticated;
@@ -125,14 +134,87 @@ export class SupplySourceCardComponent implements OnInit, OnDestroy {
     }
 
     this.isNavigatingToRequestForm.set(true); // Set loading
-    // Điều hướng đến form tạo yêu cầu, truyền thông tin cần thiết
-    this.router.navigate(['/user/orders/supply-request/new'], { // Đảm bảo route này đúng
-      queryParams: {
-        farmerId: farmerId,
-        productId: productId
-        // Không cần truyền productName, slug ở đây, form sẽ tự lấy khi load productContext
-      }
-    }).finally(() => this.isNavigatingToRequestForm.set(false)); // Tắt loading sau khi điều hướng
+    // ================== LOGIC MỚI ==================
+    // 1. Gọi API kiểm tra quyền
+
+
+    // Gọi API create, nhưng chúng ta chỉ quan tâm đến việc nó thành công hay trả về lỗi 403
+    this.supplyRequestService.checkCreateRequestPermission()
+      .pipe(finalize(() => this.isNavigatingToRequestForm.set(false)))
+      .subscribe({
+        next: (response) => {
+          // 2. Nếu API thành công (mã 200 OK) -> người dùng có quyền
+          if (response.success) {
+            // Điều hướng đến form tạo yêu cầu thật sự
+            this.router.navigate(['/user/orders/supply-request/new'], {
+              queryParams: {
+                farmerId: farmerId,
+                productId: productId
+              }
+            });
+          } else {
+            // Trường hợp API trả về success: false nhưng không phải lỗi 403
+            this.toastr.error(response.message || 'Không thể thực hiện hành động này.');
+          }
+        },
+        error: (err: HttpErrorResponse) => {
+          // 3. Nếu API trả về lỗi
+          const apiError = err.error as ApiResponse<null>;
+          const errorCode = apiError?.details?.['errorCode'];
+
+          if (err.status === 403 && errorCode === 'BUSINESS_ACCOUNT_REQUIRED') {
+            // 4. Xử lý lỗi "Cần tài khoản doanh nghiệp"
+            this.confirmationService.open({
+              title: 'Chức năng dành cho Đối tác',
+              message: 'Tính năng gửi yêu cầu nguồn cung và mua hàng số lượng lớn chỉ dành cho các đối tác Nông dân và Doanh nghiệp đã được xác thực. Bạn có muốn nâng cấp tài khoản của mình ngay bây giờ không?',
+              confirmText: 'Đăng ký Doanh nghiệp',
+              cancelText: 'Để sau',
+              confirmButtonClass: 'btn-primary',
+              iconClass: 'fas fa-briefcase',
+              iconColorClass: 'text-primary'
+            }).subscribe(confirmed => {
+              if (confirmed) {
+                this.router.navigate(['/user/profile/business-profile']);
+              }
+            });
+          } else if (err.status === 400 && errorCode === 'BUSINESS_PROFILE_REQUIRED') {
+            // 5. Xử lý lỗi "Cần hoàn thiện hồ sơ doanh nghiệp"
+            this.confirmationService.open({
+              title: 'Hoàn Thiện Hồ Sơ Doanh Nghiệp',
+              message: 'Bạn cần hoàn thiện hồ sơ doanh nghiệp của mình trước khi có thể gửi yêu cầu cung ứng. Đi đến trang hồ sơ ngay?',
+              confirmText: 'Đến trang hồ sơ',
+              cancelText: 'Để sau',
+              confirmButtonClass: 'btn-info',
+              iconClass: 'fas fa-file-alt',
+              iconColorClass: 'text-info'
+            }).subscribe(confirmed => {
+              if (confirmed) {
+                this.router.navigate(['/user/profile/business-profile']);
+              }
+            });
+          }
+          else if (err.status === 400 && errorCode === 'FARMER_PROFILE_REQUIRED') {
+            // Xử lý lỗi "Cần hoàn thiện hồ sơ nông dân"
+            this.confirmationService.open({
+              title: 'Hoàn Thiện Hồ Sơ Nông Dân',
+              message: 'Bạn cần hoàn thiện hồ sơ nông dân của mình trước khi có thể gửi yêu cầu cung ứng. Đi đến trang hồ sơ ngay?',
+              confirmText: 'Đến trang hồ sơ',
+              cancelText: 'Để sau',
+              confirmButtonClass: 'btn-accent', // Dùng màu khác
+              iconClass: 'fas fa-seedling',
+              iconColorClass: 'text-accent'
+            }).subscribe(confirmed => {
+              if (confirmed) {
+                this.router.navigate(['/user/profile/farmer-profile']);
+              }
+            });
+          }
+          else {
+            // 6. Xử lý các lỗi khác
+            this.toastr.error(apiError?.message || 'Đã có lỗi xảy ra, vui lòng thử lại.');
+          }
+        }
+      });
   }
 
   // Helper để lấy tên hiển thị cho nông dân

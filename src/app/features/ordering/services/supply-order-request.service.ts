@@ -49,4 +49,14 @@ export class SupplyOrderRequestService {
   cancelMySentRequest(requestId: number): Observable<ApiResponse<void>> {
     return this.http.post<ApiResponse<void>>(`${this.apiUrl}/${requestId}/cancel-by-buyer`, {});
   }
+
+  /**
+   * Kiểm tra xem người dùng hiện tại có quyền tạo yêu cầu cung ứng hay không.
+   * API này không tạo request thật, chỉ kiểm tra quyền và trả về success: true nếu hợp lệ.
+   * @param request Dữ liệu yêu cầu giả để backend kiểm tra.
+   */
+  checkCreateRequestPermission(): Observable<ApiResponse<void>> {
+    // Backend cần có endpoint: POST /api/supply-requests/check-permission
+    return this.http.post<ApiResponse<void>>(`${this.apiUrl}/check-permission`, {});
+  }
 }

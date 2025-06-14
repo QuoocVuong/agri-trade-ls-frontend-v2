@@ -48,6 +48,10 @@ export class OrderDetailComponent implements OnInit, OnDestroy {
   private adminOrderingService = inject(AdminOrderingService);
   private locationService = inject(LocationService);
 
+  private confirmationService = inject(ConfirmationService);
+
+
+
   order = signal<OrderResponse | null>(null);
   isLoading = signal(true);
   isActionLoading = signal(false); // Loading cho các hành động (hủy, cập nhật status)
@@ -490,37 +494,28 @@ export class OrderDetailComponent implements OnInit, OnDestroy {
     const order = this.order()!;
     const paymentMethodConfirmed = methodSelectedByAdmin as PaymentMethod;
 
-    // Thông báo xác nhận
-    let confirmMessage = `Bạn có chắc chắn muốn xác nhận đã nhận thanh toán cho đơn hàng #${order.orderCode} bằng phương thức ${this.getPaymentMethodText(paymentMethodConfirmed)}?`;
-    if (order.paymentMethod === PaymentMethod.INVOICE) {
-      confirmMessage = `Xác nhận khách hàng đã thanh toán công nợ cho đơn hàng #${order.orderCode} bằng ${this.getPaymentMethodText(paymentMethodConfirmed)}?`;
-    }
-
-    if (confirm(confirmMessage)) {
-      this.isActionLoading.set(true);
-      this.adminOrderingService.confirmOrderPayment(orderId, paymentMethodConfirmed, { notes, transactionReference: transactionRef })
-        .pipe(
-          takeUntil(this.destroy$),
-          finalize(() => this.isActionLoading.set(false))
-        )
-        .subscribe({
-          next: (res) => {
-            if (res.success && res.data) {
-              this.order.set(res.data); // Cập nhật lại order với thông tin mới
-              this.toastr.success("Đã xác nhận thanh toán cho đơn hàng!");
-              // Nếu có thông tin bank transfer, có thể cần load lại hoặc ẩn đi
-              if (res.data.paymentStatus === PaymentStatus.PAID) {
-                this.bankTransferInfo.set(null);
-              }
-            } else {
-              this.toastr.error(res.message || "Lỗi xác nhận thanh toán.");
+    this.isActionLoading.set(true);
+    this.adminOrderingService.confirmOrderPayment(orderId, paymentMethodConfirmed, { notes, transactionReference: transactionRef })
+      .pipe(
+        takeUntil(this.destroy$),
+        finalize(() => this.isActionLoading.set(false))
+      )
+      .subscribe({
+        next: (res) => {
+          if (res.success && res.data) {
+            this.order.set(res.data);
+            this.toastr.success("Đã xác nhận thanh toán cho đơn hàng!");
+            if (res.data.paymentStatus === PaymentStatus.PAID) {
+              this.bankTransferInfo.set(null);
             }
-          },
-          error: (err) => {
-            this.toastr.error(err.error?.message || "Lỗi kết nối khi xác nhận thanh toán.");
+          } else {
+            this.toastr.error(res.message || "Lỗi xác nhận thanh toán.");
           }
-        });
-    }
+        },
+        error: (err) => {
+          this.toastr.error(err.error?.message || "Lỗi kết nối khi xác nhận thanh toán.");
+        }
+      });
   }
 
   // ****** THÊM CÁC HÀM XỬ LÝ ZOOM ******
@@ -627,11 +622,45 @@ export class OrderDetailComponent implements OnInit, OnDestroy {
 
   promptAndConfirmPayment(orderId: number, paymentMethodConfirmedStr: string): void {
     const paymentMethodConfirmed = paymentMethodConfirmedStr as PaymentMethod;
-    const transactionRef = prompt(`Nhập mã giao dịch/tham chiếu (nếu có) cho phương thức ${this.getPaymentMethodText(paymentMethodConfirmed)}:`);
-    const notes = prompt(`Ghi chú thêm của Admin (tùy chọn):`);
+    const paymentMethodText = this.getPaymentMethodText(paymentMethodConfirmed);
 
-    // Gọi hàm confirmPaymentByAdmin đã có, nhưng truyền paymentMethodConfirmed từ lựa chọn của Admin
-    this.confirmPaymentByAdmin(orderId, paymentMethodConfirmed, transactionRef ?? undefined, notes ?? undefined);
+    // Thông báo xác nhận cho modal mới
+    const confirmMessage = `Bạn có chắc chắn muốn xác nhận đã nhận thanh toán cho đơn hàng #${this.order()?.orderCode} bằng phương thức "${paymentMethodText}"?`;
+
+    this.confirmationService.open({
+      title: 'Xác Nhận Thanh Toán',
+      message: confirmMessage,
+      confirmText: 'Xác nhận',
+      confirmButtonClass: 'btn-success',
+      iconClass: 'fas fa-money-check-alt',
+      iconColorClass: 'text-success',
+      inputs: [
+        {
+          key: 'transactionRef',
+          type: 'text',
+          label: 'Mã giao dịch/tham chiếu (nếu có)',
+          placeholder: 'VD: FT240614...'
+        },
+        {
+          key: 'notes',
+          type: 'textarea',
+          label: 'Ghi chú của Admin (tùy chọn)',
+          placeholder: 'Ghi chú về việc xác nhận thanh toán...'
+        }
+      ]
+    }).subscribe(result => {
+      // `result` sẽ là `false` nếu người dùng nhấn Hủy
+      // hoặc là một object `{ transactionRef: '...', notes: '...' }` nếu nhấn Đồng ý
+      if (result) {
+        const transactionRef = result.transactionRef;
+        const notes = result.notes;
+        // Gọi hàm confirmPaymentByAdmin với dữ liệu từ modal
+        this.confirmPaymentByAdmin(orderId, paymentMethodConfirmed, transactionRef, notes);
+      } else {
+        // Người dùng đã nhấn Hủy, không làm gì cả
+        this.toastr.info('Hành động xác nhận thanh toán đã được hủy.');
+      }
+    });
   }
 
   isInvoiceOverdue(dueDateString: string | null | undefined, status: InvoiceStatus | string): boolean {
@@ -658,3 +687,4 @@ import {LocationService} from '../../../../core/services/location.service';
 import {environment} from '../../../../../environments/environment';
 import {BankTransferInfoResponse} from '../../dto/response/BankTransferInfoResponse';
 import {InvoiceStatus} from '../../domain/invoice-status.enum';
+import {ConfirmationService} from '../../../../shared/services/confirmation.service';

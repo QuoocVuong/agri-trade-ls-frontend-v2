@@ -41,7 +41,10 @@ export class ProfileViewComponent implements OnInit {
   // Lấy các signal kiểm tra role từ AuthService
   isFarmer = this.authService.hasRoleSignal('ROLE_FARMER');
   isBusinessBuyer = this.authService.hasRoleSignal('ROLE_BUSINESS_BUYER');
-  isConsumerOnly = computed(() => !this.isFarmer() && !this.isBusinessBuyer()); // Tính toán user chỉ là consumer
+  //isConsumerOnly = computed(() => !this.isFarmer() && !this.isBusinessBuyer()); // Tính toán user chỉ là consumer
+
+  hasFarmerProfile = computed(() => !!this.profile()?.farmerProfile);
+  hasBusinessProfile = computed(() => !!this.profile()?.businessProfile);
 
   constructor() {
     effect(() => {
