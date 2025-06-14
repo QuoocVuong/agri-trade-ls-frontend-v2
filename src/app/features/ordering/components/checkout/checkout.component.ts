@@ -61,8 +61,7 @@ export class CheckoutComponent implements OnInit {
 
 
 
-  // ****** TẠO SIGNAL RIÊNG CHO PAYMENT METHODS ******
-  availablePaymentMethods = signal<PaymentMethod[]>([]); // Khởi tạo mảng rỗng
+
   // ***********************************************
 
   getPaymentMethodText = getPaymentMethodText;
@@ -110,46 +109,42 @@ export class CheckoutComponent implements OnInit {
   OrderType = OrderType;
   // ************************************
 
+  availablePaymentMethods = computed<PaymentMethod[]>(() => { // <<< THÊM KIỂU TRẢ VỀ <PaymentMethod[]>
+    const allMethods = Object.values(PaymentMethod);
+    const orderType = this.orderTypeUsedInCalc();
+
+    console.log('Recalculating available payment methods. Order type is:', orderType);
+
+    if (orderType === OrderType.B2B) {
+      // Nếu là đơn hàng B2B, chỉ cho phép thanh toán Công nợ hoặc Chuyển khoản
+      return allMethods.filter(
+        (m): m is PaymentMethod.INVOICE | PaymentMethod.BANK_TRANSFER => // Type guard (tùy chọn nhưng tốt)
+          m === PaymentMethod.INVOICE || m === PaymentMethod.BANK_TRANSFER
+      );
+    } else {
+      // Nếu là đơn hàng B2C, cho phép các phương thức bán lẻ
+      return allMethods.filter(
+        (m): m is Exclude<PaymentMethod, PaymentMethod.INVOICE> => // Type guard (tùy chọn nhưng tốt)
+          m !== PaymentMethod.INVOICE
+      );
+    }
+  });
+
 
   constructor() {
-    // Effect 1: Cập nhật Payment Methods (Chỉ chạy khi isBusinessBuyer thay đổi)
-    effect(() => {
-      const allMethods = Object.values(PaymentMethod);
-      const isB2B = this.isBusinessBuyer();
-      let filteredMethods: PaymentMethod[];
-      if (isB2B) {
-        filteredMethods = allMethods.filter(m => m === PaymentMethod.INVOICE || m === PaymentMethod.BANK_TRANSFER );
-      } else {
-        filteredMethods = allMethods.filter(m => m !== PaymentMethod.INVOICE);
-      }
-      this.availablePaymentMethods.set(filteredMethods);
-
-      // Cập nhật giá trị mặc định cho form control paymentMethod
-      if (this.checkoutForm) {
-        const currentFormValue = this.checkoutForm.get('paymentMethod')?.value;
-        if (!filteredMethods.includes(currentFormValue)) {
-          this.checkoutForm.patchValue({ paymentMethod: filteredMethods[0] ?? null }, { emitEvent: false });
+    // Lắng nghe cart$ để tính lại totals
+    this.cartService.cart$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(cartData => {
+        const selectedAddressId = this.checkoutForm?.get('shippingAddressId')?.value;
+        if (this.checkoutForm) {
+          if (cartData && cartData.items.length > 0) {
+            this.calculateTotals({ shippingAddressId: selectedAddressId });
+          } else {
+            this.resetCalculatedTotals();
+          }
         }
-      }
-    }, { allowSignalWrites: true });
-
-    // Effect 2: Lắng nghe thay đổi GIỎ HÀNG để tính lại totals
-    effect(() => {
-      const currentCart = this.cart(); // Chỉ lắng nghe cart ở đây
-      const selectedAddressId = this.checkoutForm?.get('shippingAddressId')?.value; // Lấy addressId hiện tại
-
-      console.log("Effect triggered by CART change. Cart items:", currentCart?.items?.length, "Address ID:", selectedAddressId);
-
-      if (this.checkoutForm) { // Đảm bảo form đã init
-        if (currentCart && currentCart.items.length > 0) {
-          // Gọi tính toán khi giỏ hàng thay đổi, với địa chỉ hiện tại
-          this.calculateTotals({ shippingAddressId: selectedAddressId });
-        } else {
-          // Reset nếu giỏ hàng trống
-          this.resetCalculatedTotals();
-        }
-      }
-    });
+      });
   }
 
 
@@ -163,28 +158,7 @@ export class CheckoutComponent implements OnInit {
     // Quan trọng: Khởi tạo form TRƯỚC khi load địa chỉ
     this.initForm();
     this.loadAddresses(); // Hàm này sẽ patch address và trigger effect ở trên
-   // this.loadInitialTotals(); // Gọi hàm load tổng tiền ban đầu
 
-    // Gọi tính toán tổng tiền ban đầu sau khi form và địa chỉ được load (hoặc có giá trị ban đầu)
-    // Dùng effect để đảm bảo address được set trước khi gọi calculate
-    // effect(() => {
-    //   const initialAddressId = this.checkoutForm.get('shippingAddressId')?.value;
-    //   if(initialAddressId !== null || this.addresses().length === 0) { // Gọi khi có address hoặc khi chắc chắn ko có address
-    //     this.calculateTotals({ shippingAddressId: initialAddressId });
-    //   }
-    // }, { allowSignalWrites: true });
-
-    // Lắng nghe thay đổi địa chỉ để tính lại tổng tiền
-    // this.checkoutForm.get('shippingAddressId')?.valueChanges
-    //   .pipe(takeUntil(this.destroy$))
-    //   .subscribe(addressId => {
-    //     if (addressId) {
-    //       this.calculateTotals({ shippingAddressId: addressId });
-    //     } else {
-    //       // Reset totals nếu không chọn địa chỉ nào
-    //       this.resetCalculatedTotals();
-    //     }
-    //   });
     // Lắng nghe thay đổi addressId từ form để tính lại totals
     this.checkoutForm.get('shippingAddressId')?.valueChanges
       .pipe(
@@ -235,9 +209,14 @@ export class CheckoutComponent implements OnInit {
             this.calculatedTotalAmount.set(res.data.totalAmount);
             // ****** LƯU ORDER TYPE ******
             this.orderTypeUsedInCalc.set(res.data.calculatedOrderType);
-            // ***************************
-            console.log("API Calculated Totals Received:", res.data);
-            // Cập nhật lại validator cho payment method nếu cần dựa trên totalAmount
+            // Sau khi có orderType, cập nhật lại giá trị mặc định cho paymentMethod nếu cần
+            const currentPaymentMethod = this.checkoutForm.get('paymentMethod')?.value;
+            const allowedMethods = this.availablePaymentMethods(); // Lấy danh sách phương thức hợp lệ mới
+
+            if (!allowedMethods.includes(currentPaymentMethod)) {
+              // Nếu phương thức hiện tại không còn hợp lệ, chọn phương thức đầu tiên trong danh sách mới
+              this.checkoutForm.patchValue({ paymentMethod: allowedMethods[0] ?? null }, { emitEvent: false });
+            }
           } else {
             this.toastr.error(res.message || 'Lỗi tính toán tổng tiền đơn hàng.');
             this.resetCalculatedTotals(); // Reset về 0 nếu lỗi
