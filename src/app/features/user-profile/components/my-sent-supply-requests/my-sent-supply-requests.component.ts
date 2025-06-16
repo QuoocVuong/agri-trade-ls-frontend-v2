@@ -25,6 +25,7 @@ import {ChatService} from '../../../interaction/service/ChatService';
 import {ToastrService} from 'ngx-toastr';
 import {AuthService} from '../../../../core/services/auth.service';
 import {FormBuilder, ReactiveFormsModule} from '@angular/forms';
+import {ConfirmationService} from '../../../../shared/services/confirmation.service';
 
 @Component({
   selector: 'app-my-sent-supply-requests',
@@ -51,6 +52,7 @@ export class MySentSupplyRequestsComponent implements OnInit, OnDestroy {
   private authService = inject(AuthService);
   private router = inject(Router);
   private fb = inject(FormBuilder);
+  private confirmationService = inject(ConfirmationService);
 
   requestsPage = signal<PageData<SupplyOrderRequestResponse> | null>(null);
   isLoading = signal(true);
@@ -101,41 +103,54 @@ export class MySentSupplyRequestsComponent implements OnInit, OnDestroy {
     this.actionLoadingMap.update(map => ({ ...map, [requestId]: isLoading }));
   }
 
+  // ... trong class MySentSupplyRequestsComponent ...
+
   cancelRequest(requestId: number, productName?: string | null): void {
     if (this.actionLoadingMap()[requestId]) return;
 
     const confirmMessage = productName
-      ? `Bạn có chắc chắn muốn hủy yêu cầu cho sản phẩm "${productName}" không?`
+      ? `Bạn có chắc chắn muốn hủy yêu cầu đặt hàng cho nguồn cung "${productName}" không?`
       : `Bạn có chắc chắn muốn hủy yêu cầu này không?`;
 
-    if (confirm(confirmMessage)) {
-      this.setActionLoading(requestId, true);
-      this.errorMessage.set(null); // Xóa lỗi cũ nếu có
+    this.confirmationService.open({
+      title: 'Xác Nhận Hủy Yêu Cầu',
+      message: confirmMessage,
+      confirmText: 'Đồng ý hủy',
+      cancelText: 'Không',
+      confirmButtonClass: 'btn-warning', // Dùng màu vàng cho hành động cần cân nhắc
+      iconClass: 'fas fa-question-circle',
+      iconColorClass: 'text-warning'
+    }).subscribe(confirmed => {
+      if (confirmed) {
+        this.setActionLoading(requestId, true);
+        this.errorMessage.set(null); // Xóa lỗi cũ nếu có
 
-      this.requestService.cancelMySentRequest(requestId) // Gọi service
-        .pipe(
-          takeUntil(this.destroy$),
-          finalize(() => this.setActionLoading(requestId, false))
-        )
-        .subscribe({
-          next: (res) => {
-            if (res.success) {
-              this.toastr.success('Đã hủy yêu cầu thành công.');
-              this.loadSentRequests(); // Tải lại danh sách để cập nhật trạng thái
-            } else {
-              this.toastr.error(res.message || 'Hủy yêu cầu thất bại.');
-              this.errorMessage.set(res.message || 'Hủy yêu cầu thất bại.');
+        this.requestService.cancelMySentRequest(requestId) // Gọi service
+          .pipe(
+            takeUntil(this.destroy$),
+            finalize(() => this.setActionLoading(requestId, false))
+          )
+          .subscribe({
+            next: (res) => {
+              if (res.success) {
+                this.toastr.success('Đã hủy yêu cầu thành công.');
+                this.loadSentRequests(); // Tải lại danh sách để cập nhật trạng thái
+              } else {
+                this.toastr.error(res.message || 'Hủy yêu cầu thất bại.');
+                this.errorMessage.set(res.message || 'Hủy yêu cầu thất bại.');
+              }
+            },
+            error: (err) => {
+              this.toastr.error(err.error?.message || 'Lỗi khi hủy yêu cầu.');
+              this.errorMessage.set(err.error?.message || 'Lỗi khi hủy yêu cầu.');
+              console.error('Error cancelling supply request:', err);
             }
-          },
-          error: (err) => {
-            this.toastr.error(err.error?.message || 'Lỗi khi hủy yêu cầu.');
-            this.errorMessage.set(err.error?.message || 'Lỗi khi hủy yêu cầu.');
-            console.error('Error cancelling supply request:', err);
-          }
-        });
-    }
-  }
+          });
+      }
+      // Nếu `confirmed` là false, không làm gì cả.
+    });
 
+  }
 
 
   // constructor() {

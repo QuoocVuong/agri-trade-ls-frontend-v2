@@ -14,7 +14,8 @@ import { takeUntil, finalize } from 'rxjs/operators';
 import { SlugifyPipe } from '../../../../shared/pipes/slugify.pipe';
 import {CategoryService} from '../../../catalog/services/category.service';
 import {FileUploadComponent} from '../../../../shared/components/file-uploader/file-uploader.component';
-import {FileUploadResponse} from '../../../../common/dto/response/FileUploadResponse'; // Import pipe slugify (cần tạo)
+import {FileUploadResponse} from '../../../../common/dto/response/FileUploadResponse';
+import {ConfirmationService} from '../../../../shared/services/confirmation.service'; // Import pipe slugify (cần tạo)
 
 @Component({
   selector: 'app-manage-categories',
@@ -28,6 +29,7 @@ export class ManageCategoriesComponent implements OnInit, OnDestroy {
   private toastr = inject(ToastrService);
   private destroy$ = new Subject<void>();
   private categoryService = inject(CategoryService);
+  private confirmationService = inject(ConfirmationService);
 
   categories = signal<CategoryResponse[]>([]); // Danh sách category dạng cây
   flatCategories = signal<CategoryResponse[]>([]); // Danh sách category phẳng cho dropdown parent
@@ -214,25 +216,39 @@ export class ManageCategoriesComponent implements OnInit, OnDestroy {
     });
   }
 
+// ... trong class ManageCategoriesComponent ...
+
   deleteCategory(category: CategoryResponse): void {
-    if (confirm(`Bạn có chắc chắn muốn xóa danh mục "${category.name}"? \nLƯU Ý: Hành động này có thể thất bại nếu danh mục có chứa sản phẩm hoặc danh mục con.`)) {
-      this.isLoading.set(true); // Dùng loading chung
-      this.adminCatalogService.deleteCategory(category.id).subscribe({
-        next: (res) => {
-          if(res.success) {
-            this.toastr.success(`Đã xóa danh mục "${category.name}".`);
-            this.loadCategories(); // Load lại danh sách
-          } else {
-            this.handleError(res, 'Lỗi khi xóa danh mục.');
+    this.confirmationService.open({
+      title: 'Xác Nhận Xóa Danh Mục',
+      message: `Bạn có chắc chắn muốn xóa danh mục "${category.name}"?\nLƯU Ý: Hành động này có thể thất bại nếu danh mục có chứa sản phẩm hoặc danh mục con.`,
+      confirmText: 'Xóa',
+      cancelText: 'Hủy',
+      confirmButtonClass: 'btn-error',
+      iconClass: 'fas fa-trash-alt',
+      iconColorClass: 'text-error'
+    }).subscribe(confirmed => {
+      if (confirmed) {
+        this.isLoading.set(true); // Dùng loading chung
+        this.adminCatalogService.deleteCategory(category.id).subscribe({
+          next: (res) => {
+            if(res.success) {
+              this.toastr.success(`Đã xóa danh mục "${category.name}".`);
+              this.loadCategories(); // Load lại danh sách
+            } else {
+              // handleError đã có toastr, không cần gọi lại ở đây
+              this.handleError(res, 'Lỗi khi xóa danh mục.');
+            }
+            this.isLoading.set(false);
+          },
+          error: (err) => {
+            this.handleError(err, 'Lỗi khi xóa danh mục.');
+            this.isLoading.set(false);
           }
-          this.isLoading.set(false);
-        },
-        error: (err) => {
-          this.handleError(err, 'Lỗi khi xóa danh mục.');
-          this.isLoading.set(false);
-        }
-      });
-    }
+        });
+      }
+      // Nếu `confirmed` là false, không làm gì cả.
+    });
   }
 
   // Helper xử lý lỗi

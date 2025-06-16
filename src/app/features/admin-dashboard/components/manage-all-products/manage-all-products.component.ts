@@ -19,6 +19,7 @@ import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged, takeUntil, finalize } from 'rxjs/operators';
 import {SafeHtmlPipe} from '../../../../shared/pipes/safe-html.pipe';
 import {FormatBigDecimalPipe} from '../../../../shared/pipes/format-big-decimal.pipe';
+import {ConfirmationService} from '../../../../shared/services/confirmation.service';
 
 
 @Component({
@@ -33,6 +34,7 @@ export class ManageAllProductsComponent implements OnInit, OnDestroy {
   private fb = inject(FormBuilder);
   private toastr = inject(ToastrService);
   private destroy$ = new Subject<void>();
+  private confirmationService = inject(ConfirmationService);
 
   productsPage = signal<Page<ProductSummaryResponse> | null>(null);
   isLoading = signal(true);
@@ -168,21 +170,32 @@ export class ManageAllProductsComponent implements OnInit, OnDestroy {
 
   // Duyệt sản phẩm
   approveProduct(productId: number): void {
-    if (confirm('Bạn có chắc muốn duyệt sản phẩm này?')) {
-      this.isLoading.set(true);
-      this.adminCatalogService.approveProduct(productId).subscribe({
-        next: (res) => {
-          if(res.success) {
-            this.toastr.success('Đã duyệt sản phẩm thành công.');
-            this.loadProducts(); // Load lại danh sách
-          } else {
-            this.handleError(res, 'Lỗi khi duyệt sản phẩm.');
-          }
-          this.isLoading.set(false); // Tắt loading chung
-        },
-        error: (err) => this.handleError(err, 'Lỗi khi duyệt sản phẩm.')
-      });
-    }
+    this.confirmationService.open({
+      title: 'Xác Nhận Duyệt Sản Phẩm',
+      message: `Bạn có chắc chắn muốn duyệt và cho phép sản phẩm này được hiển thị công khai trên trang web không?`,
+      confirmText: 'Duyệt',
+      cancelText: 'Hủy',
+      confirmButtonClass: 'btn-success', // Dùng màu xanh cho hành động tích cực
+      iconClass: 'fas fa-check-circle',  // Icon dấu tích
+      iconColorClass: 'text-success'
+    }).subscribe(confirmed => {
+      if (confirmed) {
+        this.isLoading.set(true);
+        this.adminCatalogService.approveProduct(productId).subscribe({
+          next: (res) => {
+            if(res.success) {
+              this.toastr.success('Đã duyệt sản phẩm thành công.');
+              this.loadProducts(); // Load lại danh sách
+            } else {
+              this.handleError(res, 'Lỗi khi duyệt sản phẩm.');
+            }
+            this.isLoading.set(false); // Tắt loading chung
+          },
+          error: (err) => this.handleError(err, 'Lỗi khi duyệt sản phẩm.')
+        });
+      }
+      // Nếu `confirmed` là false, không làm gì cả.
+    });
   }
 
   // Mở modal nhập lý do từ chối
@@ -227,26 +240,38 @@ export class ManageAllProductsComponent implements OnInit, OnDestroy {
     });
   }
 
-  // Xóa vĩnh viễn sản phẩm
+// Xóa vĩnh viễn sản phẩm
   forceDeleteProduct(productId: number, productName: string): void {
-    if (confirm(`!!! CẢNH BÁO !!!\nBạn có chắc chắn muốn XÓA VĨNH VIỄN sản phẩm "${productName}"?\nHành động này không thể hoàn tác và sẽ xóa mọi dữ liệu liên quan (ảnh, bậc giá...).`)) {
-      this.isLoading.set(true);
-      this.adminCatalogService.forceDeleteProduct(productId).subscribe({
-        next: (res) => {
-          if(res.success) {
-            this.toastr.success(`Đã xóa vĩnh viễn sản phẩm "${productName}".`);
-            this.loadProducts(); // Load lại danh sách
-          } else {
-            this.handleError(res, 'Lỗi khi xóa sản phẩm.');
+    this.confirmationService.open({
+      title: 'Xác Nhận Xóa Vĩnh Viễn',
+      // Sử dụng \n để xuống dòng trong message, và template của modal đã có `whitespace-pre-line` để xử lý
+      message: `!!! CẢNH BÁO !!!\nBạn có chắc chắn muốn XÓA VĨNH VIỄN sản phẩm "${productName}"?\nHành động này không thể hoàn tác và sẽ xóa mọi dữ liệu liên quan (ảnh...).`,
+      confirmText: 'Xóa Vĩnh Viễn',
+      cancelText: 'Hủy',
+      confirmButtonClass: 'btn-error', // Dùng màu đỏ cho hành động nguy hiểm
+      iconClass: 'fas fa-skull-crossbones', // Icon cảnh báo nguy hiểm
+      iconColorClass: 'text-error'
+    }).subscribe(confirmed => {
+      if (confirmed) {
+        this.isLoading.set(true);
+        this.adminCatalogService.forceDeleteProduct(productId).subscribe({
+          next: (res) => {
+            if(res.success) {
+              this.toastr.success(`Đã xóa vĩnh viễn sản phẩm "${productName}".`);
+              this.loadProducts(); // Load lại danh sách
+            } else {
+              this.handleError(res, 'Lỗi khi xóa sản phẩm.');
+            }
+            this.isLoading.set(false);
+          },
+          error: (err) => {
+            this.handleError(err, 'Lỗi khi xóa sản phẩm.');
+            this.isLoading.set(false);
           }
-          this.isLoading.set(false);
-        },
-        error: (err) => {
-          this.handleError(err, 'Lỗi khi xóa sản phẩm.');
-          this.isLoading.set(false);
-        }
-      });
-    }
+        });
+      }
+      // Nếu `confirmed` là false, không làm gì cả.
+    });
   }
 
 

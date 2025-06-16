@@ -13,7 +13,8 @@ import { Subject } from 'rxjs';
 import { takeUntil, finalize } from 'rxjs/operators';
 import { VerificationStatus, getVerificationStatusText, getVerificationStatusCssClass } from '../../../../common/model/verification-status.enum';
 import {FormControl, FormsModule, ReactiveFormsModule} from '@angular/forms';
-import {FormatBigDecimalPipe} from '../../../../shared/pipes/format-big-decimal.pipe'; // Import Enum và helpers
+import {FormatBigDecimalPipe} from '../../../../shared/pipes/format-big-decimal.pipe';
+import {ConfirmationService} from '../../../../shared/services/confirmation.service'; // Import Enum và helpers
 
 @Component({
   selector: 'app-approve-farmers',
@@ -25,7 +26,7 @@ export class ApproveFarmersComponent implements OnInit, OnDestroy {
   private adminUserService = inject(AdminUserService);
   private toastr = inject(ToastrService);
   private destroy$ = new Subject<void>();
-
+  private confirmationService = inject(ConfirmationService);
   pendingFarmersPage = signal<Page<UserProfileResponse> | null>(null); // Lưu UserProfileResponse đầy đủ
   isLoading = signal(true);
   errorMessage = signal<string | null>(null);
@@ -111,23 +112,37 @@ export class ApproveFarmersComponent implements OnInit, OnDestroy {
     this.rejectReasonControl.reset(''); // *** Reset FormControl ***
   }
 
-  // Duyệt Farmer
+
+// Duyệt Farmer
   approveFarmer(userId: number): void {
-    if (confirm(`Bạn có chắc muốn DUYỆT hồ sơ nông dân này (ID: ${userId})?`)) {
-      this.isLoading.set(true); // Dùng loading chung hoặc tạo signal riêng
-      this.adminUserService.approveFarmer(userId).subscribe({
-        next: (res) => {
-          if(res.success) {
-            this.toastr.success('Đã duyệt hồ sơ nông dân thành công.');
-            this.loadPendingFarmers(); // Load lại danh sách
-          } else {
-            this.handleError(res, 'Lỗi khi duyệt hồ sơ.');
-          }
-          this.isLoading.set(false);
-        },
-        error: (err) => this.handleError(err, 'Lỗi khi duyệt hồ sơ.')
-      });
-    }
+
+    this.confirmationService.open({
+      title: 'Xác Nhận Duyệt Hồ Sơ',
+      message: `Bạn có chắc chắn muốn DUYỆT hồ sơ nông dân này (ID: ${userId})? Sau khi duyệt, người dùng này sẽ có thể đăng bán sản phẩm.`,
+      confirmText: 'Duyệt',
+      cancelText: 'Hủy',
+      confirmButtonClass: 'btn-success',
+      iconClass: 'fas fa-user-check',
+      iconColorClass: 'text-success'
+    }).subscribe(confirmed => {
+      if (confirmed) {
+        this.isLoading.set(true); // Dùng loading chung hoặc tạo signal riêng
+        this.adminUserService.approveFarmer(userId).subscribe({
+          next: (res) => {
+            if(res.success) {
+              this.toastr.success('Đã duyệt hồ sơ nông dân thành công.');
+              this.loadPendingFarmers(); // Load lại danh sách
+            } else {
+              this.handleError(res, 'Lỗi khi duyệt hồ sơ.');
+            }
+            this.isLoading.set(false);
+          },
+          error: (err) => this.handleError(err, 'Lỗi khi duyệt hồ sơ.')
+        });
+      }
+      // Nếu `confirmed` là false, không làm gì cả.
+    });
+
   }
 
   // Từ chối Farmer

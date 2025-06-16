@@ -17,6 +17,7 @@ import { PaginatorComponent } from '../../../../shared/components/paginator/pagi
 import { FormatBigDecimalPipe } from '../../../../shared/pipes/format-big-decimal.pipe';
 import {FormsModule} from '@angular/forms';
 import {convertKgToUnit, getMassUnitText, MassUnit} from '../../../catalog/domain/mass-unit.enum';
+import {ConfirmationService} from '../../../../shared/services/confirmation.service';
 
 @Component({
   selector: 'app-manage-supply',
@@ -40,6 +41,7 @@ export class FarmerSupplyListComponent implements OnInit, OnDestroy {
   private router = inject(Router);
   private toastr = inject(ToastrService);
   private destroy$ = new Subject<void>();
+  private confirmationService = inject(ConfirmationService);
 
   supplies = signal<ProductSummaryResponse[]>([]);
   paginationData = signal<PageData<ProductSummaryResponse> | null>(null);
@@ -156,28 +158,41 @@ export class FarmerSupplyListComponent implements OnInit, OnDestroy {
     this.router.navigate(['/farmer/supply/edit', productId]);
   }
 
+// ... trong class FarmerSupplyListComponent ...
+
   deleteSupply(productId: number, productName: string): void {
-    if (confirm(`Bạn có chắc chắn muốn xóa nguồn cung "${productName}" không? Hành động này không thể hoàn tác.`)) {
-      this.isLoading.set(true); // Hoặc một signal loading riêng cho delete
-      this.productService.deleteMyProduct(productId) // API này soft delete
-        .pipe(
-          takeUntil(this.destroy$),
-          finalize(() => this.isLoading.set(false))
-        )
-        .subscribe({
-          next: (res) => {
-            if (res.success) {
-              this.toastr.success(`Đã xóa nguồn cung "${productName}".`);
-              this.loadFarmerSupplies(); // Tải lại danh sách
-            } else {
-              this.toastr.error(res.message || 'Xóa nguồn cung thất bại.');
+    this.confirmationService.open({
+      title: 'Xác Nhận Xóa Nguồn Cung',
+      message: `Bạn có chắc chắn muốn xóa nguồn cung "${productName}" không? Hành động này sẽ ẩn nguồn cung khỏi trang tìm kiếm.`,
+      confirmText: 'Xóa',
+      cancelText: 'Hủy',
+      confirmButtonClass: 'btn-error',
+      iconClass: 'fas fa-trash-alt',
+      iconColorClass: 'text-error'
+    }).subscribe(confirmed => {
+      if (confirmed) {
+        this.isLoading.set(true); // Hoặc một signal loading riêng cho delete
+        this.productService.deleteMyProduct(productId) // API này soft delete
+          .pipe(
+            takeUntil(this.destroy$),
+            finalize(() => this.isLoading.set(false))
+          )
+          .subscribe({
+            next: (res) => {
+              if (res.success) {
+                this.toastr.success(`Đã xóa nguồn cung "${productName}".`);
+                this.loadFarmerSupplies(); // Tải lại danh sách
+              } else {
+                this.toastr.error(res.message || 'Xóa nguồn cung thất bại.');
+              }
+            },
+            error: (err) => {
+              this.toastr.error(err.error?.message || 'Lỗi khi xóa nguồn cung.');
             }
-          },
-          error: (err) => {
-            this.toastr.error(err.error?.message || 'Lỗi khi xóa nguồn cung.');
-          }
-        });
-    }
+          });
+      }
+      // Nếu `confirmed` là false, không làm gì cả.
+    });
   }
 
   // Trong template hoặc một hàm helper:

@@ -21,6 +21,7 @@ import {debounceTime, distinctUntilChanged, finalize, takeUntil} from 'rxjs/oper
 import {FormatBigDecimalPipe} from '../../../../shared/pipes/format-big-decimal.pipe';
 import {getPaymentMethodText, PaymentMethod} from '../../../ordering/domain/payment-method.enum';
 import {getOrderTypeText, OrderType} from '../../../ordering/domain/order-type.enum';
+import {ConfirmationService} from '../../../../shared/services/confirmation.service';
 
 @Component({
   selector: 'app-manage-all-orders',
@@ -34,6 +35,7 @@ export class ManageAllOrdersComponent implements OnInit, OnDestroy {
   private toastr = inject(ToastrService);
   private router = inject(Router);
   private destroy$ = new Subject<void>();
+  private confirmationService = inject(ConfirmationService);
 
 
   ordersPage = signal<Page<OrderSummaryResponse> | null>(null);
@@ -144,30 +146,43 @@ export class ManageAllOrdersComponent implements OnInit, OnDestroy {
     this.toastr.info(`Chức năng cập nhật trạng thái cho đơn hàng ${orderId} chưa được triển khai.`);
   }
 
-  // Hàm xử lý khi cần hủy đơn (ví dụ)
+
+// Hàm xử lý khi cần hủy đơn
   cancelOrder(order: OrderSummaryResponse): void {
     if (order.status === OrderStatus.CANCELLED || order.status === OrderStatus.DELIVERED || order.status === OrderStatus.RETURNED) {
       this.toastr.warning(`Không thể hủy đơn hàng ở trạng thái ${this.getStatusText(order.status)}.`);
       return;
     }
-    if (confirm(`Bạn có chắc chắn muốn HỦY đơn hàng #${order.orderCode}?`)) {
-      this.isLoading.set(true); // Dùng loading chung
-      this.adminOrderingService.cancelOrderByAdmin(order.id).subscribe({
-        next: (res) => {
-          if(res.success) {
-            this.toastr.success(`Đã hủy đơn hàng #${order.orderCode}.`);
-            this.loadOrders(); // Load lại danh sách
-          } else {
-            this.handleError(res, 'Lỗi khi hủy đơn hàng.');
+    this.confirmationService.open({
+      title: 'Xác Nhận Hủy Đơn Hàng',
+      message: `Bạn có chắc chắn muốn HỦY đơn hàng #${order.orderCode}? Hành động này không thể hoàn tác.`,
+      confirmText: 'Xác nhận hủy',
+      cancelText: 'Không',
+      confirmButtonClass: 'btn-error',
+      iconClass: 'fas fa-exclamation-triangle',
+      iconColorClass: 'text-error'
+    }).subscribe(confirmed => {
+      if (confirmed) {
+        this.isLoading.set(true); // Dùng loading chung
+        this.adminOrderingService.cancelOrderByAdmin(order.id).subscribe({
+          next: (res) => {
+            if(res.success) {
+              this.toastr.success(`Đã hủy đơn hàng #${order.orderCode}.`);
+              this.loadOrders(); // Load lại danh sách
+            } else {
+              this.handleError(res, 'Lỗi khi hủy đơn hàng.');
+            }
+            this.isLoading.set(false);
+          },
+          error: (err) => {
+            this.handleError(err, 'Lỗi khi hủy đơn hàng.');
+            this.isLoading.set(false);
           }
-          this.isLoading.set(false);
-        },
-        error: (err) => {
-          this.handleError(err, 'Lỗi khi hủy đơn hàng.');
-          this.isLoading.set(false);
-        }
-      });
-    }
+        });
+      }
+      // Nếu `confirmed` là false, không làm gì cả.
+    });
+
   }
 
   // Thêm hàm reset bộ lọc

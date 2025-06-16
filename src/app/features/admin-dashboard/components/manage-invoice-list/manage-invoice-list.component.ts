@@ -25,6 +25,7 @@ import {AuthService} from '../../../../core/services/auth.service';
 import {BuyerInvoiceSearchParams, OrderService} from '../../../ordering/services/order.service';
 import {PagedApiResponse} from '../../../../core/models/api-response.model';
 import {getPaymentStatusText, PaymentStatus} from '../../../ordering/domain/payment-status.enum';
+import {ConfirmationService} from '../../../../shared/services/confirmation.service';
 
 
 // Định nghĩa các tùy chọn lọc trạng thái thanh toán cho hóa đơn công nợ
@@ -74,6 +75,8 @@ export class ManageInvoiceListComponent implements OnInit, OnDestroy {
   private authService = inject(AuthService); // Inject AuthService
 
   private orderService = inject(OrderService);
+
+  private confirmationService = inject(ConfirmationService);
 
   // Signals
   invoicesPage = signal<Page<InvoiceSummaryResponse> | null>(null);
@@ -308,8 +311,10 @@ export class ManageInvoiceListComponent implements OnInit, OnDestroy {
     }
   }
 
+  // ... trong class ManageInvoiceListComponent ...
+
   confirmPayment(invoice: InvoiceSummaryResponse): void {
-    if (!this.isAdminView()) { // Chỉ Admin mới có quyền này
+    if (!this.isAdminView()) {
       this.toastr.warning('Bạn không có quyền thực hiện hành động này.');
       return;
     }
@@ -318,54 +323,78 @@ export class ManageInvoiceListComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const paymentMethodConfirmedStr = prompt(`Khách hàng đã thanh toán hóa đơn ${invoice.invoiceNumber} bằng phương thức nào? (BANK_TRANSFER, COD, OTHER)`, PaymentMethod.BANK_TRANSFER.toString());
-    if (!paymentMethodConfirmedStr) {
-      console.log('[ManageInvoiceListComponent] Confirm payment cancelled by user (no payment method).');
-      return;
-    }
+    // --- PHẦN THAY THẾ ---
+    this.confirmationService.open({
+      title: 'Xác Nhận Thanh Toán',
+      message: `Xác nhận khách hàng đã thanh toán cho hóa đơn #${invoice.invoiceNumber} (Đơn hàng #${invoice.orderCode})?`,
+      confirmText: 'Xác nhận',
+      cancelText: 'Hủy',
+      confirmButtonClass: 'btn-success',
+      iconClass: 'fas fa-money-check-alt',
+      iconColorClass: 'text-success',
+      // Thêm các ô input để thay thế prompt()
+      inputs: [
+        {
+          key: 'paymentMethod',
+          type: 'text', // Dùng text vì modal chưa hỗ trợ select, nhưng có thể cải tiến sau
+          label: 'Phương thức thanh toán thực tế',
+          placeholder: 'VD: BANK_TRANSFER, COD, OTHER',
+          initialValue: PaymentMethod.BANK_TRANSFER.toString() // Gợi ý giá trị
+        },
+        {
+          key: 'transactionRef',
+          type: 'text',
+          label: 'Mã giao dịch/tham chiếu (nếu có)',
+          placeholder: 'VD: FT240614...'
+        },
+        {
+          key: 'notes',
+          type: 'textarea',
+          label: 'Ghi chú của Admin (tùy chọn)',
+          placeholder: 'Ghi chú về việc xác nhận thanh toán...'
+        }
+      ]
+    }).subscribe(result => {
+      // `result` sẽ là `false` nếu người dùng nhấn Hủy
+      // hoặc là một object `{ paymentMethod: '...', transactionRef: '...', notes: '...' }` nếu nhấn Đồng ý
+      if (result) {
+        const paymentMethodConfirmed = result.paymentMethod.toUpperCase() as PaymentMethod;
+        if (!Object.values(PaymentMethod).includes(paymentMethodConfirmed)) {
+          this.toastr.error("Phương thức thanh toán không hợp lệ: " + result.paymentMethod);
+          return;
+        }
 
-    const paymentMethodConfirmed = paymentMethodConfirmedStr.toUpperCase() as PaymentMethod;
-    if (!Object.values(PaymentMethod).includes(paymentMethodConfirmed)) {
-      this.toastr.error("Phương thức thanh toán không hợp lệ: " + paymentMethodConfirmedStr);
-      console.error('[ManageInvoiceListComponent] Invalid payment method entered:', paymentMethodConfirmedStr);
-      return;
-    }
+        const transactionRef = result.transactionRef;
+        const notes = result.notes;
 
-    const transactionRef = prompt(`Nhập mã giao dịch (nếu có) cho hóa đơn ${invoice.invoiceNumber}:`);
-    const notes = prompt(`Ghi chú thêm (nếu có) cho hóa đơn ${invoice.invoiceNumber}:`);
+        this.isActionLoading.set(true);
+        this.actionInvoiceId.set(invoice.invoiceId);
 
-    if (confirm(`Xác nhận khách hàng đã thanh toán hóa đơn ${invoice.invoiceNumber} (Đơn hàng ${invoice.orderCode}) bằng ${this.getInvoiceStatusText(paymentMethodConfirmed)}?`)) {
-      console.log('[ManageInvoiceListComponent] User confirmed payment. Calling API...');
-      this.isActionLoading.set(true);
-      this.actionInvoiceId.set(invoice.invoiceId);
-
-      this.adminOrderingService.confirmOrderPayment(invoice.orderId, paymentMethodConfirmed, { notes, transactionReference: transactionRef })
-        .pipe(
-          takeUntil(this.destroy$),
-          finalize(() => {
-            console.log('[ManageInvoiceListComponent] Confirm payment API call finalized.');
-            this.isActionLoading.set(false);
-            this.actionInvoiceId.set(null);
-          })
-        )
-        .subscribe({
-          next: (res) => {
-            console.log('[ManageInvoiceListComponent] Confirm payment API response:', res);
-            if (res.success) {
-              this.toastr.success(`Đã xác nhận thanh toán cho hóa đơn ${invoice.invoiceNumber}.`);
-              this.loadInvoices(); // Load lại danh sách
-            } else {
-              this.toastr.error(res.message || 'Lỗi khi xác nhận thanh toán.');
+        this.adminOrderingService.confirmOrderPayment(invoice.orderId, paymentMethodConfirmed, { notes, transactionReference: transactionRef })
+          .pipe(
+            takeUntil(this.destroy$),
+            finalize(() => {
+              this.isActionLoading.set(false);
+              this.actionInvoiceId.set(null);
+            })
+          )
+          .subscribe({
+            next: (res) => {
+              if (res.success) {
+                this.toastr.success(`Đã xác nhận thanh toán cho hóa đơn ${invoice.invoiceNumber}.`);
+                this.loadInvoices(); // Tải lại danh sách
+              } else {
+                this.toastr.error(res.message || 'Lỗi khi xác nhận thanh toán.');
+              }
+            },
+            error: (err) => {
+              this.toastr.error(err.error?.message || 'Lỗi hệ thống khi xác nhận thanh toán.');
             }
-          },
-          error: (err) => {
-            console.error('[ManageInvoiceListComponent] Confirm payment API error:', err);
-            this.toastr.error(err.error?.message || 'Lỗi hệ thống khi xác nhận thanh toán.');
-          }
-        });
-    } else {
-      console.log('[ManageInvoiceListComponent] User cancelled payment confirmation.');
-    }
+          });
+      }
+      // Nếu `result` là false, không làm gì cả.
+    });
+    // --- KẾT THÚC PHẦN THAY THẾ ---
   }
 
   // Điều chỉnh routerLink cho nút xem chi tiết đơn hàng

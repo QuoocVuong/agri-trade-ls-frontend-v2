@@ -25,6 +25,7 @@ import {AuthService} from '../../../../core/services/auth.service';
 import BigDecimal from 'js-big-decimal';
 import {CartAdjustmentInfo} from '../../dto/response/CartAdjustmentInfo';
 import {CartValidationResponse} from '../../dto/response/CartValidationResponse';
+import { ConfirmationService } from '../../../../shared/services/confirmation.service';
 
 @Component({
   selector: 'app-cart',
@@ -40,6 +41,7 @@ export class CartComponent implements OnInit, OnDestroy {
   spinner = inject(NgxSpinnerService); // Inject spinner service
   toastr = inject(ToastrService); // Inject toastr service
   authService = inject(AuthService);
+  private confirmationService = inject(ConfirmationService);
 
   cart$: Observable<CartResponse | null> = this.cartService.cart$;
 
@@ -268,19 +270,32 @@ export class CartComponent implements OnInit, OnDestroy {
   }
 
   clearCart(): void {
-    if (confirm('Bạn có chắc chắn muốn xóa toàn bộ giỏ hàng?')) {
-      this.clearLoading.set(true);
-      this.errorMessage.set(null);
-      this.cartService.clearCart()
-        .pipe(
-          takeUntil(this.destroy$),
-          finalize(() => this.clearLoading.set(false))
-        )
-        .subscribe({
-          next: () => this.toastr.success('Đã xóa toàn bộ giỏ hàng.'),
-          error: (err) => this.handleError(err, 'Lỗi khi xóa giỏ hàng.')
-        });
-    }
+    // --- PHẦN THAY THẾ ---
+    this.confirmationService.open({
+      title: 'Xác Nhận Xóa Giỏ Hàng',
+      message: 'Bạn có chắc chắn muốn xóa toàn bộ sản phẩm khỏi giỏ hàng không? Hành động này không thể hoàn tác.',
+      confirmText: 'Xóa Hết',
+      cancelText: 'Hủy',
+      confirmButtonClass: 'btn-error', // Dùng màu đỏ cho hành động nguy hiểm
+      iconClass: 'fas fa-trash-alt', // Icon thùng rác
+      iconColorClass: 'text-error'
+    }).subscribe(confirmed => {
+      if (confirmed) {
+        this.clearLoading.set(true);
+        this.errorMessage.set(null);
+        this.cartService.clearCart()
+          .pipe(
+            takeUntil(this.destroy$),
+            finalize(() => this.clearLoading.set(false))
+          )
+          .subscribe({
+            next: () => this.toastr.success('Đã xóa toàn bộ giỏ hàng.'),
+            error: (err) => this.handleError(err, 'Lỗi khi xóa giỏ hàng.')
+          });
+      }
+      // Nếu `confirmed` là false, không làm gì cả.
+    });
+    // --- KẾT THÚC PHẦN THAY THẾ ---
   }
 
   goToCheckout(): void {

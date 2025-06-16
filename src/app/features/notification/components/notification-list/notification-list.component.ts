@@ -14,7 +14,8 @@ import { TimeAgoPipe } from '../../../../shared/pipes/time-ago.pipe';
 import { SafeHtmlPipe } from '../../../../shared/pipes/safe-html.pipe';
 import { getNotificationTypeIcon } from '../../../../common/model/notification-type.enum';
 import {NotificationService} from '../../service/notification.service';
-import {ToastrService} from 'ngx-toastr'; // Import helper
+import {ToastrService} from 'ngx-toastr';
+import {ConfirmationService} from '../../../../shared/services/confirmation.service'; // Import helper
 
 @Component({
   selector: 'app-notification-list',
@@ -36,6 +37,7 @@ export class NotificationListComponent implements OnInit, OnDestroy {
   private router = inject(Router);
   private destroy$ = new Subject<void>();
   private toastr = inject(ToastrService);
+  private confirmationService = inject(ConfirmationService);
 
   notificationsPage = signal<Page<NotificationResponse> | null>(null);
   isLoading = signal(true);
@@ -129,52 +131,57 @@ export class NotificationListComponent implements OnInit, OnDestroy {
     });
   }
 
-  // *** HOÀN THIỆN HÀM DELETE ***
+  // ... trong class NotificationListComponent ...
+
   deleteNotification(notificationId: number, event: MouseEvent): void {
     event.stopPropagation(); // Ngăn sự kiện click lan tỏa lên thẻ <a> cha
+    this.confirmationService.open({
+      title: 'Xác Nhận Xóa Thông Báo',
+      message: 'Bạn có chắc chắn muốn xóa thông báo này không?',
+      confirmText: 'Xóa',
+      cancelText: 'Hủy',
+      confirmButtonClass: 'btn-error',
+      iconClass: 'fas fa-trash-alt',
+      iconColorClass: 'text-error'
+    }).subscribe(confirmed => {
+      if (confirmed) {
+        this.deletingNotificationId.set(notificationId);
+        this.errorMessage.set(null);
 
-    // Hỏi xác nhận người dùng
-    if (confirm('Bạn có chắc chắn muốn xóa thông báo này?')) {
-      this.deletingNotificationId.set(notificationId); // Đánh dấu đang xóa ID này
-      this.errorMessage.set(null); // Xóa lỗi cũ
-
-      this.notificationService.deleteNotification(notificationId)
-        .pipe(
-          takeUntil(this.destroy$),
-          finalize(() => this.deletingNotificationId.set(null)) // Luôn bỏ đánh dấu khi hoàn thành/lỗi
-        )
-        .subscribe({
-          next: (res) => {
-            if (res.success) {
-              this.toastr.success('Đã xóa thông báo.');
-              // Cập nhật lại danh sách bằng cách loại bỏ item đã xóa
-              this.notificationsPage.update(page => {
-                if (!page) return null;
-                const updatedContent = page.content.filter(n => n.id !== notificationId);
-                // Cập nhật lại totalElements nếu cần (hoặc chỉ cần cập nhật content)
-                return {
-                  ...page,
-                  content: updatedContent,
-                  totalElements: page.totalElements - 1,
-                  numberOfElements: updatedContent.length // Cập nhật số phần tử trang hiện tại
-                };
-              });
-              // Có thể cần load lại nếu trang hiện tại trở nên trống sau khi xóa
-              if (this.notificationsPage()?.content?.length === 0 && this.currentPage() > 0) {
-                this.currentPage.update(p => p - 1); // Quay về trang trước
-                this.loadNotifications();
+        this.notificationService.deleteNotification(notificationId)
+          .pipe(
+            takeUntil(this.destroy$),
+            finalize(() => this.deletingNotificationId.set(null))
+          )
+          .subscribe({
+            next: (res) => {
+              if (res.success) {
+                this.toastr.success('Đã xóa thông báo.');
+                this.notificationsPage.update(page => {
+                  if (!page) return null;
+                  const updatedContent = page.content.filter(n => n.id !== notificationId);
+                  return {
+                    ...page,
+                    content: updatedContent,
+                    totalElements: page.totalElements - 1,
+                    numberOfElements: updatedContent.length
+                  };
+                });
+                if (this.notificationsPage()?.content?.length === 0 && this.currentPage() > 0) {
+                  this.currentPage.update(p => p - 1);
+                  this.loadNotifications();
+                }
+                this.notificationService.loadInitialUnreadCount();
+              } else {
+                this.handleError(res, 'Lỗi khi xóa thông báo.');
               }
-              // Cập nhật lại số lượng chưa đọc nếu thông báo bị xóa là chưa đọc
-              this.notificationService.loadInitialUnreadCount();
-            } else {
-              this.handleError(res, 'Lỗi khi xóa thông báo.');
-            }
-          },
-          error: (err) => this.handleError(err, 'Lỗi khi xóa thông báo.')
-        });
-    }
+            },
+            error: (err) => this.handleError(err, 'Lỗi khi xóa thông báo.')
+          });
+      }
+      // Nếu `confirmed` là false, không làm gì cả.
+    });
   }
-  // ****************************
 
   // Helper xử lý lỗi
   private handleError(err: any, defaultMessage: string): void {

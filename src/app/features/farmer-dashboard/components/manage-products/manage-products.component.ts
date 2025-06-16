@@ -14,7 +14,8 @@ import { ToastrService } from 'ngx-toastr';
 import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged, takeUntil, finalize } from 'rxjs/operators';
 import { AuthService } from '../../../../core/services/auth.service';
-import {FormatBigDecimalPipe} from '../../../../shared/pipes/format-big-decimal.pipe'; // Import AuthService
+import {FormatBigDecimalPipe} from '../../../../shared/pipes/format-big-decimal.pipe';
+import {ConfirmationService} from '../../../../shared/services/confirmation.service'; // Import AuthService
 
 @Component({
   selector: 'app-manage-products',
@@ -29,6 +30,7 @@ export class ManageProductsComponent implements OnInit, OnDestroy {
   private router = inject(Router);
   private authService = inject(AuthService); // Inject AuthService
   private destroy$ = new Subject<void>();
+  private confirmationService = inject(ConfirmationService);
 
   productsPage = signal<Page<ProductSummaryResponse> | null>(null);
   isLoading = signal(true);
@@ -123,30 +125,40 @@ export class ManageProductsComponent implements OnInit, OnDestroy {
   }
 
 
-  // Xóa mềm sản phẩm
+// Xóa mềm sản phẩm
   deleteProduct(product: ProductSummaryResponse): void {
-    if (confirm(`Bạn có chắc chắn muốn xóa sản phẩm "${product.name}"? Sản phẩm sẽ được chuyển vào thùng rác.`)) {
-      this.setDeleting(product.id, true);
-      this.errorMessage.set(null); // Xóa lỗi cũ
-      this.productService.deleteMyProduct(product.id)
-        .pipe(
-          takeUntil(this.destroy$),
-          finalize(() => this.setDeleting(product.id, false))
-        )
-        .subscribe({
-          next: (res) => {
-            if(res.success) {
-              this.toastr.success(`Đã xóa sản phẩm "${product.name}".`);
-              this.loadMyProducts(); // Load lại danh sách
-            } else {
-              this.handleError(res, 'Lỗi khi xóa sản phẩm.');
-            }
-          },
-          error: (err) => this.handleError(err, 'Lỗi khi xóa sản phẩm.')
-        });
-    }
+    this.confirmationService.open({
+      title: 'Xác Nhận Xóa Sản Phẩm',
+      message: `Bạn có chắc chắn muốn xóa sản phẩm "${product.name}"? Sản phẩm sẽ được chuyển vào thùng rác và không còn hiển thị để bán.`,
+      confirmText: 'Xóa',
+      cancelText: 'Hủy',
+      confirmButtonClass: 'btn-error',
+      iconClass: 'fas fa-trash-alt',
+      iconColorClass: 'text-error'
+    }).subscribe(confirmed => {
+      if (confirmed) {
+        this.setDeleting(product.id, true);
+        this.errorMessage.set(null); // Xóa lỗi cũ
+        this.productService.deleteMyProduct(product.id)
+          .pipe(
+            takeUntil(this.destroy$),
+            finalize(() => this.setDeleting(product.id, false))
+          )
+          .subscribe({
+            next: (res) => {
+              if(res.success) {
+                this.toastr.success(`Đã xóa sản phẩm "${product.name}".`);
+                this.loadMyProducts(); // Load lại danh sách
+              } else {
+                this.handleError(res, 'Lỗi khi xóa sản phẩm.');
+              }
+            },
+            error: (err) => this.handleError(err, 'Lỗi khi xóa sản phẩm.')
+          });
+      }
+      // Nếu `confirmed` là false, không làm gì cả.
+    });
   }
-
   // Helper xử lý lỗi
   private handleError(err: any, defaultMessage: string): void {
     const message = err?.message || defaultMessage;

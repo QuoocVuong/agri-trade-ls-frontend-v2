@@ -7,7 +7,9 @@ import { AddressFormComponent } from '../address-form/address-form.component';
 import {AlertComponent} from '../../../../shared/components/alert/alert.component';
 import {LoadingSpinnerComponent} from '../../../../shared/components/loading-spinner/loading-spinner.component';
 import {LocationService} from '../../../../core/services/location.service';
-import {Observable, of, shareReplay} from 'rxjs'; // Import form component
+import {Observable, of, shareReplay} from 'rxjs';
+import {ToastrService} from 'ngx-toastr';
+import {ConfirmationService} from '../../../../shared/services/confirmation.service'; // Import form component
 
 @Component({
   selector: 'app-address-list',
@@ -18,6 +20,9 @@ import {Observable, of, shareReplay} from 'rxjs'; // Import form component
 export class AddressListComponent implements OnInit {
   private userProfileService = inject(UserProfileService);
   private locationService = inject(LocationService);
+  private confirmationService = inject(ConfirmationService); // <<< THÊM DÒNG NÀY
+  private toastr = inject(ToastrService);
+
 
   addresses: WritableSignal<Address[]> = signal([]);
   isLoading = signal(true);
@@ -79,19 +84,34 @@ export class AddressListComponent implements OnInit {
   }
 
   deleteAddress(id: number): void {
-    if (confirm('Bạn có chắc chắn muốn xóa địa chỉ này?')) {
-      // TODO: Thêm trạng thái loading khi xóa
-      this.userProfileService.deleteAddress(id).subscribe({
-        next: () => {
-          this.loadAddresses(); // Tải lại danh sách
-          // Hiển thị thông báo thành công
-        },
-        error: (err: ApiResponse<null>) => {
-          this.errorMessage.set(err.message || 'Lỗi khi xóa địa chỉ.');
-          // Hiển thị thông báo lỗi
-        }
-      });
-    }
+    this.confirmationService.open({
+      title: 'Xác Nhận Xóa Địa Chỉ',
+      message: 'Bạn có chắc chắn muốn xóa địa chỉ này không? Hành động này không thể hoàn tác.',
+      confirmText: 'Xóa',
+      cancelText: 'Hủy',
+      confirmButtonClass: 'btn-error',
+      iconClass: 'fas fa-trash-alt',
+      iconColorClass: 'text-error'
+    }).subscribe(confirmed => {
+      if (confirmed) {
+        this.isLoading.set(true); // Bật loading chung của trang
+        this.errorMessage.set(null);
+
+        this.userProfileService.deleteAddress(id).subscribe({
+          next: () => {
+            this.toastr.success('Đã xóa địa chỉ thành công.');
+            this.loadAddresses(); // Tải lại danh sách để cập nhật UI
+          },
+          error: (err: ApiResponse<null>) => {
+            this.errorMessage.set(err.message || 'Lỗi khi xóa địa chỉ.');
+            this.toastr.error(err.message || 'Lỗi khi xóa địa chỉ.');
+            this.isLoading.set(false); // Tắt loading nếu có lỗi
+          }
+          // Không cần finalize ở đây vì loadAddresses sẽ set lại isLoading
+        });
+      }
+    });
+
   }
 
   setDefaultAddress(id: number): void {

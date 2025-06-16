@@ -13,6 +13,7 @@ import { RoleType, getRoleTypeText } from '../../../../common/model/role-type.en
 import { ToastrService } from 'ngx-toastr';
 import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
+import {ConfirmationService} from '../../../../shared/services/confirmation.service';
 
 @Component({
   selector: 'app-manage-users',
@@ -25,6 +26,7 @@ export class ManageUsersComponent implements OnInit {
   private fb = inject(FormBuilder);
   private toastr = inject(ToastrService);
   private destroy$ = new Subject<void>();
+  private confirmationService = inject(ConfirmationService);
 
   usersPage = signal<Page<UserResponse> | null>(null);
   isLoading = signal(true);
@@ -202,26 +204,42 @@ export class ManageUsersComponent implements OnInit {
 
   // Cập nhật trạng thái Active/Inactive
   toggleUserStatus(user: UserResponse): void {
-    const newStatus = !user.active; // Đảo ngược trạng thái hiện tại
+    const newStatus = !user.active;
     const actionText = newStatus ? 'Kích hoạt' : 'Vô hiệu hóa';
-    if (confirm(`Bạn có chắc muốn ${actionText} người dùng "${user.fullName}"?`)) {
-      this.isLoading.set(true); // Dùng loading chung
-      this.adminUserService.updateUserStatus(user.id, newStatus).subscribe({
-        next: (res) => {
-          if(res.success) {
-            this.toastr.success(`Đã ${actionText} người dùng.`);
-            this.loadUsers(); // Load lại danh sách
-          } else {
-            this.handleError(res, `Lỗi khi ${actionText} người dùng.`);
+    const actionTitle = newStatus ? 'Xác Nhận Kích Hoạt Tài Khoản' : 'Xác Nhận Vô Hiệu Hóa Tài Khoản';
+    const confirmButtonClass = newStatus ? 'btn-success' : 'btn-error';
+    const iconClass = newStatus ? 'fas fa-user-check' : 'fas fa-user-slash';
+    const iconColorClass = newStatus ? 'text-success' : 'text-error';
+
+    this.confirmationService.open({
+      title: actionTitle,
+      message: `Bạn có chắc chắn muốn ${actionText} tài khoản của người dùng "${user.fullName}" (ID: ${user.id}) không?`,
+      confirmText: actionText,
+      cancelText: 'Hủy',
+      confirmButtonClass: confirmButtonClass,
+      iconClass: iconClass,
+      iconColorClass: iconColorClass
+    }).subscribe(confirmed => {
+      if (confirmed) {
+        this.isLoading.set(true); // Dùng loading chung
+        this.adminUserService.updateUserStatus(user.id, newStatus).subscribe({
+          next: (res) => {
+            if(res.success) {
+              this.toastr.success(`Đã ${actionText} người dùng.`);
+              this.loadUsers(); // Load lại danh sách
+            } else {
+              this.handleError(res, `Lỗi khi ${actionText} người dùng.`);
+            }
+            this.isLoading.set(false);
+          },
+          error: (err) => {
+            this.handleError(err, `Lỗi khi ${actionText} người dùng.`);
+            this.isLoading.set(false);
           }
-          this.isLoading.set(false);
-        },
-        error: (err) => {
-          this.handleError(err, `Lỗi khi ${actionText} người dùng.`);
-          this.isLoading.set(false);
-        }
-      });
-    }
+        });
+      }
+      // Nếu `confirmed` là false, không làm gì cả.
+    });
   }
 
 

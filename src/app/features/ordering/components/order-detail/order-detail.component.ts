@@ -342,7 +342,7 @@ export class OrderDetailComponent implements OnInit, OnDestroy {
     const orderToCancel = this.order();
     if (!orderToCancel || !(this.canBuyerCancel() || this.canAdminCancel())) return;
 
-    // --- PHẦN THAY THẾ ---
+
     this.confirmationService.open({
       title: 'Xác Nhận Hủy Đơn Hàng',
       message: `Bạn có thực sự muốn hủy đơn hàng #${orderToCancel.orderCode}? Hành động này không thể hoàn tác.`,
@@ -380,7 +380,7 @@ export class OrderDetailComponent implements OnInit, OnDestroy {
       }
       // Nếu `confirmed` là false, không làm gì cả.
     });
-    // --- KẾT THÚC PHẦN THAY THẾ ---
+
   }
 
   // Mở modal cập nhật trạng thái
