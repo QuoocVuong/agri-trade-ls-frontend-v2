@@ -13,7 +13,15 @@ import {
   ChangeDetectorRef
 } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, FormGroup, FormArray, Validators } from '@angular/forms';
+import {
+  ReactiveFormsModule,
+  FormBuilder,
+  FormGroup,
+  FormArray,
+  Validators,
+  ValidationErrors,
+  AbstractControl, ValidatorFn
+} from '@angular/forms';
 import {startWith, Subject} from 'rxjs';
 import {finalize, takeUntil} from 'rxjs/operators';
 import { ToastrService } from 'ngx-toastr';
@@ -30,6 +38,30 @@ import { AlertComponent } from '../../../../shared/components/alert/alert.compon
 import { FormatBigDecimalPipe } from '../../../../shared/pipes/format-big-decimal.pipe';
 import { LocationService, Province, District, Ward } from '../../../../core/services/location.service'; // Nếu cần cho địa chỉ
 import BigDecimal from 'js-big-decimal';
+
+// --- THÊM HÀM VALIDATOR NÀY VÀO BÊN NGOÀI CLASS ---
+export function futureDateValidator(): ValidatorFn {
+  return (control: AbstractControl): ValidationErrors | null => {
+    const controlValue = control.value;
+    if (!controlValue) {
+      return null; // Không validate nếu không có giá trị
+    }
+
+    const selectedDate = new Date(controlValue);
+    const today = new Date();
+
+    // Set giờ, phút, giây, ms về 0 để chỉ so sánh ngày
+    today.setHours(0, 0, 0, 0);
+    selectedDate.setHours(0, 0, 0, 0);
+
+    // Nếu ngày đã chọn nhỏ hơn ngày hôm nay, trả về lỗi
+    if (selectedDate < today) {
+      return { pastDate: true };
+    }
+
+    return null; // Hợp lệ
+  };
+}
 
 @Component({
   selector: 'app-finalize-supply-request-modal',
@@ -78,12 +110,12 @@ export class FinalizeSupplyRequestModalComponent implements OnInit, OnChanges, O
       paymentTermsDays: [null as number | null, [Validators.min(0)]], // Cho công nợ
       shippingFullName: ['', Validators.maxLength(100)],
       shippingPhoneNumber: ['', [Validators.pattern(/^(\+84|0)\d{9,10}$/)]],
-      shippingAddressDetail: ['', Validators.maxLength(255)],
+      shippingAddressDetail: ['',  [Validators.required, Validators.maxLength(255)]],
       shippingProvinceCode: ['', Validators.required],
       shippingDistrictCode: ['', Validators.required],
       shippingWardCode: ['', Validators.required],
       farmerNotes: ['', Validators.maxLength(1000)],
-      expectedDeliveryDate: ['']
+      expectedDeliveryDate: ['', [Validators.required, futureDateValidator()]]
     });
   }
 
@@ -156,7 +188,7 @@ export class FinalizeSupplyRequestModalComponent implements OnInit, OnChanges, O
 
   patchFormWithSupplyRequestData(req: SupplyOrderRequestResponse): void {
     this.finalizeForm.reset({ // Reset với giá trị mặc định nếu có
-      paymentMethod: PaymentMethod.BANK_TRANSFER // Giữ lại PTTT mặc định
+      paymentMethod: PaymentMethod.INVOICE // Giữ lại PTTT mặc định
       // Các giá trị mặc định khác nếu cần
     });
     this.finalItemsArray.clear(); // Xóa item cũ
@@ -261,11 +293,25 @@ export class FinalizeSupplyRequestModalComponent implements OnInit, OnChanges, O
 
   onSubmit(): void {
     this.errorMessage.set(null);
-    if (this.finalizeForm.invalid || !this.supplyRequest) {
-      this.finalizeForm.markAllAsTouched();
-      this.toastr.error('Vui lòng kiểm tra lại thông tin đơn hàng đã chốt.');
+    // Kiểm tra và hiển thị tất cả lỗi nếu form không hợp lệ
+    if (this.finalizeForm.invalid) {
+      this.finalizeForm.markAllAsTouched(); // Đánh dấu tất cả các trường là "đã chạm" để hiển thị lỗi
+      this.toastr.error('Vui lòng kiểm tra lại các thông tin được đánh dấu đỏ.');
+
+      // (Tùy chọn) Focus vào control đầu tiên bị lỗi
+      const firstErrorControl = document.querySelector('.modal-box .ng-invalid');
+      if (firstErrorControl) {
+        (firstErrorControl as HTMLElement).focus();
+      }
+
+      return; // Dừng thực thi
+    }
+
+    if (!this.supplyRequest) {
+      this.toastr.error('Thiếu thông tin yêu cầu gốc.');
       return;
     }
+
 
     this.isSubmitting.set(true);
     const formValue = this.finalizeForm.getRawValue();
