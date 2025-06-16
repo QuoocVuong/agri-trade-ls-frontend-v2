@@ -270,7 +270,6 @@ export class CartComponent implements OnInit, OnDestroy {
   }
 
   clearCart(): void {
-    // --- PHẦN THAY THẾ ---
     this.confirmationService.open({
       title: 'Xác Nhận Xóa Giỏ Hàng',
       message: 'Bạn có chắc chắn muốn xóa toàn bộ sản phẩm khỏi giỏ hàng không? Hành động này không thể hoàn tác.',
@@ -295,7 +294,7 @@ export class CartComponent implements OnInit, OnDestroy {
       }
       // Nếu `confirmed` là false, không làm gì cả.
     });
-    // --- KẾT THÚC PHẦN THAY THẾ ---
+
   }
 
   goToCheckout(): void {
@@ -305,47 +304,63 @@ export class CartComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // this.spinner.show(); // Có thể dùng isLoading signal của CartService
-    this.cartService.isLoading.set(true); // Sử dụng signal loading của service
+    this.cartService.isLoading.set(true);
     this.cartService.validateCart()
       .pipe(finalize(() => this.cartService.isLoading.set(false)))
       .subscribe({
         next: (res) => {
           if (res.success && res.data) {
-            const validationData = res.data as CartValidationResponse; // Ép kiểu rõ ràng
-            console.log("Validation data received:", validationData);
+            const validationData = res.data as CartValidationResponse;
 
-            // Hiển thị các thông báo điều chỉnh chi tiết từ validateCart
+            // Kịch bản 1: Có sự điều chỉnh trong giỏ hàng
             if (validationData.adjustments && validationData.adjustments.length > 0) {
-              this.displayCartAdjustments(validationData.adjustments, "Kiểm tra giỏ hàng");
-            }
+              // Tạo nội dung thông báo từ danh sách adjustments
+              const adjustmentMessages = validationData.adjustments.map(adj => `- ${adj.message}`).join('\n');
+              const modalMessage = `Một vài sản phẩm trong giỏ hàng của bạn đã có thay đổi:\n\n${adjustmentMessages}\n\nVui lòng kiểm tra lại giỏ hàng trước khi tiếp tục.`;
 
-            if (validationData.valid) {
-              // Nếu backend nói OK (isValidForCheckout = true), nghĩa là không có item nào bị XÓA,
-              // chỉ có thể là số lượng được ĐIỀU CHỈNH (nếu có).
-              // Trong trường hợp này, vẫn cho phép đi đến checkout.
-              console.log("Cart is valid. Attempting to navigate to /checkout...");
+              // Hiển thị modal thông báo
+              this.confirmationService.open({
+                title: 'Giỏ Hàng Đã Được Cập Nhật',
+                message: modalMessage,
+                confirmText: 'Đến trang Checkout',
+                cancelText: 'Xem lại giỏ hàng',
+                confirmButtonClass: 'btn-primary',
+                iconClass: 'fas fa-info-circle',
+                iconColorClass: 'text-info'
+              }).subscribe(confirmed => {
+                // Tải lại giỏ hàng để cập nhật UI
+                this.cartService.loadCart().subscribe();
+                if (confirmed) {
+                  // Nếu người dùng vẫn muốn checkout, điều hướng họ đi
+                  this.router.navigate(['/checkout']);
+                }
+                // Nếu nhấn "Xem lại giỏ hàng", họ sẽ ở lại trang cart
+              });
+
+            } else if (validationData.valid) {
+              // Kịch bản 2: Giỏ hàng hợp lệ và không có điều chỉnh -> đi đến checkout
               this.router.navigate(['/checkout']);
             } else {
-              // Nếu isValidForCheckout = false, nghĩa là có item bị XÓA hoặc số lượng thay đổi.
-              // Người dùng nên ở lại trang giỏ hàng để xem các thay đổi.
-              // CartService.loadCart() sẽ được gọi bên dưới để cập nhật UI.
-              this.toastr.error("Giỏ hàng của bạn đã có thay đổi. Vui lòng kiểm tra lại trước khi thanh toán.", "Giỏ hàng không hợp lệ", { timeOut: 7000 });
-              // Tải lại giỏ hàng để cập nhật UI với các thay đổi từ backend
-              this.cartService.loadCart().subscribe(() => {
-                this.cdr.markForCheck();
+              // Kịch bản 3: Giỏ hàng không hợp lệ mà không rõ lý do
+              this.confirmationService.open({
+                title: 'Giỏ Hàng Không Hợp Lệ',
+                message: res.message || "Giỏ hàng của bạn không hợp lệ để thanh toán. Vui lòng kiểm tra lại.",
+                confirmText: 'OK',
+                cancelText: 'Đóng',
+                confirmButtonClass: 'btn-error'
               });
             }
           } else {
-            this.toastr.error(res.message || "Lỗi kiểm tra giỏ hàng.");
+            // Lỗi từ API validate
+            this.toastr.error(res.message || "Lỗi khi kiểm tra giỏ hàng.");
           }
         },
         error: (err) => {
+          // Lỗi kết nối
           this.toastr.error(err.error?.message || "Lỗi kết nối khi kiểm tra giỏ hàng.");
         }
       });
   }
-
   // Helper quản lý loading map
   isItemLoading(itemId: number): boolean {
     return this.itemLoadingMap.get(itemId) ?? false;

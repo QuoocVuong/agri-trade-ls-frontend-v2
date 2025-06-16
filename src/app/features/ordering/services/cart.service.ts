@@ -140,12 +140,12 @@ export class CartService {
     this.isLoading.set(true);
     return this.http.delete<ApiResponse<void>>(this.apiUrl).pipe(
       tap(response => {
+        // Chỉ cập nhật state ở client KHI và CHỈ KHI API backend trả về thành công
         if (response.success) {
-          this.cartSubject.next({ items: [], subTotal: new BigDecimal("0"), totalItems: 0, adjustments: null }); // Cập nhật state ngay lập tức
-          this.cartState.set({ items: [], subTotal: 0, totalItems: 0, adjustments: null }); // Cập nhật state ngay lập tức
+          const emptyCart: CartResponse = { items: [], subTotal: new BigDecimal("0"), totalItems: 0, adjustments: null };
+          this.cartSubject.next(emptyCart);
+          this.cartState.set(emptyCart);
         }
-
-
       }),
       finalize(() => this.isLoading.set(false))
     );

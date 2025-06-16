@@ -114,7 +114,7 @@
               <div class="join border border-base-300 dark:border-gray-600 rounded-full">
                 <button type="button" class="btn btn-ghost btn-sm join-item rounded-l-full px-3"
                         (click)="changeQuantity(-1)"
-                        [disabled]="(quantityForm.controls.quantity.value ?? 1)"
+                        [disabled]="(quantityForm.controls.quantity.value ?? 1) <= 1"
                         aria-label="Giảm số lượng">-</button>
                 <input type="number" id="quantity" formControlName="quantity"
                        class="input input-sm w-16 text-center join-item bg-transparent focus:outline-none dark:text-white"

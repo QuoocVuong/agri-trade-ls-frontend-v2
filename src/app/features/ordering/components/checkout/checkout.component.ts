@@ -10,19 +10,22 @@ import { PaymentMethod, getPaymentMethodText } from '../../domain/payment-method
 import { CheckoutRequest } from '../../dto/request/CheckoutRequest';
 import { AddressFormComponent } from '../../../user-profile/components/address-form/address-form.component';
 import { LoadingSpinnerComponent } from '../../../../shared/components/loading-spinner/loading-spinner.component';
+import { CartValidationResponse } from '../../dto/response/CartValidationResponse'
 import { AlertComponent } from '../../../../shared/components/alert/alert.component';
 import { ToastrService } from 'ngx-toastr';
 import { ApiResponse } from '../../../../core/models/api-response.model';
 import { OrderResponse } from '../../dto/response/OrderResponse';
-import {distinctUntilChanged, finalize, takeUntil} from 'rxjs/operators';
+import {distinctUntilChanged, finalize, map, switchMap, takeUntil} from 'rxjs/operators';
 import {log} from '@angular-devkit/build-angular/src/builders/ssr-dev-server';
 import {FormatBigDecimalPipe} from '../../../../shared/pipes/format-big-decimal.pipe';
-import {Observable, of, shareReplay, Subject} from 'rxjs';
+import {Observable, of, shareReplay, Subject, throwError} from 'rxjs';
 import {AuthService} from '../../../../core/services/auth.service';
 import {LocationService} from '../../../../core/services/location.service';
 import BigDecimal from 'js-big-decimal';
 import {OrderType} from '../../domain/order-type.enum';
 import {CartItemResponse} from '../../dto/response/CartItemResponse';
+import {CartAdjustmentInfo} from '../../dto/response/CartAdjustmentInfo';
+import {ConfirmationService} from '../../../../shared/services/confirmation.service';
 
 @Component({
   selector: 'app-checkout',
@@ -41,6 +44,7 @@ export class CheckoutComponent implements OnInit {
   private destroy$ = new Subject<void>();
   private authService = inject(AuthService);
   private locationService = inject(LocationService);
+  private confirmationService = inject(ConfirmationService);
 
   checkoutForm!: FormGroup;
   addresses = signal<Address[]>([]);
@@ -346,11 +350,19 @@ export class CheckoutComponent implements OnInit {
 
 
   onSubmit(): void {
+    // 1. Kiểm tra validation của form checkout (địa chỉ, PTTT)
     if (this.checkoutForm.invalid && !this.showNewAddressForm()) {
       this.checkoutForm.markAllAsTouched();
-      this.toastr.error("Vui lòng chọn địa chỉ giao hàng và phương thức thanh toán.");
+      const invalidControl = document.querySelector('form .ng-invalid');
+      if (invalidControl) {
+        (invalidControl as HTMLElement).focus();
+        this.toastr.error("Vui lòng kiểm tra lại các trường thông tin được đánh dấu đỏ.", "Thông tin chưa hợp lệ");
+      } else {
+        this.toastr.error("Vui lòng chọn địa chỉ giao hàng và phương thức thanh toán.");
+      }
       return;
     }
+
     if (!this.cart() || (this.cart()?.items?.length ?? 0) === 0) {
       this.toastr.error("Giỏ hàng của bạn đang trống.");
       this.router.navigate(['/cart']);
@@ -364,8 +376,71 @@ export class CheckoutComponent implements OnInit {
     this.isLoadingCheckout.set(true);
     this.errorMessage.set(null);
 
-    const formValue = this.checkoutForm.value;
+    // 2. *** KIỂM TRA LẠI GIỎ HÀNG TRƯỚC KHI SUBMIT (LOGIC MỚI) ***
+    this.cartService.validateCart()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (validationRes) => {
+          if (validationRes.success && validationRes.data) {
+            const validationData = validationRes.data as CartValidationResponse;
 
+            // Kịch bản 1: Có sự điều chỉnh trong giỏ hàng (giá, số lượng, hoặc sản phẩm bị xóa)
+            if (validationData.adjustments && validationData.adjustments.length > 0) {
+              this.isLoadingCheckout.set(false); // Tắt loading ngay lập tức
+
+              // Tạo nội dung thông báo chi tiết từ danh sách adjustments
+              const adjustmentMessages = validationData.adjustments.map(adj => `• ${adj.message}`).join('\n');
+              const modalMessage = `Một vài sản phẩm trong giỏ hàng của bạn đã có thay đổi:\n\n${adjustmentMessages}\n\nVui lòng quay lại giỏ hàng để xem lại và tiến hành thanh toán lại.`;
+
+              // Hiển thị Modal yêu cầu người dùng xác nhận và quay lại giỏ hàng
+              this.confirmationService.open({
+                title: 'Giỏ Hàng Đã Được Cập Nhật',
+                message: modalMessage,
+                confirmText: 'Về Giỏ Hàng', // Chỉ có một nút hành động chính
+                cancelText: 'Đóng', // Nút phụ
+                confirmButtonClass: 'btn-primary',
+                iconClass: 'fas fa-info-circle',
+                iconColorClass: 'text-info'
+              }).subscribe(confirmed => {
+                // Tải lại giỏ hàng để cập nhật state chung của ứng dụng
+                this.cartService.loadCart().subscribe();
+                // Bất kể người dùng nhấn nút nào, cũng điều hướng về giỏ hàng
+                this.router.navigate(['/cart']);
+              });
+
+              return; // Dừng hoàn toàn quá trình checkout
+            }
+
+            // Kịch bản 2: Không có điều chỉnh nào và giỏ hàng hợp lệ
+            if (validationData.valid) {
+              // Tiến hành đặt hàng
+              this.proceedToPlaceOrder();
+            } else {
+              // Kịch bản 3: Giỏ hàng không hợp lệ mà không rõ lý do từ adjustments
+              this.toastr.error("Giỏ hàng không hợp lệ để thanh toán. Vui lòng quay lại giỏ hàng để kiểm tra.", "Lỗi");
+              this.isLoadingCheckout.set(false);
+              this.router.navigate(['/cart']);
+            }
+
+          } else {
+            // Lỗi từ API validate
+            this.toastr.error(validationRes.message || "Lỗi khi kiểm tra lại giỏ hàng. Vui lòng thử lại.");
+            this.isLoadingCheckout.set(false);
+          }
+        },
+        error: (err) => {
+          // Lỗi kết nối khi validate
+          this.toastr.error(err.error?.message || "Lỗi kết nối khi kiểm tra giỏ hàng.");
+          this.isLoadingCheckout.set(false);
+        }
+      });
+  }
+
+
+
+  // --- TÁCH LOGIC ĐẶT HÀNG RA HÀM RIÊNG ---
+  private proceedToPlaceOrder(): void {
+    const formValue = this.checkoutForm.value;
     const requestData: CheckoutRequest = {
       shippingAddressId: formValue.shippingAddressId,
       paymentMethod: formValue.paymentMethod,
@@ -375,74 +450,58 @@ export class CheckoutComponent implements OnInit {
 
     this.orderService.checkout(requestData)
       .pipe(
-        takeUntil(this.destroy$), // Giả sử có destroy$
+        // Dùng switchMap để thực hiện hành động tiếp theo sau khi checkout thành công
+        switchMap(orderResponse => {
+          if (orderResponse.success && orderResponse.data && orderResponse.data.length > 0) {
+            // Nếu checkout thành công, gọi API clearCart và chờ nó hoàn tất
+            return this.cartService.clearCart().pipe(
+              map(() => orderResponse) // Trả về lại orderResponse để xử lý tiếp
+            );
+          } else {
+            // Nếu checkout không thành công, ném lỗi để khối error xử lý
+            return throwError(() => orderResponse);
+          }
+        }),
+        takeUntil(this.destroy$),
         finalize(() => this.isLoadingCheckout.set(false))
       )
       .subscribe({
-        next: (response) => {
-          if (response.success && response.data && response.data.length > 0) {
-            const createdOrders = response.data;
-            // Giả sử chúng ta xử lý từng đơn hàng một nếu có nhiều farmer
-            // Hoặc nếu bạn đảm bảo checkout chỉ tạo 1 order cho tất cả (ít khả thi với nhiều farmer)
-            const firstOrder = createdOrders[0];
+        next: (orderResponse) => {
+          // Tại thời điểm này, cả checkout và clearCart đều đã thành công
+          const firstOrder = orderResponse.data![0];
 
-            this.cartService.clearCart(); // Xóa giỏ hàng sau khi đặt hàng thành công
-
-          //   if (firstOrder.paymentMethod === PaymentMethod.BANK_TRANSFER) {
-          //     this.toastr.success('Đơn hàng đã được tạo. Vui lòng thực hiện chuyển khoản theo hướng dẫn.', 'Đặt hàng thành công');
-          //     this.cartService.loadCart().subscribe(); // Làm mới giỏ hàng
-          //     this.router.navigate(['/user/orders', firstOrder.id]); // Điều hướng đến chi tiết đơn hàng
-          //   } else if (firstOrder.paymentMethod === PaymentMethod.COD) {
-          //     this.toastr.success('Đặt hàng thành công! Bạn sẽ thanh toán khi nhận hàng.');
-          //     this.cartService.loadCart().subscribe();
-          //     this.router.navigate(['/user/orders', firstOrder.id]);
-          //   } else { // Trường hợp VNPay, MoMo (cần tạo payment URL)
-          //     this.toastr.info('Đơn hàng đã được tạo. Đang chuyển đến trang thanh toán...');
-          //     this.createAndRedirectToPaymentGateway(firstOrder.id, firstOrder.paymentMethod);
-          //   }
-          // } else {
             if (firstOrder.paymentMethod === PaymentMethod.VNPAY) {
               this.toastr.info('Đơn hàng đã được tạo. Đang chuyển đến trang thanh toán VNPAY...', 'Chuyển hướng');
               this.createAndRedirectToPaymentGateway(firstOrder.id, PaymentMethod.VNPAY);
             } else if (firstOrder.paymentMethod === PaymentMethod.COD) {
               this.toastr.success('Đặt hàng thành công! Bạn sẽ thanh toán khi nhận hàng.', 'Thành công');
-              this.router.navigate(['/user/orders', firstOrder.id]); // Điều hướng đến chi tiết đơn hàng
+              this.router.navigate(['/user/orders', firstOrder.id]);
             } else if (firstOrder.paymentMethod === PaymentMethod.BANK_TRANSFER) {
               this.toastr.success('Đơn hàng đã được tạo. Vui lòng thực hiện chuyển khoản theo hướng dẫn.', 'Đặt hàng thành công');
               this.router.navigate(['/user/orders', firstOrder.id]);
             } else {
-              // Xử lý các phương thức khác nếu có
               this.toastr.success('Đặt hàng thành công!');
               this.router.navigate(['/user/orders', firstOrder.id]);
             }
-          } else {
-            this.handleError(response, 'Đặt hàng thất bại.');
-          }
-        },
-        // CheckoutComponent.ts -> onSubmit() -> error block
-        error: (err) => {
-          const apiError = err.error as ApiResponse<null>;
-          const message = apiError?.message || 'Đã xảy ra lỗi khi đặt hàng.';
-          this.errorMessage.set(message);
-          this.toastr.error(message, 'Đặt hàng thất bại', { timeOut: 7000 }); // Tăng thời gian hiển thị toastr
-          this.isLoadingCheckout.set(false);
-          console.error(err);
 
-          // Nếu lỗi là do sản phẩm không khả dụng (backend đã xóa khỏi giỏ)
-          // thì tải lại giỏ hàng ở frontend để cập nhật UI
-          if (message.includes('không còn khả dụng')) {
-            this.cartService.loadCart().subscribe(() => {
-              this.cdr.markForCheck(); // Đảm bảo UI tóm tắt đơn hàng cập nhật
-              // Có thể kiểm tra lại nếu giỏ hàng trống thì điều hướng
-              if (!this.cart() || (this.cart()?.items?.length ?? 0) === 0) {
-                this.toastr.info("Giỏ hàng của bạn hiện đã trống.");
-                this.router.navigate(['/cart']);
-              }
-            });
-          }
+        },
+        error: (err) => {
+          this.handleCheckoutError(err, 'Đã xảy ra lỗi khi đặt hàng.');
         }
       });
   }
+
+
+  private displayCartAdjustments(adjustments: CartAdjustmentInfo[], titlePrefix: string = "Giỏ hàng đã cập nhật"): void {
+    adjustments.forEach(adj => {
+      if (adj.type === 'REMOVED') {
+        this.toastr.warning(adj.message, titlePrefix, { timeOut: 7000, closeButton: true});
+      } else if (adj.type === 'ADJUSTED') {
+        this.toastr.info(adj.message, titlePrefix, { timeOut: 7000, closeButton: true });
+      }
+    });
+  }
+
   // Hàm mới để xử lý redirect cho cổng thanh toán
   private createAndRedirectToPaymentGateway(orderId: number, paymentMethod: PaymentMethod): void {
     this.orderService.createPaymentUrl(orderId, paymentMethod) // Gọi API tạo URL
