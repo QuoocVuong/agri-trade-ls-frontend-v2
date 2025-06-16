@@ -230,25 +230,25 @@ export class CartService {
     if (!product) return { price: null, unit: 'N/A' };
 
     // Dùng signal isBusinessBuyer đã inject
-    if (this.isBusinessBuyer() && product.b2bEnabled) { // Giả sử tên trường là b2bEnabled
-      let finalPrice = product.b2bBasePrice ? new BigDecimal(product.b2bBasePrice.toString()) : null;
-      const unit = product.b2bUnit ?? product.unit;
-
-      if (product.pricingTiers && product.pricingTiers.length > 0) {
-        const applicableTier = product.pricingTiers
-          .filter(tier => quantity >= tier.minQuantity)
-          .sort((a, b) => b.minQuantity - a.minQuantity)[0];
-        if (applicableTier?.pricePerUnit) {
-          finalPrice = new BigDecimal(applicableTier.pricePerUnit.toString());
-        }
-      }
-      if (finalPrice === null) {
-        finalPrice = product.price ? new BigDecimal(product.price.toString()) : null;
-      }
-      return { price: finalPrice, unit: unit };
-    } else {
+    // if (this.isBusinessBuyer() && product.b2bEnabled) { // Giả sử tên trường là b2bEnabled
+    //   let finalPrice = product.b2bBasePrice ? new BigDecimal(product.b2bBasePrice.toString()) : null;
+    //   const unit = product.b2bUnit ?? product.unit;
+    //
+    //   if (product.pricingTiers && product.pricingTiers.length > 0) {
+    //     const applicableTier = product.pricingTiers
+    //       .filter(tier => quantity >= tier.minQuantity)
+    //       .sort((a, b) => b.minQuantity - a.minQuantity)[0];
+    //     if (applicableTier?.pricePerUnit) {
+    //       finalPrice = new BigDecimal(applicableTier.pricePerUnit.toString());
+    //     }
+    //   }
+    //   if (finalPrice === null) {
+    //     finalPrice = product.price ? new BigDecimal(product.price.toString()) : null;
+    //   }
+    //   return { price: finalPrice, unit: unit };
+    // } else {
       return { price: product.price ? new BigDecimal(product.price.toString()) : null, unit: product.unit };
-    }
+    //}
   }
 
   // Hàm này có thể để public
