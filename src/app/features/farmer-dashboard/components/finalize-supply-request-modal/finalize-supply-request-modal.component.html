@@ -35,9 +35,23 @@
             <div *ngIf="itemCtrl.get('unit')?.invalid && itemCtrl.get('unit')?.touched" class="text-error text-xs mt-1">Vui lòng chọn đơn vị.</div>
           </div>
           <div class="form-control">
-            <label class="label pb-1"><span class="label-text text-xs">Số lượng (chốt) <span class="text-error">*</span></span></label>
+            <label class="label pb-1">
+              <span class="label-text text-xs">Số lượng (chốt) <span class="text-error">*</span></span>
+              <!-- THÊM HIỂN THỊ TỒN KHO -->
+              <span *ngIf="productContext()" class="label-text-alt text-info dark:text-sky-400">
+      (Tồn kho: {{ productContext()?.stockQuantity | number }} {{ getUnitText(productContext()?.unit) }})
+    </span>
+            </label>
             <input type="number" formControlName="quantity" class="input input-sm input-bordered" [ngClass]="{'input-error': itemCtrl.get('quantity')?.invalid && itemCtrl.get('quantity')?.touched}">
-            <div *ngIf="itemCtrl.get('quantity')?.invalid && itemCtrl.get('quantity')?.touched" class="text-error text-xs mt-1">Số lượng không hợp lệ.</div>
+
+            <!-- SỬA LẠI KHỐI HIỂN THỊ LỖI -->
+            <div *ngIf="itemCtrl.get('quantity')?.invalid && itemCtrl.get('quantity')?.touched" class="text-error text-xs mt-1">
+              <span *ngIf="itemCtrl.get('quantity')?.errors?.['required']">Vui lòng nhập số lượng.</span>
+              <span *ngIf="itemCtrl.get('quantity')?.errors?.['min']">Số lượng phải lớn hơn 0.</span>
+              <span *ngIf="itemCtrl.get('quantity')?.errors?.['maxQuantityExceeded']">
+      Số lượng không được vượt quá tồn kho ({{ itemCtrl.get('quantity')?.errors?.['maxQuantityExceeded'].max | number }}).
+    </span>
+            </div>
           </div>
           <div class="form-control">
             <label class="label pb-1"><span class="label-text text-xs">Đơn giá / đơn vị (chốt) <span class="text-error">*</span></span></label>

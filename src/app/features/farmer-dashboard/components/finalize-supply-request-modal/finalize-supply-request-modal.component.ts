@@ -22,7 +22,7 @@ import {
   ValidationErrors,
   AbstractControl, ValidatorFn
 } from '@angular/forms';
-import {startWith, Subject} from 'rxjs';
+import {firstValueFrom, startWith, Subject} from 'rxjs';
 import {finalize, takeUntil} from 'rxjs/operators';
 import { ToastrService } from 'ngx-toastr';
 
@@ -38,6 +38,8 @@ import { AlertComponent } from '../../../../shared/components/alert/alert.compon
 import { FormatBigDecimalPipe } from '../../../../shared/pipes/format-big-decimal.pipe';
 import { LocationService, Province, District, Ward } from '../../../../core/services/location.service'; // Nếu cần cho địa chỉ
 import BigDecimal from 'js-big-decimal';
+import {ProductService} from '../../../catalog/services/product.service';
+import {ProductDetailResponse} from '../../../catalog/dto/response/ProductDetailResponse';
 
 // --- THÊM HÀM VALIDATOR NÀY VÀO BÊN NGOÀI CLASS ---
 export function futureDateValidator(): ValidatorFn {
@@ -81,6 +83,14 @@ export class FinalizeSupplyRequestModalComponent implements OnInit, OnChanges, O
   private destroy$ = new Subject<void>();
   private cdr = inject(ChangeDetectorRef);
 
+  // ... các injects khác ...
+  private productService = inject(ProductService); // <<< INJECT ProductService
+
+  // --- THÊM CÁC SIGNAL MỚI ---
+  productContext = signal<ProductDetailResponse | null>(null); // Lưu thông tin sản phẩm mới nhất
+  isLoadingProductContext = signal(false);
+  // ---------------------------
+
   finalizeForm!: FormGroup;
   isSubmitting = signal(false);
   errorMessage = signal<string | null>(null);
@@ -106,7 +116,7 @@ export class FinalizeSupplyRequestModalComponent implements OnInit, OnChanges, O
       // Thông tin Farmer có thể chốt/sửa
       finalItems: this.fb.array([], Validators.required), // Sẽ có 1 item ban đầu
       finalTotalAmount: [{ value: '', disabled: true }, [Validators.required, Validators.min(0.01)]], // Sẽ tự tính
-      paymentMethod: [PaymentMethod.BANK_TRANSFER, Validators.required],
+      paymentMethod: [PaymentMethod.INVOICE, Validators.required],
       paymentTermsDays: [null as number | null, [Validators.min(0)]], // Cho công nợ
       shippingFullName: ['', Validators.maxLength(100)],
       shippingPhoneNumber: ['', [Validators.pattern(/^(\+84|0)\d{9,10}$/)]],
@@ -157,8 +167,37 @@ export class FinalizeSupplyRequestModalComponent implements OnInit, OnChanges, O
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['supplyRequest'] && this.supplyRequest) {
-      this.patchFormWithSupplyRequestData(this.supplyRequest);
+      //this.patchFormWithSupplyRequestData(this.supplyRequest);
+      this.loadDataForFinalization(this.supplyRequest);
     }
+  }
+
+  // --- HÀM MỚI: Load dữ liệu sản phẩm và patch form ---
+  private loadDataForFinalization(req: SupplyOrderRequestResponse): void {
+    if (!req.product?.id) {
+      this.errorMessage.set('Yêu cầu không có thông tin sản phẩm hợp lệ.');
+      return;
+    }
+
+    this.isLoadingProductContext.set(true);
+    this.productService.getPublicProductById(req.product.id) // Gọi API lấy chi tiết sản phẩm
+      .pipe(
+        takeUntil(this.destroy$),
+        finalize(() => this.isLoadingProductContext.set(false))
+      )
+      .subscribe({
+        next: (res) => {
+          if (res.success && res.data) {
+            this.productContext.set(res.data); // Lưu thông tin sản phẩm mới nhất
+            this.patchFormWithSupplyRequestData(req, res.data); // Patch form với dữ liệu từ cả request và product
+          } else {
+            this.errorMessage.set(res.message || 'Không thể tải thông tin sản phẩm để chốt đơn.');
+          }
+        },
+        error: (err) => {
+          this.errorMessage.set(err.error?.message || 'Lỗi khi tải thông tin sản phẩm.');
+        }
+      });
   }
 
   ngOnDestroy(): void {
@@ -186,7 +225,7 @@ export class FinalizeSupplyRequestModalComponent implements OnInit, OnChanges, O
     });
   }
 
-  patchFormWithSupplyRequestData(req: SupplyOrderRequestResponse): void {
+  patchFormWithSupplyRequestData(req: SupplyOrderRequestResponse, productData: ProductDetailResponse): void {
     this.finalizeForm.reset({ // Reset với giá trị mặc định nếu có
       paymentMethod: PaymentMethod.INVOICE // Giữ lại PTTT mặc định
       // Các giá trị mặc định khác nếu cần
@@ -215,7 +254,19 @@ export class FinalizeSupplyRequestModalComponent implements OnInit, OnChanges, O
       quantity: req.requestedQuantity,
       pricePerUnit: req.proposedPricePerUnit  || null // Ưu tiên giá buyer, rồi giá tham khảo
     };
-    this.finalItemsArray.push(this.createFinalItemFormGroup(initialItemData));
+
+    const itemGroup = this.createFinalItemFormGroup(initialItemData);
+    // Thêm validator động cho 'quantity'
+    itemGroup.get('quantity')?.setValidators([
+      Validators.required,
+      Validators.min(1),
+      this.maxQuantityValidator(productData.stockQuantity) // Sử dụng tồn kho mới nhất
+    ]);
+    itemGroup.get('quantity')?.updateValueAndValidity();
+
+    this.finalItemsArray.push(itemGroup);
+
+    //this.finalItemsArray.push(this.createFinalItemFormGroup(initialItemData));
     this.calculateAndUpdateTotalAmount(); // Tính tổng tiền ban đầu
 
 
@@ -268,6 +319,16 @@ export class FinalizeSupplyRequestModalComponent implements OnInit, OnChanges, O
     }
   }
 
+  private maxQuantityValidator(maxStock: number): ValidatorFn {
+    return (control: AbstractControl): ValidationErrors | null => {
+      const enteredQuantity = control.value;
+      if (enteredQuantity > maxStock) {
+        return { maxQuantityExceeded: { max: maxStock, actual: enteredQuantity } };
+      }
+      return null;
+    };
+  }
+
   subscribeToItemChanges(): void {
     this.finalItemsArray.valueChanges.pipe(
       startWith(this.finalItemsArray.value), // Tính toán ngay khi form được patch
@@ -291,7 +352,7 @@ export class FinalizeSupplyRequestModalComponent implements OnInit, OnChanges, O
     this.finalizeForm.get('finalTotalAmount')?.setValue(total.getValue(), { emitEvent: false });
   }
 
-  onSubmit(): void {
+  async onSubmit(): Promise<void> {
     this.errorMessage.set(null);
     // Kiểm tra và hiển thị tất cả lỗi nếu form không hợp lệ
     if (this.finalizeForm.invalid) {
@@ -314,6 +375,35 @@ export class FinalizeSupplyRequestModalComponent implements OnInit, OnChanges, O
 
 
     this.isSubmitting.set(true);
+
+    // --- BƯỚC KIỂM TRA TỒN KHO LẦN CUỐI ---
+    try {
+      const latestProductRes = await firstValueFrom(this.productService.getPublicProductById(this.productContext()!.id));
+      if (!latestProductRes.success || !latestProductRes.data) {
+        throw new Error('Không thể xác thực lại tồn kho sản phẩm.');
+      }
+
+      const latestStock = latestProductRes.data.stockQuantity;
+      const requestedQuantity = this.finalizeForm.value.finalItems[0].quantity;
+
+      if (requestedQuantity > latestStock) {
+        this.toastr.error(`Rất tiếc, số lượng tồn kho của sản phẩm đã thay đổi. Chỉ còn ${latestStock}. Vui lòng điều chỉnh lại.`, 'Tồn kho không đủ', { timeOut: 7000 });
+        this.productContext.set(latestProductRes.data); // Cập nhật lại context
+        // Cập nhật lại validator và giá trị của ô số lượng
+        const itemControl = this.finalItemsArray.at(0);
+        itemControl.get('quantity')?.setValidators([Validators.required, Validators.min(1), this.maxQuantityValidator(latestStock)]);
+        itemControl.get('quantity')?.setValue(latestStock); // Gợi ý số lượng tối đa
+        itemControl.get('quantity')?.markAsTouched();
+        this.isSubmitting.set(false);
+        return;
+      }
+    } catch (err: any) {
+      this.errorMessage.set(err.message || 'Lỗi khi xác thực tồn kho.');
+      this.isSubmitting.set(false);
+      return;
+    }
+    // --- KẾT THÚC KIỂM TRA TỒN KHO ---
+
     const formValue = this.finalizeForm.getRawValue();
 
     const agreedOrderRequest: AgreedOrderRequest = {

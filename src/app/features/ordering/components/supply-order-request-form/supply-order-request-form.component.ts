@@ -11,7 +11,7 @@ import {
   AbstractControl   // Thêm AbstractControl
 } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import {of, Subject, combineLatest, startWith} from 'rxjs'; // Thêm combineLatest
+import {of, Subject, combineLatest, startWith, firstValueFrom} from 'rxjs'; // Thêm combineLatest
 import { takeUntil, finalize, switchMap, distinctUntilChanged, tap } from 'rxjs/operators';
 import { ToastrService } from 'ngx-toastr';
 
@@ -30,7 +30,7 @@ import { FormatBigDecimalPipe } from '../../../../shared/pipes/format-big-decima
 import BigDecimal from 'js-big-decimal';
 import { convertPriceToPerKg, convertToKg, getMassUnitText, MassUnit } from '../../../catalog/domain/mass-unit.enum';
 
-// Custom validator function (đã có từ trước, giữ nguyên)
+// Custom validator function
 export function maxQuantityValidator(max: number | null | undefined): ValidatorFn {
   return (control: AbstractControl): ValidationErrors | null => {
     if (max === null || max === undefined) {
@@ -41,6 +41,27 @@ export function maxQuantityValidator(max: number | null | undefined): ValidatorF
       return null;
     }
     return +value > max ? { maxQuantityExceeded: { max: max, actual: value } } : null;
+  };
+}
+export function futureDateValidator(): ValidatorFn {
+  return (control: AbstractControl): ValidationErrors | null => {
+    const controlValue = control.value;
+    if (!controlValue) {
+      return null; // Không validate nếu không có giá trị
+    }
+
+    const selectedDate = new Date(controlValue);
+    const today = new Date();
+
+    // Set giờ, phút, giây, ms về 0 để chỉ so sánh ngày
+    today.setHours(0, 0, 0, 0);
+    selectedDate.setHours(0, 0, 0, 0);
+
+    if (selectedDate < today) {
+      return { pastDate: true };
+    }
+
+    return null;
   };
 }
 
@@ -146,13 +167,13 @@ export class SupplyOrderRequestFormComponent implements OnInit, OnDestroy {
       requestedUnit: [MassUnit.KG, Validators.required],
       proposedPricePerUnit: [null as number | null, [Validators.min(0.01)]],
       buyerNotes: ['', Validators.maxLength(1000)],
-      shippingFullName: ['', Validators.maxLength(100)],
-      shippingPhoneNumber: ['', [Validators.pattern(/^(\+84|0)\d{9,10}$/)]],
-      shippingAddressDetail: ['', Validators.maxLength(255)],
-      shippingProvinceCode: [''],
-      shippingDistrictCode: [''],
-      shippingWardCode: [''],
-      expectedDeliveryDate: [null as string | null]
+      shippingFullName: ['', [Validators.required, Validators.maxLength(100)]],
+      shippingPhoneNumber: ['', [Validators.required, Validators.pattern(/^(\+84|0)\d{9,10}$/)]],
+      shippingAddressDetail: ['', [Validators.required, Validators.maxLength(255)]],
+      shippingProvinceCode: ['', Validators.required],
+      shippingDistrictCode: ['', Validators.required],
+      shippingWardCode: ['', Validators.required],
+      expectedDeliveryDate: [null as string | null, [futureDateValidator()]]
     });
   }
 
@@ -397,67 +418,97 @@ export class SupplyOrderRequestFormComponent implements OnInit, OnDestroy {
     }
   }
 
-  onSubmit(): void {
+  async onSubmit(): Promise<void> { // Chuyển hàm thành async
     this.errorMessage.set(null);
     this.successMessage.set(null);
 
-    // Trigger validation lại một lần nữa trước khi submit, đặc biệt cho requestedQuantity
-    this.requestForm.get('requestedQuantity')?.updateValueAndValidity();
-
-    if (this.requestForm.invalid || !this.targetFarmerId || !this.targetProductId) {
+    // 1. Kiểm tra validation cơ bản của form
+    if (this.requestForm.invalid) {
       this.requestForm.markAllAsTouched();
-      this.toastr.error('Vui lòng điền đầy đủ và chính xác thông tin yêu cầu.');
-      // Log lỗi cụ thể của form
-      Object.keys(this.requestForm.controls).forEach(key => {
-        const controlErrors = this.requestForm.get(key)?.errors;
-        if (controlErrors != null) {
-          console.error('Key control: ' + key + ', errors: ' + JSON.stringify(controlErrors));
-        }
-      });
+      this.toastr.error('Vui lòng điền đầy đủ và chính xác các thông tin yêu cầu.');
+      const firstErrorControl = document.querySelector('form .ng-invalid');
+      if (firstErrorControl) {
+        (firstErrorControl as HTMLElement).focus();
+      }
+      return;
+    }
+
+    if (!this.targetFarmerId || !this.targetProductId) {
+      this.toastr.error('Thiếu thông tin nông dân hoặc sản phẩm để tạo yêu cầu.');
       return;
     }
 
     this.isSubmitting.set(true);
-    const formValue = this.requestForm.getRawValue();
 
-    const request: SupplyOrderPlacementRequest = {
-      farmerId: this.targetFarmerId,
-      productId: this.targetProductId,
-      requestedQuantity: +formValue.requestedQuantity!,
-      requestedUnit: formValue.requestedUnit!,
-      proposedPricePerUnit: formValue.proposedPricePerUnit ? new BigDecimal(formValue.proposedPricePerUnit).getValue() : null, // Sửa ở đây
-      buyerNotes: formValue.buyerNotes || null,
-      shippingFullName: formValue.shippingFullName || null,
-      shippingPhoneNumber: formValue.shippingPhoneNumber || null,
-      shippingAddressDetail: formValue.shippingAddressDetail || null,
-      shippingProvinceCode: formValue.shippingProvinceCode || null,
-      shippingDistrictCode: formValue.shippingDistrictCode || null,
-      shippingWardCode: formValue.shippingWardCode || null,
-      expectedDeliveryDate: formValue.expectedDeliveryDate || null
-    };
+    try {
+      // 2. Lấy lại thông tin sản phẩm mới nhất từ API
+      const latestProductRes = await firstValueFrom(this.productService.getPublicProductById(this.targetProductId));
 
-    this.supplyRequestService.createSupplyOrderRequest(request)
-      .pipe(
-        takeUntil(this.destroy$),
-        finalize(() => this.isSubmitting.set(false))
-      )
-      .subscribe({
-        next: (res) => {
-          if (res.success && res.data) {
-            this.toastr.success('Yêu cầu đặt hàng của bạn đã được gửi thành công!');
-            this.successMessage.set(`Đã gửi yêu cầu cho sản phẩm "${this.productContext()?.name}". Nhà cung cấp sẽ sớm phản hồi.`);
-            this.requestForm.reset({ requestedUnit: MassUnit.KG }); // Reset về KG
-            this.setQuantityValidators(); // Reset validator sau khi reset form
-            this.router.navigate(['/user/my-supply-requests']);
-          } else {
-            this.errorMessage.set(res.message || 'Gửi yêu cầu thất bại.');
-            this.toastr.error(res.message || 'Gửi yêu cầu thất bại.');
-          }
-        },
-        error: (err) => {
-          this.errorMessage.set(err.error?.message || 'Đã có lỗi xảy ra khi gửi yêu cầu.');
-          this.toastr.error(err.error?.message || 'Đã có lỗi xảy ra.');
-        }
-      });
+      if (!latestProductRes.success || !latestProductRes.data) {
+        throw new Error('Không thể xác thực lại thông tin sản phẩm. Vui lòng thử lại.');
+      }
+
+      const latestProduct = latestProductRes.data;
+      const formValue = this.requestForm.getRawValue();
+      const requestedQuantity = +formValue.requestedQuantity!;
+      const requestedUnit = formValue.requestedUnit as MassUnit;
+
+      // 3. Quy đổi số lượng yêu cầu và tồn kho về đơn vị cơ bản (kg) để so sánh
+      const stockInKg = convertToKg(latestProduct.stockQuantity, latestProduct.unit as MassUnit);
+      const requestedQtyInKg = convertToKg(requestedQuantity, requestedUnit);
+
+      // 4. So sánh và xử lý
+      if (requestedQtyInKg > stockInKg) {
+        this.toastr.error(
+          `Số lượng tồn kho của sản phẩm đã thay đổi. Chỉ còn ${latestProduct.stockQuantity} ${this.getUnitText(latestProduct.unit)}. Vui lòng điều chỉnh lại yêu cầu của bạn.`,
+          'Tồn Kho Không Đủ',
+          { timeOut: 8000 }
+        );
+
+        // Cập nhật lại UI
+        this.productContext.set(latestProduct);
+        this.setQuantityValidators(); // Cập nhật lại validator với số lượng tồn kho mới
+        this.requestForm.get('requestedQuantity')?.updateValueAndValidity(); // Trigger re-validation
+        this.isSubmitting.set(false); // Dừng loading
+        return; // Dừng quá trình submit
+      }
+
+      // 5. Nếu hợp lệ, tiếp tục tạo request
+      const request: SupplyOrderPlacementRequest = {
+        farmerId: this.targetFarmerId,
+        productId: this.targetProductId,
+        requestedQuantity: requestedQuantity,
+        requestedUnit: requestedUnit,
+        proposedPricePerUnit: formValue.proposedPricePerUnit ? new BigDecimal(formValue.proposedPricePerUnit).getValue() : null,
+        buyerNotes: formValue.buyerNotes || null,
+        shippingFullName: formValue.shippingFullName || null,
+        shippingPhoneNumber: formValue.shippingPhoneNumber || null,
+        shippingAddressDetail: formValue.shippingAddressDetail || null,
+        shippingProvinceCode: formValue.shippingProvinceCode || null,
+        shippingDistrictCode: formValue.shippingDistrictCode || null,
+        shippingWardCode: formValue.shippingWardCode || null,
+        expectedDeliveryDate: formValue.expectedDeliveryDate || null
+      };
+
+      // Gọi API để gửi yêu cầu
+      const res = await firstValueFrom(this.supplyRequestService.createSupplyOrderRequest(request));
+
+      if (res.success && res.data) {
+        this.toastr.success('Yêu cầu đặt hàng của bạn đã được gửi thành công!');
+        this.successMessage.set(`Đã gửi yêu cầu cho sản phẩm "${this.productContext()?.name}". Nhà cung cấp sẽ sớm phản hồi.`);
+        this.requestForm.reset({ requestedUnit: MassUnit.KG });
+        this.setQuantityValidators();
+        this.router.navigate(['/user/my-supply-requests']);
+      } else {
+        this.errorMessage.set(res.message || 'Gửi yêu cầu thất bại.');
+        this.toastr.error(res.message || 'Gửi yêu cầu thất bại.');
+      }
+
+    } catch (err: any) {
+      this.errorMessage.set(err.error?.message || err.message || 'Đã có lỗi xảy ra khi gửi yêu cầu.');
+      this.toastr.error(err.error?.message || 'Đã có lỗi xảy ra.');
+    } finally {
+      this.isSubmitting.set(false);
+    }
   }
 }

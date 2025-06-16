@@ -92,41 +92,55 @@
       <h3 class="text-lg font-semibold mb-3 mt-4 text-primary dark:text-green-400">Thông tin giao hàng mong muốn</h3>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
         <div class="form-control">
-          <label class="label pb-1"><span class="label-text text-xs">Tên người nhận</span></label>
-          <input type="text" formControlName="shippingFullName" class="input input-bordered input-sm">
+          <label class="label pb-1"><span class="label-text text-xs">Tên người nhận <span class="text-error">*</span></span></label>
+          <input type="text" formControlName="shippingFullName" class="input input-bordered input-sm" [ngClass]="{'input-error': requestForm.get('shippingFullName')?.invalid && requestForm.get('shippingFullName')?.touched}">
+          <div *ngIf="requestForm.get('shippingFullName')?.invalid && requestForm.get('shippingFullName')?.touched" class="text-error text-xs mt-1">Vui lòng nhập tên người nhận.</div>
         </div>
         <div class="form-control">
-          <label class="label pb-1"><span class="label-text text-xs">Số điện thoại</span></label>
-          <input type="tel" formControlName="shippingPhoneNumber" class="input input-bordered input-sm">
+          <label class="label pb-1"><span class="label-text text-xs">Số điện thoại <span class="text-error">*</span></span></label>
+          <input type="tel" formControlName="shippingPhoneNumber" class="input input-bordered input-sm" [ngClass]="{'input-error': requestForm.get('shippingPhoneNumber')?.invalid && requestForm.get('shippingPhoneNumber')?.touched}">
+          <div *ngIf="requestForm.get('shippingPhoneNumber')?.invalid && requestForm.get('shippingPhoneNumber')?.touched" class="text-error text-xs mt-1">
+            <span *ngIf="requestForm.get('shippingPhoneNumber')?.errors?.['required']">Vui lòng nhập số điện thoại.</span>
+            <span *ngIf="requestForm.get('shippingPhoneNumber')?.errors?.['pattern']">Số điện thoại không hợp lệ.</span>
+          </div>
         </div>
         <div class="form-control md:col-span-2">
-          <label class="label pb-1"><span class="label-text text-xs">Địa chỉ chi tiết</span></label>
-          <input type="text" formControlName="shippingAddressDetail" class="input input-bordered input-sm">
+          <label class="label pb-1"><span class="label-text text-xs">Địa chỉ chi tiết (Số nhà, tên đường) <span class="text-error">*</span></span></label>
+          <input type="text" formControlName="shippingAddressDetail" class="input input-bordered input-sm" [ngClass]="{'input-error': requestForm.get('shippingAddressDetail')?.invalid && requestForm.get('shippingAddressDetail')?.touched}">
+          <div *ngIf="requestForm.get('shippingAddressDetail')?.invalid && requestForm.get('shippingAddressDetail')?.touched" class="text-error text-xs mt-1">Vui lòng nhập địa chỉ chi tiết.</div>
         </div>
         <div class="form-control">
-          <label class="label pb-1"><span class="label-text text-xs">Tỉnh/Thành</span></label>
-          <select formControlName="shippingProvinceCode" class="select select-bordered select-sm">
+          <label class="label pb-1"><span class="label-text text-xs">Tỉnh/Thành <span class="text-error">*</span></span></label>
+          <select formControlName="shippingProvinceCode" class="select select-bordered select-sm" [ngClass]="{'select-error': requestForm.get('shippingProvinceCode')?.invalid && requestForm.get('shippingProvinceCode')?.touched}">
             <option value="">-- Chọn --</option>
             <option *ngFor="let p of provinces()" [value]="p.idProvince">{{p.name}}</option>
           </select>
+          <div *ngIf="requestForm.get('shippingProvinceCode')?.invalid && requestForm.get('shippingProvinceCode')?.touched" class="text-error text-xs mt-1">Vui lòng chọn Tỉnh/Thành.</div>
         </div>
         <div class="form-control">
-          <label class="label pb-1"><span class="label-text text-xs">Quận/Huyện</span></label>
-          <select formControlName="shippingDistrictCode" class="select select-bordered select-sm" [disabled]="!requestForm.get('shippingProvinceCode')?.value || districts().length === 0">
+          <label class="label pb-1"><span class="label-text text-xs">Quận/Huyện <span class="text-error">*</span></span></label>
+          <select formControlName="shippingDistrictCode" class="select select-bordered select-sm" [disabled]="!requestForm.get('shippingProvinceCode')?.value || districts().length === 0" [ngClass]="{'select-error': requestForm.get('shippingDistrictCode')?.invalid && requestForm.get('shippingDistrictCode')?.touched}">
             <option value="">-- Chọn --</option>
             <option *ngFor="let d of districts()" [value]="d.idDistrict">{{d.name}}</option>
           </select>
+          <div *ngIf="requestForm.get('shippingDistrictCode')?.invalid && requestForm.get('shippingDistrictCode')?.touched" class="text-error text-xs mt-1">Vui lòng chọn Quận/Huyện.</div>
         </div>
         <div class="form-control">
-          <label class="label pb-1"><span class="label-text text-xs">Xã/Phường</span></label>
-          <select formControlName="shippingWardCode" class="select select-bordered select-sm" [disabled]="!requestForm.get('shippingDistrictCode')?.value || wards().length === 0">
+          <label class="label pb-1"><span class="label-text text-xs">Xã/Phường <span class="text-error">*</span></span></label>
+          <select formControlName="shippingWardCode" class="select select-bordered select-sm" [disabled]="!requestForm.get('shippingDistrictCode')?.value || wards().length === 0" [ngClass]="{'select-error': requestForm.get('shippingWardCode')?.invalid && requestForm.get('shippingWardCode')?.touched}">
             <option value="">-- Chọn --</option>
             <option *ngFor="let w of wards()" [value]="w.idWard">{{w.name}}</option>
           </select>
+          <div *ngIf="requestForm.get('shippingWardCode')?.invalid && requestForm.get('shippingWardCode')?.touched" class="text-error text-xs mt-1">Vui lòng chọn Xã/Phường.</div>
         </div>
         <div class="form-control">
           <label class="label pb-1"><span class="label-text text-xs">Ngày giao dự kiến</span></label>
-          <input type="date" formControlName="expectedDeliveryDate" class="input input-bordered input-sm">
+          <input type="date" formControlName="expectedDeliveryDate" class="input input-bordered input-sm" [ngClass]="{'input-error': requestForm.get('expectedDeliveryDate')?.invalid && requestForm.get('expectedDeliveryDate')?.touched}">
+          <div *ngIf="requestForm.get('expectedDeliveryDate')?.invalid && requestForm.get('expectedDeliveryDate')?.touched" class="text-error text-xs mt-1">
+            <span *ngIf="requestForm.get('expectedDeliveryDate')?.errors?.['pastDate']">
+              Ngày giao hàng không được là ngày trong quá khứ.
+            </span>
+          </div>
         </div>
       </div>
     </div>
