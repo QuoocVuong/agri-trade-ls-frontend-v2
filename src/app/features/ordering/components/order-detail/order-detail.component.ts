@@ -342,31 +342,45 @@ export class OrderDetailComponent implements OnInit, OnDestroy {
     const orderToCancel = this.order();
     if (!orderToCancel || !(this.canBuyerCancel() || this.canAdminCancel())) return;
 
-    if (confirm(`Bạn có chắc chắn muốn hủy đơn hàng #${orderToCancel.orderCode}?`)) {
-      this.isActionLoading.set(true);
-      this.errorMessage.set(null);
-      this.successMessage.set(null);
+    // --- PHẦN THAY THẾ ---
+    this.confirmationService.open({
+      title: 'Xác Nhận Hủy Đơn Hàng',
+      message: `Bạn có thực sự muốn hủy đơn hàng #${orderToCancel.orderCode}? Hành động này không thể hoàn tác.`,
+      confirmText: 'Xác nhận hủy',
+      cancelText: 'Không',
+      confirmButtonClass: 'btn-error', // Dùng màu đỏ cho hành động nguy hiểm
+      iconClass: 'fas fa-exclamation-triangle', // Icon cảnh báo
+      iconColorClass: 'text-error'
+    }).subscribe(confirmed => {
+      // `confirmed` sẽ là `true` nếu người dùng nhấn "Xác nhận hủy"
+      // và là `false` nếu nhấn "Không" hoặc đóng modal.
+      if (confirmed) {
+        this.isActionLoading.set(true);
+        this.errorMessage.set(null);
+        this.successMessage.set(null);
 
-      // Admin và Buyer có thể dùng API khác nhau nếu cần logic khác ở backend
-      const apiCall = this.isAdmin()
-        ? this.orderService.cancelOrderByAdmin(orderToCancel.id)
-        : this.orderService.cancelMyOrder(orderToCancel.id);
+        const apiCall = this.isAdmin()
+          ? this.orderService.cancelOrderByAdmin(orderToCancel.id)
+          : this.orderService.cancelMyOrder(orderToCancel.id);
 
-      apiCall.pipe(
-        takeUntil(this.destroy$),
-        finalize(() => this.isActionLoading.set(false))
-      ).subscribe({
-        next: (response) => {
-          if (response.success && response.data) {
-            this.order.set(response.data); // Cập nhật lại đơn hàng đã hủy
-            this.toastr.success(`Đã hủy đơn hàng #${orderToCancel.orderCode}.`);
-          } else {
-            this.handleError(response, 'Hủy đơn hàng thất bại.');
-          }
-        },
-        error: (err) => this.handleError(err, 'Lỗi khi hủy đơn hàng.')
-      });
-    }
+        apiCall.pipe(
+          takeUntil(this.destroy$),
+          finalize(() => this.isActionLoading.set(false))
+        ).subscribe({
+          next: (response) => {
+            if (response.success && response.data) {
+              this.order.set(response.data);
+              this.toastr.success(`Đã hủy đơn hàng #${orderToCancel.orderCode}.`);
+            } else {
+              this.handleError(response, 'Hủy đơn hàng thất bại.');
+            }
+          },
+          error: (err) => this.handleError(err, 'Lỗi khi hủy đơn hàng.')
+        });
+      }
+      // Nếu `confirmed` là false, không làm gì cả.
+    });
+    // --- KẾT THÚC PHẦN THAY THẾ ---
   }
 
   // Mở modal cập nhật trạng thái

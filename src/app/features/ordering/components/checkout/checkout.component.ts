@@ -113,21 +113,24 @@ export class CheckoutComponent implements OnInit {
     const allMethods = Object.values(PaymentMethod);
     const orderType = this.orderTypeUsedInCalc();
 
-    console.log('Recalculating available payment methods. Order type is:', orderType);
+    let allowedMethods: PaymentMethod[];
 
     if (orderType === OrderType.B2B) {
       // Nếu là đơn hàng B2B, chỉ cho phép thanh toán Công nợ hoặc Chuyển khoản
-      return allMethods.filter(
-        (m): m is PaymentMethod.INVOICE | PaymentMethod.BANK_TRANSFER => // Type guard (tùy chọn nhưng tốt)
+      allowedMethods = allMethods.filter(
+        (m): m is PaymentMethod.INVOICE | PaymentMethod.BANK_TRANSFER =>
           m === PaymentMethod.INVOICE || m === PaymentMethod.BANK_TRANSFER
       );
     } else {
       // Nếu là đơn hàng B2C, cho phép các phương thức bán lẻ
-      return allMethods.filter(
-        (m): m is Exclude<PaymentMethod, PaymentMethod.INVOICE> => // Type guard (tùy chọn nhưng tốt)
+      allowedMethods = allMethods.filter(
+        (m): m is Exclude<PaymentMethod, PaymentMethod.INVOICE> =>
           m !== PaymentMethod.INVOICE
       );
     }
+
+    // Loại bỏ MoMo và ZaloPay khỏi danh sách cuối cùng
+    return allowedMethods.filter(m => m !== PaymentMethod.MOMO && m !== PaymentMethod.ZALOPAY);
   });
 
 

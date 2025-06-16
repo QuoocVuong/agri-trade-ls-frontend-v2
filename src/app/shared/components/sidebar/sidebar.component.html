@@ -41,19 +41,17 @@
         <ng-container *ngIf="menuType === 'farmer'">
           <li><app-sidebar-item icon="fas fa-tachometer-alt" link="/farmer/dashboard" label="Bảng Điều Khiển" [exactMatch]="true" (itemClick)="onMenuItemClick()"></app-sidebar-item></li>
           <li><app-sidebar-item icon="fas fa-box-open" link="/farmer/products" label="Quản Lý Sản Phẩm" (itemClick)="onMenuItemClick()"></app-sidebar-item></li>
-<!--          <li><app-sidebar-item icon="fas fa-plus-circle" link="/farmer/products/new" label="Thêm Sản Phẩm Mới" (itemClick)="onMenuItemClick()"></app-sidebar-item></li>-->
           <li><app-sidebar-item icon="fas fa-file-invoice-dollar" link="/farmer/orders" label="Quản Lý Đơn Hàng" (itemClick)="onMenuItemClick()"></app-sidebar-item></li>
           <li><app-sidebar-item icon="fas fa-file-invoice" link="/farmer/invoices" label="Quản Lý Hóa Đơn" (itemClick)="onMenuItemClick()"></app-sidebar-item></li>
-          <li><app-sidebar-item icon="fas fa-tasks" link="/farmer/supply-requests" label="Quản Lý Yêu Cầu Đặt Hàng" (itemClick)="onMenuItemClick()"></app-sidebar-item></li>
+          <li><app-sidebar-item icon="fas fa-tasks" link="/farmer/supply-requests" label="Yêu Cầu Nguồn Cung" (itemClick)="onMenuItemClick()"></app-sidebar-item></li>
           <li>
             <app-sidebar-item icon="fas fa-handshake"
                               link="/farmer/agreed-order/new"
-            label="Tạo Đơn Thỏa Thuận"
-            (itemClick)="onMenuItemClick()">
+                              label="Tạo Đơn Thỏa Thuận"
+                              (itemClick)="onMenuItemClick()">
             </app-sidebar-item>
           </li>
           <li><app-sidebar-item icon="fas fa-seedling" link="/farmer/my-supplies" label="Quản Lý Nguồn Cung" (itemClick)="onMenuItemClick()"></app-sidebar-item></li>
-<!--          <li><app-sidebar-item icon="fas fa-plus-square" link="/farmer/supply/new" label="Đăng Nguồn Cung" (itemClick)="onMenuItemClick()"></app-sidebar-item></li>-->
           <li><app-sidebar-item icon="fas fa-comments" link="/farmer/reviews" label="Đánh Giá Sản Phẩm" (itemClick)="onMenuItemClick()"></app-sidebar-item></li>
           <li><app-sidebar-item icon="fas fa-user-cog" link="/farmer/profile" label="Hồ Sơ Gian Hàng" (itemClick)="onMenuItemClick()"></app-sidebar-item></li>
         </ng-container>
