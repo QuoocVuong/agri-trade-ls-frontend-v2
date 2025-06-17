@@ -113,7 +113,18 @@ export class NotificationListComponent implements OnInit, OnDestroy {
     }
     // Điều hướng nếu có link
     if (notification.link) {
-      this.router.navigateByUrl(notification.link);
+      try {
+        // Tạo một đối tượng URL để dễ dàng lấy ra pathname
+        const url = new URL(notification.link);
+        const path = url.pathname; // Sẽ lấy ra "/user/orders/52"
+
+        // Sử dụng router để điều hướng đến path tương đối
+        this.router.navigateByUrl(path);
+      } catch (e) {
+        // Nếu link không phải là một URL hợp lệ, thử điều hướng trực tiếp
+        console.error("Could not parse notification link, attempting direct navigation:", e);
+        this.router.navigateByUrl(notification.link);
+      }
     }
   }
 

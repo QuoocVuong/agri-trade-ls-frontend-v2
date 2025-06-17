@@ -441,11 +441,24 @@ export class CheckoutComponent implements OnInit {
   // --- TÁCH LOGIC ĐẶT HÀNG RA HÀM RIÊNG ---
   private proceedToPlaceOrder(): void {
     const formValue = this.checkoutForm.value;
+
+
+    // Kiểm tra xem đã có kết quả tính toán chưa
+    if (!this.calculatedTotalAmount()) {
+      this.toastr.error('Không thể xác định tổng tiền đơn hàng. Vui lòng thử lại.');
+      this.isLoadingCheckout.set(false);
+      return;
+    }
+
+
     const requestData: CheckoutRequest = {
       shippingAddressId: formValue.shippingAddressId,
       paymentMethod: formValue.paymentMethod,
       notes: formValue.notes || null,
-      purchaseOrderNumber: this.isBusinessBuyer() ? (formValue.purchaseOrderNumber || null) : null
+      purchaseOrderNumber: this.isBusinessBuyer() ? (formValue.purchaseOrderNumber || null) : null,
+
+      // Lấy giá trị từ signal và chuyển thành string nếu cần
+      confirmedTotalAmount: new BigDecimal(this.calculatedTotalAmount().toString()).getValue()
     };
 
     this.orderService.checkout(requestData)
@@ -486,7 +499,33 @@ export class CheckoutComponent implements OnInit {
 
         },
         error: (err) => {
-          this.handleCheckoutError(err, 'Đã xảy ra lỗi khi đặt hàng.');
+          // --- SỬA LẠI LOGIC XỬ LÝ LỖI 400 ---
+          const apiError = err?.error as ApiResponse<null> || err;
+          const defaultMessage = 'Đã xảy ra lỗi khi đặt hàng.';
+          let errorMessage = apiError?.message || defaultMessage;
+
+          // Nếu là lỗi BadRequest (400), có thể là do giá/tồn kho thay đổi
+          if (err.status === 400) {
+            errorMessage = `Đặt hàng thất bại: ${apiError.message}. Giỏ hàng của bạn có thể đã thay đổi. Vui lòng quay lại giỏ hàng để kiểm tra.`;
+
+            // Hiển thị modal thay vì toastr
+            this.confirmationService.open({
+              title: 'Không Thể Đặt Hàng',
+              message: errorMessage,
+              confirmText: 'Về Giỏ Hàng',
+              cancelText: 'Đóng',
+              confirmButtonClass: 'btn-warning',
+              iconClass: 'fas fa-exclamation-triangle',
+              iconColorClass: 'text-warning'
+            }).subscribe(() => {
+              this.cartService.loadCart().subscribe(); // Tải lại giỏ hàng
+              this.router.navigate(['/cart']); // Điều hướng về giỏ hàng
+            });
+          } else {
+            // Các lỗi khác thì dùng toastr như cũ
+            this.handleCheckoutError(err, defaultMessage);
+          }
+          // ------------------------------------
         }
       });
   }
