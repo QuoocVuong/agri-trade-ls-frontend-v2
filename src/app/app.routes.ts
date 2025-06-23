@@ -8,9 +8,6 @@ import { FarmerDashboardLayoutComponent } from './core/layouts/farmer-dashboard-
 import { UserDashboardLayoutComponent } from './core/layouts/user-dashboard-layout/user-dashboard-layout.component';
 import { authGuard } from './core/guards/auth.guard';
 import { roleGuard } from './core/guards/role.guard';
-import {
-  NotificationListComponent
-} from './features/notification/components/notification-list/notification-list.component';
 
 export const routes: Routes = [
 
@@ -72,9 +69,7 @@ export const routes: Routes = [
         data: { viewMode: 'buyer' }, // Truyền dữ liệu để component biết ai đang xem
         title: 'Hóa Đơn Công Nợ Của Tôi'
       },
-      // Các route đăng ký profile có thể nằm trong user-profile.routes.ts hoặc để ở đây nếu muốn URL riêng
-      // { path: 'register-farmer', ... },
-      // { path: 'register-business', ... },
+
       { path: '', redirectTo: 'profile', pathMatch: 'full' } // Redirect /user về /user/profile
     ]
   },
@@ -83,9 +78,7 @@ export const routes: Routes = [
   {
      path: 'chat',
      component: UserDashboardLayoutComponent, // Dùng layout user
-    // canActivate: [authGuard],
-    // loadComponent: () => import('./features/interaction/components/chat/chat-layout/chat-layout.component').then(m => m.ChatLayoutComponent),
-    // title: 'Tin nhắn'
+
     // Hoặc dùng loadChildren nếu interaction có file route riêng
      loadChildren: () => import('./features/interaction/interaction.routes').then(m => m.INTERACTION_ROUTES)
   },
@@ -120,10 +113,7 @@ export const routes: Routes = [
         title: 'AgriTrade - Nông sản sạch Lạng Sơn'
       },
 
-      // {
-      //   path: 'products', // Tất cả các route bắt đầu bằng /products
-      //   loadChildren: () => import('./features/catalog/catalog.routes').then(m => m.CATALOG_ROUTES)
-      // },
+
       {
         path: 'products', // Trang danh sách sản phẩm B2C
         loadComponent: () => import('./features/catalog/components/product-list/product-list.component').then(m => m.ProductListComponent),
@@ -217,7 +207,7 @@ export const routes: Routes = [
         loadComponent: () => import('./core/components/not-found/not-found.component').then(m => m.NotFoundComponent),
         title: 'Không tìm thấy trang'
       },
-      // Thêm các trang public khác nếu có (About, Contact...)
+
     ]
   },
 

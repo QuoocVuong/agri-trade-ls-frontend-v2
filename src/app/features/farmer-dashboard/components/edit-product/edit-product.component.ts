@@ -1,6 +1,6 @@
 import {Component, OnInit, inject, signal, OnDestroy, computed, ChangeDetectorRef} from '@angular/core';
 import { CommonModule, DecimalPipe } from '@angular/common';
-import { FormBuilder, FormGroup, FormArray, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, FormArray, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ProductService } from '../../../catalog/services/product.service';
 import { CategoryService } from '../../../catalog/services/category.service';
@@ -8,20 +8,20 @@ import { ProductRequest } from '../../../catalog/dto/request/ProductRequest';
 import { ProductDetailResponse } from '../../../catalog/dto/response/ProductDetailResponse';
 import { CategoryResponse } from '../../../catalog/dto/response/CategoryResponse';
 import { ProductImageRequest } from '../../../catalog/dto/request/ProductImageRequest';
-import { ProductPricingTierRequest } from '../../../catalog/dto/request/ProductPricingTierRequest';
+
 import {getProductStatusText, ProductStatus} from '../../../catalog/domain/product-status.enum';
 import { ApiResponse } from '../../../../core/models/api-response.model';
 import { LoadingSpinnerComponent } from '../../../../shared/components/loading-spinner/loading-spinner.component';
 import { AlertComponent } from '../../../../shared/components/alert/alert.component';
 import { ToastrService } from 'ngx-toastr';
 import {Observable, Subject} from 'rxjs';
-import {takeUntil, finalize, filter, switchMap, distinctUntilChanged, debounceTime} from 'rxjs/operators';
-import  BigDecimal  from 'js-big-decimal';
+import {takeUntil, finalize, distinctUntilChanged, debounceTime} from 'rxjs/operators';
+
 import {ProductImageResponse} from '../../../catalog/dto/response/ProductImageResponse';
-import {ProductPricingTierResponse} from '../../../catalog/dto/response/ProductPricingTierResponse';
+
 import {FileUploadResponse} from '../../../../common/dto/response/FileUploadResponse';
 import {CdkDragDrop, DragDropModule, moveItemInArray} from '@angular/cdk/drag-drop';
-import {FileUploadComponent} from '../../../../shared/components/file-uploader/file-uploader.component'; // Import nếu dùng
+import {FileUploadComponent} from '../../../../shared/components/file-uploader/file-uploader.component';
 // @ts-ignore
 import slugify from 'slug';
 
@@ -107,76 +107,12 @@ export class EditProductComponent implements OnInit, OnDestroy {
       price: [null, [Validators.required, Validators.min(0)]], // Giá B2C
       stockQuantity: [0, [Validators.required, Validators.min(0)]],
       status: [null],
-      // b2bEnabled: [false],
-      // b2bUnit: [{ value: '', disabled: true }, Validators.maxLength(50)], // Khởi tạo disable
-      // minB2bQuantity: [{ value: 1, disabled: true }, Validators.min(1)], // Khởi tạo disable
-      // b2bBasePrice: [{ value: null, disabled: true }, Validators.min(0)], // Khởi tạo disable
+
       images: this.imagesArray, // Gán FormArray vào form group
-      // pricingTiers: this.fb.array([]) // Khởi tạo pricingTiers là FormArray rỗng, cũng disable ban đầu
+
     });
-    // this.pricingTiersArray = this.productForm.get('pricingTiers') as FormArray;
 
-
-  //   // Disable các trường B2B nếu b2bEnabled là false
-  //   this.productForm.get('b2bEnabled')?.valueChanges
-  //     .pipe(takeUntil(this.destroy$))
-  //     .subscribe(isAvailable => {
-  //       const b2bControls = ['b2bUnit', 'minB2bQuantity', 'b2bBasePrice', 'pricingTiers'];
-  //       if (isAvailable) {
-  //         b2bControls.forEach(controlName => this.productForm.get(controlName)?.enable());
-  //         // Có thể thêm Validators.required cho b2bUnit, minB2bQuantity nếu cần
-  //         this.productForm.get('b2bUnit')?.setValidators([Validators.required, Validators.maxLength(50)]);
-  //         this.productForm.get('minB2bQuantity')?.setValidators([Validators.required, Validators.min(1)]);
-  //       } else {
-  //         b2bControls.forEach(controlName => this.productForm.get(controlName)?.disable());
-  //         this.productForm.get('b2bUnit')?.clearValidators();
-  //         this.productForm.get('minB2bQuantity')?.clearValidators();
-  //         // Xóa giá trị các trường B2B khi disable (tùy chọn)
-  //         // this.productForm.patchValue({ b2bUnit: null, minB2bQuantity: null, b2bBasePrice: null });
-  //         // this.pricingTiersArray.clear();
-  //       }
-  //       b2bControls.forEach(controlName => this.productForm.get(controlName)?.updateValueAndValidity());
-  //     });
-  // }
-
-    // // Lắng nghe thay đổi của b2bEnabled
-    // this.productForm.get('b2bEnabled')?.valueChanges
-    //   .pipe(takeUntil(this.destroy$))
-    //   .subscribe(isAvailable => {
-    //     this.toggleB2BControls(isAvailable); // Gọi hàm helper
-    //   });
-    //
-    // // ****** GỌI HÀM TOGGLE NGAY SAU KHI KHỞI TẠO ******
-    // // Để đảm bảo trạng thái disable/enable đúng với giá trị ban đầu (false)
-    // this.toggleB2BControls(this.productForm.get('b2bEnabled')?.value);
-    // **************************************************
   }
-  // ****** TÁCH LOGIC ENABLE/DISABLE RA HÀM RIÊNG ******
-  // toggleB2BControls(isAvailable: boolean): void {
-  //   const b2bControls = ['b2bUnit', 'minB2bQuantity', 'b2bBasePrice'];
-  //   if (isAvailable) {
-  //     b2bControls.forEach(controlName => this.productForm.get(controlName)?.enable());
-  //     this.pricingTiersArray.enable(); // Enable cả FormArray
-  //     // Thêm Validators.required
-  //     this.productForm.get('b2bUnit')?.setValidators([Validators.required, Validators.maxLength(50)]);
-  //     this.productForm.get('minB2bQuantity')?.setValidators([Validators.required, Validators.min(1)]);
-  //     this.productForm.get('b2bBasePrice')?.setValidators([Validators.required, Validators.min(0)]); // Thêm required cho giá B2B cơ bản
-  //   } else {
-  //     b2bControls.forEach(controlName => this.productForm.get(controlName)?.disable());
-  //     this.pricingTiersArray.disable(); // Disable cả FormArray
-  //     // Xóa Validators.required
-  //     this.productForm.get('b2bUnit')?.clearValidators();
-  //     this.productForm.get('minB2bQuantity')?.clearValidators();
-  //     this.productForm.get('b2bBasePrice')?.clearValidators();
-  //     // Reset giá trị khi disable (quan trọng)
-  //     this.productForm.patchValue({ b2bUnit: null, minB2bQuantity: 1, b2bBasePrice: null }, { emitEvent: false });
-  //     this.pricingTiersArray.clear(); // Xóa các bậc giá
-  //   }
-  //   // Cập nhật trạng thái validation
-  //   b2bControls.forEach(controlName => this.productForm.get(controlName)?.updateValueAndValidity());
-  //   this.pricingTiersArray.updateValueAndValidity();
-  // }
-  // ****************************************************
 
 
   loadCategories(): void {
@@ -208,21 +144,12 @@ export class EditProductComponent implements OnInit, OnDestroy {
               price: product.price, // Cần xử lý BigDecimal nếu có
               stockQuantity: product.stockQuantity,
               status: product.status,
-              // b2bEnabled : product.b2bEnabled ,
-              // b2bUnit: product.b2bUnit,
-              // minB2bQuantity: product.minB2bQuantity,
-              // b2bBasePrice: product.b2bBasePrice // Cần xử lý BigDecimal nếu có
+
             });
             // Xóa các ảnh và bậc giá cũ trong FormArray
             this.imagesArray.clear();
-            // this.pricingTiersArray.clear();
-            // Thêm ảnh vào FormArray
-            // ****** KHI LOAD, ProductImageResponse CẦN CÓ blobPath ******
-            product.images?.forEach(imgResp => this.addImageControl(imgResp)); // imgResp là ProductImageResponse
-            // ***********************************************************
-            // Thêm bậc giá vào FormArray
-            // product.pricingTiers?.forEach(tier => this.addPricingTierControl(tier));
-            // this.toggleB2BControls(product.b2bEnabled); // Gọi lại toggle
+
+            product.images?.forEach(imgResp => this.addImageControl(imgResp));
             this.cdr.markForCheck(); // Cập nhật view
           } else {
             this.handleErrorAndNavigate(res.message || 'Không tìm thấy sản phẩm.');
@@ -234,7 +161,7 @@ export class EditProductComponent implements OnInit, OnDestroy {
       });
   }
 
-  // Hàm mới để cung cấp danh sách trạng thái cho Farmer khi chỉnh sửa
+
   availableStatusesForFarmerWhenEditing(): ProductStatus[] {
     // Farmer chỉ có thể chuyển sản phẩm của họ về DRAFT hoặc UNPUBLISHED
     // PENDING_APPROVAL sẽ do hệ thống tự set khi có thay đổi đáng kể trên sản phẩm PUBLISHED
@@ -247,8 +174,7 @@ export class EditProductComponent implements OnInit, OnDestroy {
     return this.fb.group({
       id: [(imgData && 'id' in imgData) ? imgData.id : null],
       imageUrl: [imgData?.imageUrl || ''], // Dùng imageUrl từ response/request
-      // blobPath sẽ lấy từ imgData.blobPath nếu là ProductImageResponse,
-      // hoặc từ imgData.blobPath nếu là ProductImageRequest (khi upload mới)
+
       blobPath: [(imgData?.blobPath) || null, Validators.required],
       isDefault: [imgData?.isDefault ?? false],
       displayOrder: [imgData?.displayOrder ?? 0, Validators.required]
@@ -277,14 +203,6 @@ export class EditProductComponent implements OnInit, OnDestroy {
     const imageId = imageControl.get('id')?.value;
     const blobPath = imageControl.get('blobPath')?.value; // Lấy blobPath từ form control
 
-    // Nếu ảnh này đã được lưu (có ID) và có blobPath, bạn có thể cân nhắc gọi API xóa file ngay
-    // Tuy nhiên, cách an toàn hơn là chỉ xóa khỏi FormArray, việc xóa file vật lý sẽ do Backend xử lý khi update Product
-    // nếu ảnh đó không còn trong danh sách images gửi lên.
-    // Nếu bạn muốn xóa ngay:
-    // if (imageId && blobPath) {
-    //   console.log(`TODO: Call API to delete file with blobPath: ${blobPath} if needed immediately`);
-    //   // this.fileService.deleteFile(blobPath).subscribe(...);
-    // }
 
     this.imagesArray.removeAt(index);
     this.updateDisplayOrder();
@@ -297,11 +215,11 @@ export class EditProductComponent implements OnInit, OnDestroy {
     console.log('File uploaded, response from server:', uploadResponse);
     console.log('FileUploadComponent Response:', uploadResponse); // Log toàn bộ response
     console.log('File Download URI:', uploadResponse?.fileDownloadUri); // Log cụ thể URI
-    console.log('File Download URI Length:', uploadResponse?.fileDownloadUri?.length); // <<< THÊM LOG NÀY
+    console.log('File Download URI Length:', uploadResponse?.fileDownloadUri?.length);
     const newImageRequest: ProductImageRequest = {
-      // id: null, // Ảnh mới không có ID
+
       imageUrl: uploadResponse.fileDownloadUri, // URL để hiển thị
-      blobPath: uploadResponse.fileName,       // <<< LƯU blobPath (là fileName từ response)
+      blobPath: uploadResponse.fileName,
       isDefault: this.imagesArray.length === 0, // Ảnh đầu tiên là default
       displayOrder: this.imagesArray.length    // Thứ tự cuối cùng
     };
@@ -309,12 +227,12 @@ export class EditProductComponent implements OnInit, OnDestroy {
     this.errorMessage.set(null); // Xóa lỗi cũ nếu có
   }
 
-  // *** THÊM HÀM NÀY ***
+
   onImageUploadError(errorMsg: string): void {
     this.errorMessage.set(`Lỗi tải ảnh: ${errorMsg}`); // Hiển thị lỗi chung của form nếu muốn
     this.toastr.error(`Lỗi tải ảnh: ${errorMsg}`); // Hiển thị toastr lỗi
   }
-  // *******************
+
 
   setDefaultImage(selectedIndex: number): void {
     this.imagesArray.controls.forEach((control, index) => {
@@ -351,27 +269,6 @@ export class EditProductComponent implements OnInit, OnDestroy {
     this.updateDisplayOrder(); // Cập nhật lại thứ tự sau khi thả
   }
 
-
-  // --- Quản lý Bậc giá B2B ---
-  // createPricingTierGroup(tier?: ProductPricingTierResponse | ProductPricingTierRequest): FormGroup {
-  //   return this.fb.group({
-  //     minQuantity: [tier?.minQuantity || 1, [Validators.required, Validators.min(1)]],
-  //     pricePerUnit: [tier?.pricePerUnit || null, [Validators.required, Validators.min(0)]]
-  //   });
-  // }
-  //
-  // addPricingTierControl(tier?: ProductPricingTierResponse | ProductPricingTierRequest): void {
-  //   const tierGroup = this.createPricingTierGroup(tier);
-  //   if (!this.productForm.controls['b2bEnabled'].value) {
-  //     tierGroup.disable(); // Disable nếu B2B không được chọn
-  //   }
-  //   this.pricingTiersArray.push(tierGroup);
-  // }
-  //
-  //
-  // removePricingTierControl(index: number): void {
-  //   this.pricingTiersArray.removeAt(index);
-  // }
 
 
   // --- Submit Form ---
@@ -412,18 +309,14 @@ export class EditProductComponent implements OnInit, OnDestroy {
       const imgValue = ctrl.value;
       return {
         id: imgValue.id || null,
-        imageUrl: imgValue.imageUrl, // URL để hiển thị (Backend sẽ dùng blobPath để xóa nếu cần)
-        blobPath: imgValue.blobPath || null, // <<< GỬI blobPath LÊN
+        imageUrl: imgValue.imageUrl,
+        blobPath: imgValue.blobPath || null,
         isDefault: imgValue.isDefault,
         displayOrder: index // Luôn cập nhật displayOrder theo vị trí hiện tại
       };
     });
-    // ***************************************************
 
-    // let pricingTierRequests: ProductPricingTierRequest[] | null = null;
-    // if (formValue.b2bEnabled && this.pricingTiersArray.controls.length > 0) {
-    //   pricingTierRequests = this.pricingTiersArray.controls.map(ctrl => ctrl.value);
-    // }
+
 
 
     let finalStatus: ProductStatus; // Khai báo kiểu rõ ràng
@@ -486,8 +379,7 @@ export class EditProductComponent implements OnInit, OnDestroy {
 
   setupSlugListener(): void {
     const nameControl = this.productForm.get('name');
-    const slugControl = this.productForm.get('slug'); // Giả sử bạn có FormControl cho slug
-
+    const slugControl = this.productForm.get('slug');
     if (nameControl && slugControl) {
       nameControl.valueChanges.pipe(
         debounceTime(300),
@@ -495,7 +387,7 @@ export class EditProductComponent implements OnInit, OnDestroy {
         takeUntil(this.destroy$)
       ).subscribe(nameValue => {
         if(nameValue && (!slugControl.value || !slugControl.dirty)) {
-          // *** Sử dụng slugify từ thư viện 'slug' ***
+
           const generatedSlug = slugify(nameValue, { lower: true, replacement: '-' });
           slugControl.setValue(generatedSlug, { emitEvent: false });
         }
@@ -525,7 +417,7 @@ export class EditProductComponent implements OnInit, OnDestroy {
    * Hàm trackBy cho vòng lặp *ngFor của danh sách ảnh.
    * Dùng index vì FormControl trong FormArray không có ID ổn định.
    */
-  trackImageByIndex(index: number, item: any): number { // *** THÊM HÀM NÀY ***
+  trackImageByIndex(index: number, item: any): number {
     return index;
   }
 }

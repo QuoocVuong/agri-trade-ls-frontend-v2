@@ -1,4 +1,4 @@
-// src/app/features/ordering/dto/response/InvoiceInfoResponse.ts (hoặc một đường dẫn tương tự)
+
 
 
 import {InvoiceStatus} from '../../domain/invoice-status.enum';

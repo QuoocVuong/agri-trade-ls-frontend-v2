@@ -1,18 +1,18 @@
 import { Component, OnInit, inject, signal, OnDestroy, computed } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import { Router, RouterLink } from '@angular/router';
+import {  RouterLink } from '@angular/router';
 import { UserProfileService } from '../../services/user-profile.service';
 import { AuthService } from '../../../../core/services/auth.service';
 import { BusinessProfileRequest } from '../../dto/request/BusinessProfileRequest';
 import { BusinessProfileResponse } from '../../dto/response/BusinessProfileResponse';
-import { ApiResponse } from '../../../../core/models/api-response.model';
+
 import { LoadingSpinnerComponent } from '../../../../shared/components/loading-spinner/loading-spinner.component';
 import { AlertComponent } from '../../../../shared/components/alert/alert.component';
 import { ToastrService } from 'ngx-toastr';
 import { Subject, Observable, of, firstValueFrom } from 'rxjs';
-import { takeUntil, finalize, debounceTime, distinctUntilChanged, filter, tap } from 'rxjs/operators';
-import { LocationService, Province, District, Ward } from '../../../../core/services/location.service'; // Import LocationService
+import { takeUntil,  filter, tap } from 'rxjs/operators';
+import { LocationService, Province, District, Ward } from '../../../../core/services/location.service';
 
 @Component({
   selector: 'app-edit-business-profile',
@@ -24,8 +24,8 @@ export class EditBusinessProfileComponent implements OnInit, OnDestroy {
   private fb = inject(FormBuilder);
   private userProfileService = inject(UserProfileService);
   private authService = inject(AuthService);
-  private locationService = inject(LocationService); // Inject LocationService
-  private router = inject(Router);
+  private locationService = inject(LocationService);
+
   private toastr = inject(ToastrService);
   private destroy$ = new Subject<void>();
 
@@ -38,7 +38,7 @@ export class EditBusinessProfileComponent implements OnInit, OnDestroy {
   isEditMode = computed(() => !!this.currentProfile());
 
   // Observables cho địa giới
-  provinces$: Observable<Province[]> = of([]); // *** Thêm provinces$ ***
+  provinces$: Observable<Province[]> = of([]);
   districts$: Observable<District[]> = of([]);
   wards$: Observable<Ward[]> = of([]);
 
@@ -177,9 +177,7 @@ export class EditBusinessProfileComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // *** Bỏ kiểm tra cứng tỉnh Lạng Sơn ở đây ***
-    // const requestData: BusinessProfileRequest = this.profileForm.getRawValue();
-    // if (requestData.businessProvinceCode !== '12') { ... }
+
 
 
     this.isLoading.set(true);

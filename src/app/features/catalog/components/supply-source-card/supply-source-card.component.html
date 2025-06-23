@@ -2,7 +2,7 @@
 <div *ngIf="supplySource"
      class="card card-compact bg-base-100 dark:bg-gray-800 shadow-md hover:shadow-xl transition-all duration-300 rounded-xl overflow-hidden h-full flex flex-col">
 
-  <!-- SỬA Ở ĐÂY: Thêm a tag bao quanh ảnh để người dùng có thể click vào xem chi tiết -->
+
   <a [routerLink]="['/supply-sources/detail', supplySource.productSlug]" class="relative block aspect-[4/3] overflow-hidden">
     <img [src]="supplySource.thumbnailUrl || 'assets/images/placeholder-image.png'"
          [alt]="supplySource.productName"
@@ -17,13 +17,13 @@
         <a [routerLink]="['/farmer', supplySource.farmerInfo?.farmerId]"
            class="flex items-center gap-3 group"> <!-- Tăng gap -->
           <div class="avatar">
-            <!-- SỬA Ở ĐÂY: Tăng kích thước avatar -->
+
             <div class="w-10 h-10 rounded-full ring ring-primary/20 dark:ring-green-500/20 group-hover:ring-primary dark:group-hover:ring-green-500 transition-all">
               <img [src]="supplySource.farmerInfo?.avatarUrl || 'assets/images/default-avatar.png'" [alt]="getFarmerDisplayName()" />
             </div>
           </div>
           <div>
-            <!-- SỬA Ở ĐÂY: Tăng kích thước font cho tên nông dân -->
+
             <p class="text-base font-semibold text-base-content dark:text-gray-100 group-hover:text-primary dark:group-hover:text-green-400 transition-colors line-clamp-1"
                [title]="getFarmerDisplayName()">
               {{ getFarmerDisplayName() }}
@@ -46,7 +46,7 @@
       </a>
 
       <!-- Thông tin nguồn cung -->
-      <!-- SỬA Ở ĐÂY: Tăng kích thước font và làm nổi bật số lượng -->
+
       <div class="text-sm text-base-content/80 dark:text-gray-300 space-y-1">
         <p>
           <span class="font-medium">Hiện có:</span>
@@ -77,7 +77,7 @@
     </div>
 
     <!-- Nút Liên hệ -->
-    <!-- SỬA Ở ĐÂY: Thay đổi bố cục và style nút -->
+
     <div class="card-actions justify-end mt-4 p-4 pt-0 flex items-center gap-2">
       <button class="btn btn-sm btn-outline btn-secondary rounded-full flex-1"
               (click)="contactSupplier($event)"

@@ -12,17 +12,17 @@ import {
 } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import {startWith, Subject} from 'rxjs';
-import { takeUntil, finalize, debounceTime, switchMap, filter, tap } from 'rxjs/operators';
+import { takeUntil, finalize } from 'rxjs/operators';
 import { ToastrService } from 'ngx-toastr';
 
 import { OrderService } from '../../../ordering/services/order.service';
 import { AuthService } from '../../../../core/services/auth.service';
 
-import { ProductService } from '../../../catalog/services/product.service'; // Để tìm sản phẩm của farmer
+import { ProductService } from '../../../catalog/services/product.service';
 
 import { AgreedOrderRequest } from '../../../ordering/dto/request/AgreedOrderRequest';
-import { UserResponse } from '../../../user-profile/dto/response/UserResponse'; // DTO cho tìm kiếm user
-import { ProductSummaryResponse } from '../../../catalog/dto/response/ProductSummaryResponse'; // DTO cho tìm sản phẩm
+import { UserResponse } from '../../../user-profile/dto/response/UserResponse';
+import { ProductSummaryResponse } from '../../../catalog/dto/response/ProductSummaryResponse';
 import { PaymentMethod, getPaymentMethodText } from '../../../ordering/domain/payment-method.enum';
 
 import { LoadingSpinnerComponent } from '../../../../shared/components/loading-spinner/loading-spinner.component';
@@ -50,18 +50,18 @@ import BigDecimal from 'js-big-decimal';
     AlertComponent,
     FormatBigDecimalPipe,
     DatePipe,
-    UserSearchSelectComponent, // Thêm component
-    ProductSearchSelectComponent // Thêm component
+    UserSearchSelectComponent,
+    ProductSearchSelectComponent
   ],
   templateUrl: './agreed-order-form.component.html',
-  // styleUrls: ['./agreed-order-form.component.css']
+
 })
 export class AgreedOrderFormComponent implements OnInit, OnDestroy {
   private fb = inject(FormBuilder);
   private orderService = inject(OrderService);
   private authService = inject(AuthService);
   private userProfileService = inject(UserProfileService);
-  private productService = inject(ProductService); // Service để tìm sản phẩm của farmer
+  private productService = inject(ProductService);
   private router = inject(Router);
   private toastr = inject(ToastrService);
   private locationService = inject(LocationService);
@@ -75,11 +75,11 @@ export class AgreedOrderFormComponent implements OnInit, OnDestroy {
 
   currentUser = this.authService.currentUser;
    isFarmer = this.authService.hasRoleSignal('ROLE_FARMER');
-  // isAdmin = this.authService.hasRoleSignal('ROLE_ADMIN');
+
 
   // Danh sách cho dropdown
   paymentMethods = Object.values(PaymentMethod).filter(
-    // Lọc bỏ các phương thức không phù hợp cho đơn hàng thỏa thuận (ví dụ: VNPAY, MOMO nếu không xử lý URL)
+
     method => method === PaymentMethod.BANK_TRANSFER || method === PaymentMethod.INVOICE || method === PaymentMethod.COD
   );
   getPaymentMethodText = getPaymentMethodText;
@@ -105,7 +105,7 @@ export class AgreedOrderFormComponent implements OnInit, OnDestroy {
       buyerId: [null as number | null, Validators.required], // Sẽ được set khi chọn người mua
       buyerDisplay: [{ value: '', disabled: true }], // Chỉ để hiển thị tên người mua
       farmerId: [{ value: currentUserId !== undefined ? currentUserId : null, disabled: true }],
-      // // Admin có thể cần 1 ô tìm kiếm farmer nếu isFarmer() là false và isAdmin() là true
+
 
       items: this.fb.array([this.createItemFormGroup()], Validators.required),
 
@@ -123,9 +123,7 @@ export class AgreedOrderFormComponent implements OnInit, OnDestroy {
       expectedDeliveryDate: ['']
     });
 
-    // if ( this.isFarmer()  && this.currentUser()) {
-    //   this.agreedOrderForm.get('farmerId')?.disable(); // Farmer không được sửa farmerId
-    // }
+
   }
 
   ngOnInit(): void {
@@ -138,7 +136,7 @@ export class AgreedOrderFormComponent implements OnInit, OnDestroy {
     const currentUserId = this.currentUser()?.id;
 
     if (this.isFarmer() && currentUserId !== undefined) { // Kiểm tra undefined
-      // Nếu bạn có control 'farmerId' trong form:
+
       this.agreedOrderForm.patchValue({ farmerId: currentUserId });
     }
   }
@@ -171,7 +169,7 @@ export class AgreedOrderFormComponent implements OnInit, OnDestroy {
     return group;
   }
 
-  // *** THÊM VALIDATOR FUNCTION NÀY VÀO TRONG CLASS ***
+
   private maxQuantityValidator(itemGroup: FormGroup): ValidatorFn {
     return (control: AbstractControl): ValidationErrors | null => {
       const productId = itemGroup.get('productId')?.value;
@@ -342,7 +340,7 @@ export class AgreedOrderFormComponent implements OnInit, OnDestroy {
       itemGroup.get('quantity')?.updateValueAndValidity();
     }
   }
-  // *** THÊM HÀM HELPER NÀY ĐỂ DÙNG TRONG TEMPLATE ***
+
   getProductStockInfo(itemIndex: number): { stockQuantity: number, unit: string } | undefined {
     const itemGroup = this.itemsFormArray.at(itemIndex) as FormGroup;
     const productId = itemGroup.get('productId')?.value;
@@ -375,7 +373,7 @@ export class AgreedOrderFormComponent implements OnInit, OnDestroy {
         productName: item.productName,
         unit: item.unit,
         quantity: +item.quantity,
-        pricePerUnit: item.pricePerUnit.toString() // Đảm bảo là string
+        pricePerUnit: item.pricePerUnit.toString()
       })),
       agreedTotalAmount: formValue.agreedTotalAmount.toString(),
       agreedPaymentMethod: formValue.agreedPaymentMethod!,
@@ -407,7 +405,7 @@ export class AgreedOrderFormComponent implements OnInit, OnDestroy {
             this.addItem(); // Thêm lại một item rỗng
             this.selectedBuyer.set(null);
             // Điều hướng đến chi tiết đơn hàng vừa tạo
-            this.router.navigate(['/user/orders', res.data.id]); // Hoặc /farmer/orders
+            this.router.navigate(['/user/orders', res.data.id]);
           } else {
             this.errorMessage.set(res.message || 'Tạo đơn hàng thất bại.');
             this.toastr.error(res.message || 'Tạo đơn hàng thất bại.');
@@ -420,7 +418,7 @@ export class AgreedOrderFormComponent implements OnInit, OnDestroy {
       });
   }
 
-  // *** THÊM PHƯƠNG THỨC MỚI NÀY ***
+
   subscribeToItemChangesToCalculateTotal(): void {
     this.itemsFormArray.valueChanges.pipe(
       startWith(this.itemsFormArray.value), // Kích hoạt lần đầu ngay lập tức để tính toán giá trị ban đầu

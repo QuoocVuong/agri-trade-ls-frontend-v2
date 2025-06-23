@@ -13,7 +13,7 @@ export interface ProductRequest {
   price: number | string | BigDecimal;
   stockQuantity: number;
 
-  status?: ProductStatus; // optional, default là PENDING_APPROVAL nếu không gửi
+  status?: ProductStatus;
 
   b2bEnabled?: boolean;
   b2bUnit?: string | null;

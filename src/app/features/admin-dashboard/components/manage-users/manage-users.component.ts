@@ -1,15 +1,15 @@
 import { Component, OnInit, inject, signal, computed, ViewChild } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder } from '@angular/forms'; // Import Forms
+import { ReactiveFormsModule, FormBuilder } from '@angular/forms';
 import { Page } from '../../../../core/models/page.model';
 import { UserResponse } from '../../../user-profile/dto/response/UserResponse';
-import { UserProfileResponse } from '../../../user-profile/dto/response/UserProfileResponse'; // Import UserProfileResponse
-import { AdminUserService } from '../../services/admin-user.service'; // Import AdminUserService
+import { UserProfileResponse } from '../../../user-profile/dto/response/UserProfileResponse';
+import { AdminUserService } from '../../services/admin-user.service';
 import { LoadingSpinnerComponent } from '../../../../shared/components/loading-spinner/loading-spinner.component';
 import { AlertComponent } from '../../../../shared/components/alert/alert.component';
 import { PaginatorComponent } from '../../../../shared/components/paginator/paginator.component';
-import { ModalComponent } from '../../../../shared/components/modal/modal.component'; // Import Modal
-import { RoleType, getRoleTypeText } from '../../../../common/model/role-type.enum'; // Import RoleType
+import { ModalComponent } from '../../../../shared/components/modal/modal.component';
+import { RoleType, getRoleTypeText } from '../../../../common/model/role-type.enum';
 import { ToastrService } from 'ngx-toastr';
 import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';

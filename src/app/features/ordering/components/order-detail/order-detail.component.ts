@@ -10,15 +10,22 @@ import { AuthService } from '../../../../core/services/auth.service';
 import { OrderStatus, getOrderStatusText, getOrderStatusCssClass } from '../../domain/order-status.enum';
 import { PaymentStatus, getPaymentStatusText, getPaymentStatusCssClass } from '../../domain/payment-status.enum';
 import { PaymentMethod, getPaymentMethodText } from '../../domain/payment-method.enum';
-import { ToastrService } from 'ngx-toastr'; // Import ToastrService
+import { ToastrService } from 'ngx-toastr';
 import {Observable, of, shareReplay, Subject} from 'rxjs';
 import { takeUntil, finalize } from 'rxjs/operators';
-import { FormatBigDecimalPipe } from '../../../../shared/pipes/format-big-decimal.pipe'; // Import Pipe
-import { OrderStatusUpdateRequest } from '../../dto/request/OrderStatusUpdateRequest'; // Import DTO update status
-import {ReactiveFormsModule, FormControl, Validators, FormBuilder} from '@angular/forms'; // Import Forms
-import { ModalComponent } from '../../../../shared/components/modal/modal.component'; // Import Modal
+import { FormatBigDecimalPipe } from '../../../../shared/pipes/format-big-decimal.pipe';
+import { OrderStatusUpdateRequest } from '../../dto/request/OrderStatusUpdateRequest';
+import {ReactiveFormsModule, FormControl, Validators, FormBuilder} from '@angular/forms';
+import { ModalComponent } from '../../../../shared/components/modal/modal.component';
 import { QRCodeComponent } from 'angularx-qrcode';
 import { getInvoiceStatusText } from '../../domain/invoice-status.enum';
+import { AdminOrderingService } from '../../../admin-dashboard/services/admin-ordering.service';
+import {saveAs} from 'file-saver';
+import {LocationService} from '../../../../core/services/location.service';
+
+import {BankTransferInfoResponse} from '../../dto/response/BankTransferInfoResponse';
+import {InvoiceStatus} from '../../domain/invoice-status.enum';
+import {ConfirmationService} from '../../../../shared/services/confirmation.service';
 
 @Component({
   selector: 'app-order-detail',
@@ -30,9 +37,9 @@ import { getInvoiceStatusText } from '../../domain/invoice-status.enum';
     AlertComponent,
     DatePipe,
     DecimalPipe,
-    FormatBigDecimalPipe, // Thêm Pipe
-    ReactiveFormsModule, // Thêm Forms
-    ModalComponent, // Thêm Modal
+    FormatBigDecimalPipe,
+    ReactiveFormsModule,
+    ModalComponent,
     QRCodeComponent
   ],
   templateUrl: './order-detail.component.html',
@@ -42,7 +49,7 @@ export class OrderDetailComponent implements OnInit, OnDestroy {
   private orderService = inject(OrderService);
   private fb = inject(FormBuilder);
   private authService = inject(AuthService);
-  private router = inject(Router);
+
   private toastr = inject(ToastrService);
   private destroy$ = new Subject<void>();
   private adminOrderingService = inject(AdminOrderingService);
@@ -64,10 +71,10 @@ export class OrderDetailComponent implements OnInit, OnDestroy {
   bankTransferInfo = signal<BankTransferInfoResponse | null>(null);
   isLoadingBankInfo = signal(false);
 
-  // ****** THÊM CÁC SIGNALS CHO ZOOM QR ******
+  // ******  CÁC SIGNALS CHO ZOOM QR ******
   isQrCodeZoomed = signal(false);
   zoomedQrCodeUrl = signal<string | null>(null);
-  // ****************************************
+
 
   // Signals cho modal thông tin chuyển khoản (DÙNG CHUNG cho cả BANK_TRANSFER và INVOICE khi click nút)
   bankTransferInfoModal = signal<BankTransferInfoResponse | null>(null);
@@ -76,9 +83,9 @@ export class OrderDetailComponent implements OnInit, OnDestroy {
 
 
 
-  // ****** THÊM CACHE CHO TÊN ĐỊA DANH ******
+  // ******  CACHE CHO TÊN ĐỊA DANH ******
   private locationNameCache = new Map<string, Observable<string | null>>();
-  // *****************************************
+
 
   // Xác định vai trò và quyền
   currentUser = this.authService.currentUser;
@@ -140,7 +147,7 @@ export class OrderDetailComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe(params => {
         const id = params.get('id');
-        const code = params.get('code'); // Nếu có route theo code
+        const code = params.get('code');
         if (id) {
           this.loadOrderById(+id);
         } else if (code) {
@@ -161,7 +168,7 @@ export class OrderDetailComponent implements OnInit, OnDestroy {
     this.errorMessage.set(null);
     this.successMessage.set(null); // Xóa thông báo cũ
     this.bankTransferInfo.set(null); // Reset thông tin bank transfer cũ
-    // Admin gọi API riêng, user thường gọi API chung (đã có kiểm tra quyền ở service)
+    // Admin gọi API riêng, user thường gọi API chung
     const apiCall = this.isAdmin()
       ? this.orderService.getAdminOrderDetails(id)
       : this.orderService.getMyOrderDetailsById(id);
@@ -185,11 +192,7 @@ export class OrderDetailComponent implements OnInit, OnDestroy {
     next: (response: ApiResponse<OrderResponse>) => {
       if (response.success && response.data) {
         this.order.set(response.data);
-        // SỬA ĐIỀU KIỆN Ở ĐÂY:
-        // Nếu là đơn hàng CÔNG NỢ (INVOICE) VÀ đang chờ thanh toán (AWAITING_PAYMENT_TERM hoặc PENDING)
-        // HOẶC là đơn hàng CHUYỂN KHOẢN (BANK_TRANSFER) VÀ đang chờ thanh toán (PENDING)
-        // thì mới load thông tin chuyển khoản.
-        // Nếu là BANK_TRANSFER và PENDING, load thông tin để hiển thị trực tiếp
+
         if (response.data.paymentMethod === PaymentMethod.BANK_TRANSFER &&
           response.data.paymentStatus === PaymentStatus.PENDING &&
           response.data.id != null) {
@@ -205,8 +208,7 @@ export class OrderDetailComponent implements OnInit, OnDestroy {
     error: (err: ApiResponse<null> | any) => {
       this.order.set(null);
       this.handleErrorAndRedirect(err.message || 'Lỗi khi tải chi tiết đơn hàng.');
-      // Không redirect ngay nếu lỗi 403 để user thấy thông báo lỗi
-      // if (err.status === 404) this.router.navigate(['/not-found']);
+
     }
   };
 
@@ -255,7 +257,7 @@ export class OrderDetailComponent implements OnInit, OnDestroy {
   }
 
 
-  // THÊM NÚT "TÔI ĐÃ THANH TOÁN" (Cho đơn hàng INVOICE)
+  //  NÚT "TÔI ĐÃ THANH TOÁN" (Cho đơn hàng INVOICE)
   showNotifyPaymentModal = signal(false);
   paymentNotificationForm = this.fb.group({ // Thêm FormBuilder vào injects nếu chưa có
     referenceCode: [''],
@@ -280,8 +282,7 @@ export class OrderDetailComponent implements OnInit, OnDestroy {
       notes: this.paymentNotificationForm.value.notes || null
     };
 
-    this.isActionLoading.set(true); // Sử dụng loading chung hoặc tạo signal riêng
-    // Cần tạo service method và API backend cho việc này
+    this.isActionLoading.set(true);
     this.orderService.notifyPaymentMade(orderId, payload)
       .pipe(
         takeUntil(this.destroy$),
@@ -303,28 +304,7 @@ export class OrderDetailComponent implements OnInit, OnDestroy {
       });
   }
 
-  loadBankTransferDetails(orderId: number): void {
-    this.isLoadingBankInfo.set(true);
-    this.orderService.getBankTransferInfo(orderId)
-      .pipe(
-        takeUntil(this.destroy$),
-        finalize(() => this.isLoadingBankInfo.set(false))
-      )
-      .subscribe({
-        next: (res) => {
-          if (res.success && res.data) {
-            this.bankTransferInfo.set(res.data);
-          } else {
-            this.toastr.error(res.message || 'Không tải được thông tin chuyển khoản.');
-            this.bankTransferInfo.set(null); // Đặt là null nếu lỗi
-          }
-        },
-        error: (err) => {
-          this.toastr.error(err.error?.message || 'Lỗi tải thông tin chuyển khoản.');
-          this.bankTransferInfo.set(null);
-        }
-      });
-  }
+
 
   async copyToClipboard(text: string | null | undefined) {
     if (!text) return;
@@ -471,7 +451,7 @@ export class OrderDetailComponent implements OnInit, OnDestroy {
     }
   }
 
-  // ****** THÊM HÀM getLocationName ******
+  // ******  HÀM getLocationName ******
   getLocationName(type: 'province' | 'district' | 'ward', code: string | null | undefined): Observable<string | null> {
     if (!code || code === 'undefined') {
       return of(null);
@@ -500,7 +480,7 @@ export class OrderDetailComponent implements OnInit, OnDestroy {
     this.locationNameCache.set(cacheKey, cachedName$);
     return cachedName$;
   }
-  // ************************************
+
 
   confirmPaymentByAdmin(orderId: number, methodSelectedByAdmin: string, transactionRef?: string, notes?: string): void {
     if (!this.isAdmin() || !this.order()) return;
@@ -545,7 +525,7 @@ export class OrderDetailComponent implements OnInit, OnDestroy {
     // Không cần reset zoomedQrCodeUrl ngay, nó sẽ tự mất khi modal đóng
     // Hoặc this.zoomedQrCodeUrl.set(null); nếu muốn
   }
-  // *************************************
+
 
 
   // Helper xử lý lỗi và điều hướng
@@ -694,11 +674,5 @@ export class OrderDetailComponent implements OnInit, OnDestroy {
   protected readonly HTMLInputElement = HTMLInputElement;
 }
 
-// Cần inject AdminOrderingService nếu chưa có
-import { AdminOrderingService } from '../../../admin-dashboard/services/admin-ordering.service';
-import {saveAs} from 'file-saver';
-import {LocationService} from '../../../../core/services/location.service';
-import {environment} from '../../../../../environments/environment';
-import {BankTransferInfoResponse} from '../../dto/response/BankTransferInfoResponse';
-import {InvoiceStatus} from '../../domain/invoice-status.enum';
-import {ConfirmationService} from '../../../../shared/services/confirmation.service';
+
+

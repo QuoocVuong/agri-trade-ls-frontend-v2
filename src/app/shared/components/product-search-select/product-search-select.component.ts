@@ -1,12 +1,12 @@
-// src/app/shared/components/product-search-select/product-search-select.component.ts
+
 import { Component, EventEmitter, Input, Output, inject, signal, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms'; // Cần FormsModule cho ngModel
+import { FormsModule } from '@angular/forms';
 import { Subject, of } from 'rxjs';
 import { debounceTime, distinctUntilChanged, switchMap, filter, catchError } from 'rxjs/operators';
-import { ProductService, ProductSearchParams } from '../../../features/catalog/services/product.service'; // ProductService của bạn
+import { ProductService, ProductSearchParams } from '../../../features/catalog/services/product.service';
 import { ProductSummaryResponse } from '../../../features/catalog/dto/response/ProductSummaryResponse';
-import { PagedApiResponse } from '../../../core/models/api-response.model';
+
 
 @Component({
   selector: 'app-product-search-select',

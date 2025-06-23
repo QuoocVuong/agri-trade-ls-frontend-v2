@@ -1,14 +1,14 @@
 // src/app/features/admin/components/approve-reviews/approve-reviews.component.ts
 import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ReviewListComponent } from '../../../interaction/components/review-list/review-list.component'; // Import ReviewListComponent
-import { ReviewStatus, getReviewStatusText } from '../../../../common/model/review-status.enum'; // Import Enum và helper
-import { ToastrService } from 'ngx-toastr'; // Import Toastr
+import { ReviewListComponent } from '../../../interaction/components/review-list/review-list.component';
+import { ReviewStatus, getReviewStatusText } from '../../../../common/model/review-status.enum';
+import { ToastrService } from 'ngx-toastr';
 
 @Component({
   selector: 'app-approve-reviews',
   standalone: true,
-  imports: [CommonModule, ReviewListComponent], // Import ReviewListComponent
+  imports: [CommonModule, ReviewListComponent],
   templateUrl: './approve-reviews.component.html',
   styleUrl: './approve-reviews.component.css'
 })
@@ -29,7 +29,7 @@ export class ApproveReviewsComponent {
     // ReviewListComponent sẽ tự động load lại nhờ ngOnChanges
   }
 
-  // (Optional) Xử lý sự kiện từ ReviewListComponent
+  //  Xử lý sự kiện từ ReviewListComponent
   onReviewApproved(reviewId: number): void {
     this.toastr.success(`Đánh giá #${reviewId} đã được duyệt.`);
     // Có thể cần load lại nếu đang ở tab REJECTED

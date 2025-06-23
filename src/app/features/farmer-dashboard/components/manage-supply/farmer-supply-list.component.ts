@@ -1,4 +1,4 @@
-// src/app/features/farmer-dashboard/components/manage-supply/manage-supply.component.ts
+
 import { Component, OnInit, inject, signal, OnDestroy, effect } from '@angular/core';
 import { CommonModule, DatePipe, DecimalPipe } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
@@ -8,7 +8,7 @@ import { ToastrService } from 'ngx-toastr';
 
 import { ProductService, ProductSearchParams } from '../../../catalog/services/product.service';
 import { ProductSummaryResponse } from '../../../catalog/dto/response/ProductSummaryResponse';
-import { PageData, PagedApiResponse } from '../../../../core/models/api-response.model';
+import { PageData } from '../../../../core/models/api-response.model';
 import { ProductStatus, getProductStatusText, getProductStatusCssClass } from '../../../catalog/domain/product-status.enum';
 
 import { LoadingSpinnerComponent } from '../../../../shared/components/loading-spinner/loading-spinner.component';
@@ -34,7 +34,7 @@ import {ConfirmationService} from '../../../../shared/services/confirmation.serv
     FormsModule
   ],
   templateUrl: './farmer-supply-list.component.html',
-  // styleUrls: ['./manage-supply.component.css']
+
 })
 export class FarmerSupplyListComponent implements OnInit, OnDestroy {
   private productService = inject(ProductService);
@@ -158,7 +158,7 @@ export class FarmerSupplyListComponent implements OnInit, OnDestroy {
     this.router.navigate(['/farmer/supply/edit', productId]);
   }
 
-// ... trong class FarmerSupplyListComponent ...
+
 
   deleteSupply(productId: number, productName: string): void {
     this.confirmationService.open({

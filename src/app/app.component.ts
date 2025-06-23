@@ -1,7 +1,6 @@
 import { Component } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
-// Import các component dùng trực tiếp trong app.component.html (nếu có)
-// Ví dụ: import { HeaderComponent } from './shared/components/header/header.component';
+
 
 @Component({
   selector: 'app-root', // Selector để nhúng vào index.html

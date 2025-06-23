@@ -4,14 +4,13 @@ import {ReactiveFormsModule, FormBuilder, FormControl, Validators} from '@angula
 import { Router, RouterLink } from '@angular/router';
 import { Page } from '../../../../core/models/page.model';
 import { OrderSummaryResponse } from '../../../ordering/dto/response/OrderSummaryResponse';
-import { OrderResponse } from '../../../ordering/dto/response/OrderResponse'; // Import OrderResponse
+
 import {FarmerOrderSearchParams, OrderService} from '../../../ordering/services/order.service';
-import { OrderStatusUpdateRequest } from '../../../ordering/dto/request/OrderStatusUpdateRequest'; // Import DTO
-import { ApiResponse, PagedApiResponse } from '../../../../core/models/api-response.model';
+import { OrderStatusUpdateRequest } from '../../../ordering/dto/request/OrderStatusUpdateRequest';
 import { LoadingSpinnerComponent } from '../../../../shared/components/loading-spinner/loading-spinner.component';
 import { AlertComponent } from '../../../../shared/components/alert/alert.component';
 import { PaginatorComponent } from '../../../../shared/components/paginator/paginator.component';
-import { ModalComponent } from '../../../../shared/components/modal/modal.component'; // Import Modal
+import { ModalComponent } from '../../../../shared/components/modal/modal.component';
 import { OrderStatus, getOrderStatusText, getOrderStatusCssClass } from '../../../ordering/domain/order-status.enum';
 import { PaymentStatus, getPaymentStatusText, getPaymentStatusCssClass } from '../../../ordering/domain/payment-status.enum';
 import { ToastrService } from 'ngx-toastr';
@@ -20,7 +19,7 @@ import { debounceTime, distinctUntilChanged, takeUntil, finalize } from 'rxjs/op
 import { AuthService } from '../../../../core/services/auth.service';
 import {FormatBigDecimalPipe} from '../../../../shared/pipes/format-big-decimal.pipe';
 import {getPaymentMethodText, PaymentMethod} from '../../../ordering/domain/payment-method.enum';
-import {getOrderTypeText, OrderType} from '../../../ordering/domain/order-type.enum'; // Import AuthService
+import {getOrderTypeText, OrderType} from '../../../ordering/domain/order-type.enum';
 
 @Component({
   selector: 'app-manage-orders',
@@ -33,7 +32,7 @@ export class ManageOrdersComponent implements OnInit, OnDestroy {
   private fb = inject(FormBuilder);
   private toastr = inject(ToastrService);
   private router = inject(Router);
-  private authService = inject(AuthService); // Inject AuthService
+  private authService = inject(AuthService);
   private destroy$ = new Subject<void>();
 
   ordersPage = signal<Page<OrderSummaryResponse> | null>(null);
@@ -77,13 +76,13 @@ export class ManageOrdersComponent implements OnInit, OnDestroy {
   statusUpdateLoading = signal(false);
   statusUpdateError = signal<string | null>(null);
 
-  // Các trạng thái Farmer có thể chuyển đến (ví dụ)
+  // Các trạng thái Farmer có thể chuyển đến
   farmerAllowedStatuses = [
     OrderStatus.CONFIRMED,
     OrderStatus.PROCESSING,
     OrderStatus.SHIPPING,
     OrderStatus.DELIVERED,
-    // OrderStatus.CANCELLED // Hủy có thể cần API riêng hoặc logic phức tạp hơn
+
   ];
 
   ngOnInit(): void {
@@ -226,7 +225,7 @@ export class ManageOrdersComponent implements OnInit, OnDestroy {
   private handleError(err: any, defaultMessage: string): void {
     const message = err?.message || defaultMessage;
     this.errorMessage.set(message);
-    // this.toastr.error(message); // Có thể không cần toastr ở đây nếu đã có alert
+
     this.isLoading.set(false);
     console.error(err);
   }

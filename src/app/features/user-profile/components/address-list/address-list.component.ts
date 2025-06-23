@@ -9,18 +9,18 @@ import {LoadingSpinnerComponent} from '../../../../shared/components/loading-spi
 import {LocationService} from '../../../../core/services/location.service';
 import {Observable, of, shareReplay} from 'rxjs';
 import {ToastrService} from 'ngx-toastr';
-import {ConfirmationService} from '../../../../shared/services/confirmation.service'; // Import form component
+import {ConfirmationService} from '../../../../shared/services/confirmation.service';
 
 @Component({
   selector: 'app-address-list',
   standalone: true,
-  imports: [CommonModule, AddressFormComponent, AlertComponent,LoadingSpinnerComponent], // Import AddressForm
+  imports: [CommonModule, AddressFormComponent, AlertComponent,LoadingSpinnerComponent],
   templateUrl: './address-list.component.html',
 })
 export class AddressListComponent implements OnInit {
   private userProfileService = inject(UserProfileService);
   private locationService = inject(LocationService);
-  private confirmationService = inject(ConfirmationService); // <<< THÊM DÒNG NÀY
+  private confirmationService = inject(ConfirmationService);
   private toastr = inject(ToastrService);
 
 
@@ -159,7 +159,7 @@ export class AddressListComponent implements OnInit {
       return cachedName$;
     }
 
-  // ... trong AddressListComponent
+
   trackAddressById(index: number, item: Address): number {
     return item.id;
   }

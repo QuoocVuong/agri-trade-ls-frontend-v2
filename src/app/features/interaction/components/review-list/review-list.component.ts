@@ -17,11 +17,16 @@ import { Page } from '../../../../core/models/page.model';
 import { PagedApiResponse } from '../../../../core/models/api-response.model';
 import { LoadingSpinnerComponent } from '../../../../shared/components/loading-spinner/loading-spinner.component';
 import { AlertComponent } from '../../../../shared/components/alert/alert.component';
-import { PaginatorComponent } from '../../../../shared/components/paginator/paginator.component'; // Import Paginator
-import { AuthService } from '../../../../core/services/auth.service'; // Import AuthService
-import { getReviewStatusText, getReviewStatusCssClass } from '../../../../common/model/review-status.enum'; // Import thêm hàm text/css
+import { PaginatorComponent } from '../../../../shared/components/paginator/paginator.component';
+import { AuthService } from '../../../../core/services/auth.service';
+import { getReviewStatusText, getReviewStatusCssClass } from '../../../../common/model/review-status.enum';
+import { ReviewStatus } from '../../../../common/model/review-status.enum';
+import { Observable } from 'rxjs';
+import {AdminInteractionService} from '../../../admin-dashboard/services/admin-interaction.service';
+import {RouterLink} from '@angular/router';
+import {TimeAgoPipe} from '../../../../shared/pipes/time-ago.pipe';
 
-type ReviewListMode = 'product' | 'my' | 'admin_manage'| 'farmer_product_reviews'; // Bỏ 'admin_pending', thay bằng 'admin_manage'
+type ReviewListMode = 'product' | 'my' | 'admin_manage'| 'farmer_product_reviews';
 
 @Component({
   selector: 'app-review-list',
@@ -34,17 +39,17 @@ export class ReviewListComponent implements OnInit, OnChanges {
 
   @Input() productId?: number | null; // ID sản phẩm nếu mode='product'
   @Input() mode: ReviewListMode = 'product'; // Chế độ hiển thị
-  @Input() statusFilter?: ReviewStatus | null = null; // <<< Input mới để lọc theo status (cho admin)
+  @Input() statusFilter?: ReviewStatus | null = null;
   @Input() showAdminActions: boolean = false; // <<< Input để quyết định có hiện nút admin không
 
-  // Output events để component cha xử lý (nếu cần)
+  // Output events để component cha xử lý
   @Output() reviewApproved = new EventEmitter<number>();
   @Output() reviewRejected = new EventEmitter<number>();
   @Output() reviewDeleted = new EventEmitter<number>();
 
   private reviewService = inject(ReviewService);
-  private adminInteractionService = inject(AdminInteractionService); // Inject Admin Service
-  private authService = inject(AuthService); // Inject để lấy user nếu mode='my'
+  private adminInteractionService = inject(AdminInteractionService);
+  private authService = inject(AuthService);
 
   reviewsPage = signal<Page<ReviewResponse> | null>(null);
   isLoading = signal(true);
@@ -207,10 +212,5 @@ export class ReviewListComponent implements OnInit, OnChanges {
   }
 }
 
-// Cần import ReviewStatus vào đây nếu dùng mode admin_pending
-import { ReviewStatus } from '../../../../common/model/review-status.enum';
-import { Observable } from 'rxjs';
-import {AdminInteractionService} from '../../../admin-dashboard/services/admin-interaction.service';
-import {Router, RouterLink} from '@angular/router';
-import {TimeAgoPipe} from '../../../../shared/pipes/time-ago.pipe';
-//import { PagedApiResponse } from '../../../../core/models/api-response.model';
+
+

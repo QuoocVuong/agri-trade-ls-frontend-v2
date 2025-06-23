@@ -6,7 +6,7 @@ import { catchError, tap, map, switchMap, finalize } from 'rxjs/operators';
 
 import { environment } from '../../../environments/environment';
 import { ApiResponse } from '../models/api-response.model';
-// Import DTOs (đảm bảo đường dẫn đúng)
+
 import { UserRegistrationRequest } from '../../features/user-profile/dto/request/UserRegistrationRequest';
 import { UserLoginRequest } from '../../features/user-profile/dto/request/UserLoginRequest';
 import { UserResponse } from '../../features/user-profile/dto/response/UserResponse';
@@ -14,7 +14,7 @@ import { LoginResponse } from '../../features/user-profile/dto/response/LoginRes
 import { ForgotPasswordRequest } from '../../features/user-profile/dto/request/ForgotPasswordRequest';
 import { ResetPasswordRequest } from '../../features/user-profile/dto/request/ResetPasswordRequest';
 import {UserProfileResponse} from '../../features/user-profile/dto/response/UserProfileResponse';
-import {AuthResponse} from '../models/auth-response.model';
+
 import {SocialAuthService} from '@abacritt/angularx-social-login';
 import {ToastrService} from 'ngx-toastr';
 import {RoleType} from '../../common/model/role-type.enum';
@@ -42,7 +42,7 @@ export class AuthService {
   private router = inject(Router);
 
   private socialAuthService = inject(SocialAuthService);
-  private toastr = inject(ToastrService); // Inject ToastrService
+  private toastr = inject(ToastrService);
 
 
   private apiUrl = `${environment.apiUrl}/auth`;
@@ -54,13 +54,13 @@ export class AuthService {
   private currentUserSignal = signal<UserResponse | null>(this.getUserFromStorage());
   private loadingSignal = signal<boolean>(false); // Signal cho trạng thái loading
 
-  private rolesSignal = signal<Set<RoleType>>(new Set(this.getUserFromStorage()?.roles as RoleType[] || [])); // << THÊM SIGNAL CHO ROLES
+  private rolesSignal = signal<Set<RoleType>>(new Set(this.getUserFromStorage()?.roles as RoleType[] || [])); // <<  SIGNAL CHO ROLES
 
   // Public signals
   public readonly currentToken = this.authTokenSignal.asReadonly();
   public readonly currentUser = this.currentUserSignal.asReadonly();
   public readonly isAuthenticated = computed(() => !!this.authTokenSignal());
-  public readonly isLoading = this.loadingSignal.asReadonly(); // Signal loading public
+  public readonly isLoading = this.loadingSignal.asReadonly();
   public readonly roles = this.rolesSignal.asReadonly(); // << PUBLIC READONLY SIGNAL CHO ROLES
 
   // --- REFRESH TOKEN LOGIC ---
@@ -144,11 +144,9 @@ export class AuthService {
       .pipe(
         tap(response => {
           if (response.success && response.data) {
-            // ****** GỌI setSession THAY VÌ SET TRỰC TIẾP ******
+
             this.setSession(response.data);
-            // Không cần set currentUserSignal ở đây nữa, refreshUserProfile sẽ làm
-            // this.currentUserSignal.set(response.data.user);
-            // *************************************************
+
           } else {
             // Xử lý trường hợp API trả về success=true nhưng không có data
             this.clearAuthData();
@@ -178,7 +176,7 @@ export class AuthService {
         finalize(() => this.loadingSignal.set(false))
       );
   }
-  // --- SỬA HÀM LOGOUT ---
+
   logout(): void {
 
     if (this.isLoggingOut()) return; // Tránh gọi logout nhiều lần nếu đang trong quá trình
@@ -234,10 +232,10 @@ export class AuthService {
         console.log('Local auth data cleared.');
       });
   }
-  // ----------------------
 
 
-  // --- Phương thức mới để làm mới thông tin user profile ---
+
+
   refreshUserProfile(): Observable<UserResponse | null> {
     if (!this.isAuthenticated()) {
       return of(null); // Trả về observable null nếu chưa đăng nhập
@@ -250,7 +248,7 @@ export class AuthService {
           if (response.success && response.data) {
             // Chỉ cập nhật phần UserResponse cơ bản vào currentUserSignal
             // Thông tin profile chi tiết (farmer/business) có thể được quản lý riêng nếu cần
-            // Hoặc bạn có thể lưu cả UserProfileResponse nếu muốn
+
             const basicUserInfo: UserResponse = {
               id: response.data.id,
               email: response.data.email,
@@ -279,7 +277,7 @@ export class AuthService {
       );
   }
 
-  // ****** THÊM HÀM LOGIN GOOGLE ******
+
   loginWithGoogle(idToken: string): Observable<ApiResponse<LoginResponse>> {
     const requestBody = { idToken };
     // Gọi API backend mới tạo
@@ -298,9 +296,9 @@ export class AuthService {
         catchError(this.handleError.bind(this))
       );
   }
-  // **********************************
 
-  // ****** THÊM PHƯƠNG THỨC NÀY ******
+
+
   private setSession(authResult: LoginResponse): void {
     if (authResult.accessToken && authResult.refreshToken && authResult.user) {
       this.authTokenSignal.set(authResult.accessToken);
@@ -312,7 +310,7 @@ export class AuthService {
       this.clearAuthData();
     }
   }
-  // **********************************
+
 
   // --- Helper Methods ---
 
@@ -325,14 +323,14 @@ export class AuthService {
     // localStorage sẽ được xóa bởi effect
   }
 
-  getAccessToken(): string | null { // Đổi tên cho rõ ràng
+  getAccessToken(): string | null {
     return this.authTokenSignal();
   }
   getRefreshToken(): string | null {
     return this.refreshTokenSignal();
   }
 
-  // --- PHƯƠNG THỨC REFRESH TOKEN ---
+
   attemptRefreshToken(): Observable<ApiResponse<LoginResponse>> {
 
     if (this.isLoggingOut()) { // << NẾU ĐANG LOGOUT, KHÔNG THỬ REFRESH
@@ -354,7 +352,7 @@ export class AuthService {
     // Gửi refresh token dưới dạng plain text string trong body
     // Hoặc nếu backend nhận JSON: return this.http.post<ApiResponse<LoginResponse>>(`${this.apiUrl}/refresh-token`, { refreshToken: rToken })
     return this.http.post<ApiResponse<LoginResponse>>(`${this.apiUrl}/refresh-token`, rToken, {
-      headers: new HttpHeaders({ 'Content-Type': 'text/plain' }) // Nếu backend nhận plain text
+      headers: new HttpHeaders({ 'Content-Type': 'text/plain' })
     }).pipe(
       tap((response: ApiResponse<LoginResponse>) => {
         if (response.success && response.data) {
@@ -381,12 +379,7 @@ export class AuthService {
       })
     );
   }
-  // -----------------------------
 
-
-  // getCurrentUser(): UserResponse | null {
-  //   return this.currentUserSignal();
-  // }
 
   // Kiểm tra role (dùng cho guard và component logic)
   hasRole(role: string): boolean {

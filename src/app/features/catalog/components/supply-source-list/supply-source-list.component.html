@@ -2,12 +2,12 @@
 <div class="flex flex-col md:flex-row gap-6 lg:gap-8 container mx-auto px-4 py-8">
   <!-- Sidebar Filters -->
   <aside class="w-full md:w-1/4 lg:w-1/5 flex-shrink-0">
-    <!-- Category Sidebar (có thể tái sử dụng nếu muốn lọc nguồn cung theo category) -->
+    <!-- Category Sidebar -->
     <div class="rounded-xl shadow-md p-4 mb-6">
       <h3 class="text-lg font-semibold mb-3 text-primary dark:text-green-400">Lọc theo Danh mục</h3>
       <app-category-sidebar [pageType]="'supply-sources'"
                             (categorySelected)="navigateToCategory($event)"></app-category-sidebar>
-      <!-- (categorySelected) sẽ điều hướng đến /supply-sources/category/:slug -->
+
     </div>
 
     <!-- Bộ lọc cho Nguồn Cung -->
@@ -117,7 +117,7 @@
     </div>
 
     <div *ngIf="!isLoading() && supplySources().length > 0"
-         class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4 lg:gap-6"> <!-- Điều chỉnh số cột nếu cần -->
+         class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4 lg:gap-6">
       <app-supply-source-card *ngFor="let supply of supplySources(); trackBy: trackSupplySourceById"
                               [supplySource]="supply"
                               class="animate-fade-in"></app-supply-source-card>

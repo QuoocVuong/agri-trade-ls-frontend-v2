@@ -15,10 +15,10 @@ import { CartItemResponse } from '../../dto/response/CartItemResponse';
 import { LoadingSpinnerComponent } from '../../../../shared/components/loading-spinner/loading-spinner.component';
 import { AlertComponent } from '../../../../shared/components/alert/alert.component';
 import { CartItemUpdateRequest } from '../../dto/request/CartItemUpdateRequest';
-import { Observable, Subject } from 'rxjs'; // Import Subject
-import { takeUntil, finalize } from 'rxjs/operators'; // Import takeUntil, finalize
-import { NgxSpinnerService } from 'ngx-spinner'; // Ví dụ dùng thư viện spinner khác
-import { ToastrService } from 'ngx-toastr'; // Ví dụ dùng thư viện toastr
+import { Observable, Subject } from 'rxjs';
+import { takeUntil, finalize } from 'rxjs/operators';
+import { NgxSpinnerService } from 'ngx-spinner';
+import { ToastrService } from 'ngx-toastr';
 import { FormatBigDecimalPipe } from '../../../../shared/pipes/format-big-decimal.pipe';
 import {ApiResponse} from '../../../../core/models/api-response.model';
 import {AuthService} from '../../../../core/services/auth.service';
@@ -37,9 +37,9 @@ import { ConfirmationService } from '../../../../shared/services/confirmation.se
 export class CartComponent implements OnInit, OnDestroy {
   cartService = inject(CartService);
   router = inject(Router);
-  cdr = inject(ChangeDetectorRef); // Inject ChangeDetectorRef
-  spinner = inject(NgxSpinnerService); // Inject spinner service
-  toastr = inject(ToastrService); // Inject toastr service
+  cdr = inject(ChangeDetectorRef);
+  spinner = inject(NgxSpinnerService);
+  toastr = inject(ToastrService);
   authService = inject(AuthService);
   private confirmationService = inject(ConfirmationService);
 
@@ -81,10 +81,7 @@ export class CartComponent implements OnInit, OnDestroy {
         if (cartData && cartData.adjustments && cartData.adjustments.length > 0) {
           // Hiển thị thông báo nếu getCart trả về adjustments
           this.displayCartAdjustments(cartData.adjustments, "Thông tin giỏ hàng");
-          // Sau khi hiển thị, có thể muốn "reset" adjustments trong state của service
-          // để không hiển thị lại khi component khác subscribe.
-          // Hoặc CartService chỉ nên trả adjustments một lần.
-          // Hiện tại, cứ để nó hiển thị mỗi khi cart$ phát ra giá trị có adjustments.
+
         }
         this.cdr.markForCheck();
       });
@@ -110,8 +107,7 @@ export class CartComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
-  // ****** HÀM HELPER LẤY GIÁ VÀ ĐƠN VỊ HIỂN THỊ ******
-  // ****** SỬA HÀM LẤY GIÁ VÀ ĐƠN VỊ (BAO GỒM BẬC GIÁ) ******
+
   getDisplayInfo(item: CartItemResponse): { price: BigDecimal | null, unit: string | null } {
     const product = item.product;
     const quantity = item.quantity;
@@ -135,8 +131,7 @@ export class CartComponent implements OnInit, OnDestroy {
         }
       }
 
-      // Nếu không tìm thấy bậc giá hoặc giá bậc thang là null, dùng giá B2B cơ bản
-      // Nếu giá B2B cơ bản cũng null, fallback về giá B2C (hoặc xử lý khác)
+
       if (finalPrice === null) {
         finalPrice = product.price ? new BigDecimal(product.price.toString()) : null;
       }
@@ -148,7 +143,7 @@ export class CartComponent implements OnInit, OnDestroy {
       return { price: product.price ? new BigDecimal(product.price.toString()) : null, unit: product.unit };
     }
   }
-  // ***********************************************************
+
 
   // ****** HÀM HELPER TÍNH LẠI ITEM TOTAL ******
   calculateItemTotal(item: CartItemResponse): BigDecimal {
@@ -176,7 +171,7 @@ export class CartComponent implements OnInit, OnDestroy {
       return sum.add(this.calculateItemTotal(item));
     }, new BigDecimal(0));
   });
-  // ************************************************
+
 
   updateQuantity(item: CartItemResponse, newQuantityInput: number | string): void {
     // Chuyển đổi và kiểm tra giá trị nhập
@@ -190,7 +185,7 @@ export class CartComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // ****** KIỂM TRA SỐ LƯỢNG TỐI THIỂU B2B ******
+
     const minQuantity = (this.isBusinessBuyer() && item.product.b2bEnabled)
       ? (item.product.minB2bQuantity || 1)
       : 1;
@@ -202,18 +197,15 @@ export class CartComponent implements OnInit, OnDestroy {
       if(inputElement) inputElement.value = newQuantity.toString();
       // Không return vội, vẫn gọi API với số lượng min
     }
-    // *******************************************
 
-    // // Đảm bảo số lượng không nhỏ hơn 1
-    // if (newQuantity < 1) {
-    //   newQuantity = 1;
-    // }
+
+
 
     const availableStock = item.product.stockQuantity ?? 0;
     const oldQuantity = item.quantity;
     const productName = item.product.name ?? 'Sản phẩm';
 
-    // ****** THÊM KIỂM TRA TỒN KHO CLIENT-SIDE ******
+
     if (newQuantity > availableStock) {
       this.toastr.error(`Chỉ còn ${availableStock} ${item.product.name} trong kho.`);
       // Set lại giá trị input về mức tối đa
@@ -222,7 +214,6 @@ export class CartComponent implements OnInit, OnDestroy {
       // Không gọi API nếu số lượng yêu cầu đã vượt quá tồn kho
       return;
     }
-    // **********************************************
 
     // Nếu số lượng không thay đổi thì không cần gọi API
     if (newQuantity === oldQuantity) {
@@ -423,7 +414,7 @@ export class CartComponent implements OnInit, OnDestroy {
     console.error('API Error:', err);
     this.cdr.markForCheck(); // Thông báo thay đổi
   }
-  // ******************************
+
 
   // Hàm trackBy cho *ngFor
   trackCartItemById(index: number, item: CartItemResponse): number {

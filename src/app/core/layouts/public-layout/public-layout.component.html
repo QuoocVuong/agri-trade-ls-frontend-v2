@@ -1,10 +1,9 @@
-<!-- Header sẽ được ghim lại nhờ class sticky top-0 z-50 bên trong nó -->
+
 <app-header [showSidebarToggle]="false"></app-header>
 
-<!-- Phần còn lại của trang sẽ cuộn -->
 <div class="flex flex-col min-h-screen">
   <!-- Nội dung chính của trang public -->
-  <main class="flex-grow container mx-auto pt-16"> <!-- THAY ĐỔI: Thêm pt-20 (padding-top) -->
+  <main class="flex-grow container mx-auto pt-16">
     <router-outlet></router-outlet> <!-- Nội dung của các trang con sẽ hiển thị ở đây -->
   </main>
 

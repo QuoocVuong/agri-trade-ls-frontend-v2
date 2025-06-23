@@ -5,16 +5,16 @@ import { environment } from '../../../../environments/environment';
 import { ApiResponse, PagedApiResponse } from '../../../core/models/api-response.model';
 import { ReviewResponse } from '../dto/response/ReviewResponse';
 import { ReviewRequest } from '../dto/request/ReviewRequest';
-import { ReviewStatus } from '../../../common/model/review-status.enum'; // Import Enum
+import { ReviewStatus } from '../../../common/model/review-status.enum';
 
 @Injectable({
-  providedIn: 'root' // Hoặc chỉ trong module Interaction nếu không dùng ở ngoài
+  providedIn: 'root'
 })
 export class ReviewService {
   private http = inject(HttpClient);
   private apiUrl = `${environment.apiUrl}/reviews`; // Base URL cho API review
 
-  private farmerReviewApiUrl = `${environment.apiUrl}/farmer/reviews`; // <<< URL API mới
+  private farmerReviewApiUrl = `${environment.apiUrl}/farmer/reviews`;
 
   // Tạo review mới
   createReview(request: ReviewRequest): Observable<ApiResponse<ReviewResponse>> {
@@ -29,11 +29,9 @@ export class ReviewService {
     if (sort) {
       params = params.set('sort', sort);
     }
-    // API public nên có thể không cần /public/ prefix
+
     return this.http.get<PagedApiResponse<ReviewResponse>>(`${environment.apiUrl}/reviews/product/${productId}`, { params });
-    // Hoặc dùng API chung nếu không có API public riêng:
-    // params = params.set('status', ReviewStatus.APPROVED);
-    // return this.http.get<PagedApiResponse<ReviewResponse>>(`${this.apiUrl}/product/${productId}`, { params });
+
   }
 
   // Lấy review của user hiện tại (phân trang)
@@ -78,9 +76,7 @@ export class ReviewService {
     if (sort) {
       params = params.set('sort', sort);
     }
-    // if (status) { // <<< Thêm nếu backend hỗ trợ lọc status
-    //   params = params.set('status', status);
-    // }
+
     return this.http.get<PagedApiResponse<ReviewResponse>>(this.farmerReviewApiUrl, { params });
   }
 }

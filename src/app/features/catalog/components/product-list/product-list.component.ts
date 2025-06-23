@@ -1,19 +1,19 @@
 import {Component, OnInit, inject, signal, computed, effect, OnDestroy} from '@angular/core';
 import { CommonModule } from '@angular/common';
-import {ActivatedRoute, NavigationExtras, Router, RouterLink} from '@angular/router'; // Import ActivatedRoute, Router
+import {ActivatedRoute, NavigationExtras, Router, RouterLink} from '@angular/router';
 import { ProductService, ProductSearchParams } from '../../services/product.service';
-import { CategoryService } from '../../services/category.service'; // Import CategoryService
+import { CategoryService } from '../../services/category.service';
 import { ProductSummaryResponse } from '../../dto/response/ProductSummaryResponse';
-import { CategoryResponse } from '../../dto/response/CategoryResponse'; // Import CategoryResponse
-import {ApiResponse, PagedApiResponse, PageData} from '../../../../core/models/api-response.model';
-import { ProductCardComponent } from '../product-card/product-card.component'; // Import ProductCard
-import { CategorySidebarComponent } from '../category-sidebar/category-sidebar.component'; // Import Sidebar
-import { PaginatorComponent } from '../../../../shared/components/paginator/paginator.component'; // Import Paginator
-import { LoadingSpinnerComponent } from '../../../../shared/components/loading-spinner/loading-spinner.component'; // Import Loading
-import {ReactiveFormsModule, FormBuilder, Validators, FormGroup} from '@angular/forms';
+import { CategoryResponse } from '../../dto/response/CategoryResponse';
+import {ApiResponse, PageData} from '../../../../core/models/api-response.model';
+import { ProductCardComponent } from '../product-card/product-card.component';
+import { CategorySidebarComponent } from '../category-sidebar/category-sidebar.component';
+import { PaginatorComponent } from '../../../../shared/components/paginator/paginator.component';
+import { LoadingSpinnerComponent } from '../../../../shared/components/loading-spinner/loading-spinner.component';
+import {ReactiveFormsModule, FormBuilder, Validators} from '@angular/forms';
 import {debounceTime, distinctUntilChanged, map, switchMap, takeUntil, tap} from 'rxjs/operators';
 import {combineLatest, of, Subject} from 'rxjs';
-import {ToastrService} from 'ngx-toastr'; // Import FormBuilder
+import {ToastrService} from 'ngx-toastr';
 
 @Component({
   selector: 'app-product-list',
@@ -21,7 +21,7 @@ import {ToastrService} from 'ngx-toastr'; // Import FormBuilder
   imports: [
     CommonModule,
     RouterLink,
-    ReactiveFormsModule, // Thêm ReactiveFormsModule
+    ReactiveFormsModule,
     ProductCardComponent,
     CategorySidebarComponent,
     PaginatorComponent,
@@ -34,8 +34,8 @@ export class ProductListComponent implements OnInit {
   private categoryService = inject(CategoryService);
   public route = inject(ActivatedRoute);
   private router = inject(Router);
-  private fb = inject(FormBuilder); // Inject FormBuilder
-  private toastr = inject(ToastrService); // Inject ToastrService
+  private fb = inject(FormBuilder);
+  private toastr = inject(ToastrService);
 
   products = signal<ProductSummaryResponse[]>([]);
   paginationData = signal<PageData<ProductSummaryResponse> | null>(null);
@@ -46,10 +46,10 @@ export class ProductListComponent implements OnInit {
   // Form cho bộ lọc
   filterForm = this.fb.group({
     keyword: [''],
-    minPrice: [null as number | null, [Validators.min(0)]], // ĐÃ CÓ
-    maxPrice: [null as number | null, [Validators.min(0)]], // ĐÃ CÓ
-    minRating: [0 as number | null] // ĐÃ CÓ // Mặc định là 0 (Tất cả)
-    // Thêm các control khác nếu cần (giá, rating...)
+    minPrice: [null as number | null, [Validators.min(0)]],
+    maxPrice: [null as number | null, [Validators.min(0)]],
+    minRating: [0 as number | null]
+
   });
 
 
@@ -286,7 +286,7 @@ export class ProductListComponent implements OnInit {
 
       this.router.navigate(targetPathArray, {
         queryParams: queryParams,
-        // queryParamsHandling: 'merge', // Ghi đè các query params filter hiện tại
+
         replaceUrl: true
       });
     } else {
@@ -298,7 +298,7 @@ export class ProductListComponent implements OnInit {
   trackProductById(index: number, item: ProductSummaryResponse): number {
     return item.id;
   }
-  // Thêm hàm reset bộ lọc (ví dụ)
+  // Thêm hàm reset bộ lọc
   resetFilters(): void {
     const currentSlug = this.route.snapshot.paramMap.get('slug');
     this.filterForm.reset({

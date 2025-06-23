@@ -1,30 +1,30 @@
-// src/app/features/farmer-profile/pages/farmer-public-profile/farmer-public-profile.component.ts
+
 
 import { Component, OnInit, inject, signal, OnDestroy, computed } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { Subject, Observable, of } from 'rxjs';
+import { Subject, of } from 'rxjs';
 import { takeUntil, finalize, switchMap, catchError, tap, map } from 'rxjs/operators';
 import { ToastrService } from 'ngx-toastr';
 import { HttpErrorResponse } from '@angular/common/http';
 
-// --- Import các Service và DTO cần thiết ---
-import { FarmerProfileService } from '../../../user-profile/services/farmer-profile.service';
-// *** Đảm bảo import đúng DTO đã cập nhật ***
+
+
+
 import { FarmerProfileResponse } from '../../../user-profile/dto/response/FarmerProfileResponse';
-import { ProductService, ProductSearchParams } from '../../../catalog/services/product.service';
+import { ProductService } from '../../../catalog/services/product.service';
 import { ProductSummaryResponse } from '../../../catalog/dto/response/ProductSummaryResponse';
 import { LocationService } from '../../../../core/services/location.service';
 import { AuthService } from '../../../../core/services/auth.service';
 import { FollowService } from '../../../interaction/service/FollowService';
-import { ApiResponse, PagedApiResponse } from '../../../../core/models/api-response.model';
+import { ApiResponse } from '../../../../core/models/api-response.model';
 
-// --- Import các Component và Pipe dùng trong template ---
 import { LoadingSpinnerComponent } from '../../../../shared/components/loading-spinner/loading-spinner.component';
 import { AlertComponent } from '../../../../shared/components/alert/alert.component';
 import { ProductCardComponent } from '../../../catalog/components/product-card/product-card.component';
 import { SafeHtmlPipe } from '../../../../shared/pipes/safe-html.pipe';
 import {ChatService} from '../../../interaction/service/ChatService';
+import {FarmerProfileService} from '../../services/farmer-profile.service';
 
 
 @Component({
@@ -58,7 +58,7 @@ export class FarmerPublicProfileComponent implements OnInit, OnDestroy {
 
 
   // --- Signals ---
-  // *** Đảm bảo kiểu dữ liệu là FarmerProfileResponse đã cập nhật ***
+
   farmerProfile = signal<FarmerProfileResponse | null>(null);
   farmerProducts = signal<ProductSummaryResponse[]>([]);
   isLoadingProfile = signal(true);
@@ -156,7 +156,7 @@ export class FarmerPublicProfileComponent implements OnInit, OnDestroy {
     const size = 8; // Số lượng
     const validSort = 'createdAt,desc'; // Sắp xếp
 
-    // *** GỌI PHƯƠNG THỨC MỚI ***
+
     this.productService.getPublicProductsByFarmerId(farmerUserId, page, size, validSort)
       .pipe(
         takeUntil(this.destroy$),
@@ -266,7 +266,7 @@ export class FarmerPublicProfileComponent implements OnInit, OnDestroy {
       }
     });
   }
-  // ****************************
+
 
   // --- Helpers ---
   getFarmerDisplayName(farmer: FarmerProfileResponse | null): string {

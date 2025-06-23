@@ -5,18 +5,18 @@ import { RouterLink } from '@angular/router';
 import { Page } from '../../../../core/models/page.model';
 import { ProductSummaryResponse } from '../../../catalog/dto/response/ProductSummaryResponse';
 import { ProductDetailResponse } from '../../../catalog/dto/response/ProductDetailResponse'; // Import detail DTO
-import { AdminCatalogService } from '../../services/admin-catalog.service'; // Import AdminCatalogService
-import { ProductStatus, getProductStatusText,  getProductStatusCssClass  } from '../../../catalog/domain/product-status.enum'; // Import Enum và helpers
-import { CategoryResponse } from '../../../catalog/dto/response/CategoryResponse'; // Import CategoryResponse
-import { CategoryService } from '../../../catalog/services/category.service'; // Import CategoryService
-import { ApiResponse, PagedApiResponse } from '../../../../core/models/api-response.model';
+import { AdminCatalogService } from '../../services/admin-catalog.service';
+import { ProductStatus, getProductStatusText,  getProductStatusCssClass  } from '../../../catalog/domain/product-status.enum';
+import { CategoryResponse } from '../../../catalog/dto/response/CategoryResponse';
+import { CategoryService } from '../../../catalog/services/category.service';
+
 import { LoadingSpinnerComponent } from '../../../../shared/components/loading-spinner/loading-spinner.component';
 import { AlertComponent } from '../../../../shared/components/alert/alert.component';
 import { PaginatorComponent } from '../../../../shared/components/paginator/paginator.component';
-import { ModalComponent } from '../../../../shared/components/modal/modal.component'; // Import Modal
+import { ModalComponent } from '../../../../shared/components/modal/modal.component';
 import { ToastrService } from 'ngx-toastr';
 import { Subject } from 'rxjs';
-import { debounceTime, distinctUntilChanged, takeUntil, finalize } from 'rxjs/operators';
+import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
 import {SafeHtmlPipe} from '../../../../shared/pipes/safe-html.pipe';
 import {FormatBigDecimalPipe} from '../../../../shared/pipes/format-big-decimal.pipe';
 import {ConfirmationService} from '../../../../shared/services/confirmation.service';
@@ -30,7 +30,7 @@ import {ConfirmationService} from '../../../../shared/services/confirmation.serv
 })
 export class ManageAllProductsComponent implements OnInit, OnDestroy {
   private adminCatalogService = inject(AdminCatalogService);
-  private categoryService = inject(CategoryService); // Inject để lấy danh sách category cho filter
+  private categoryService = inject(CategoryService);
   private fb = inject(FormBuilder);
   private toastr = inject(ToastrService);
   private destroy$ = new Subject<void>();
@@ -59,8 +59,7 @@ export class ManageAllProductsComponent implements OnInit, OnDestroy {
   showRejectModal = signal(false); // Modal nhập lý do từ chối
   selectedProduct = signal<ProductDetailResponse | null>(null);
   productToReject = signal<{ id: number, name: string } | null>(null);
-  // rejectReason = signal(''); // Lý do từ chối
-  //rejectReason: string = '';
+
   rejectReasonControl = new FormControl('');
 
 
@@ -138,7 +137,7 @@ export class ManageAllProductsComponent implements OnInit, OnDestroy {
 
   onPageChange(page: number): void {
     this.currentPage.set(page);
-    // Effect không dùng ở đây, gọi load trực tiếp
+
     this.loadProducts();
   }
 

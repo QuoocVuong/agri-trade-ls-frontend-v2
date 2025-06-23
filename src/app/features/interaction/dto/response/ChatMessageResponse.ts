@@ -1,6 +1,5 @@
 import { MessageType } from '../../domain/message-type.enum';
-import { UserInfoSimpleResponse } from '../../../user-profile/dto/response/UserInfoSimpleResponse'; // Correct path
-
+import { UserInfoSimpleResponse } from '../../../user-profile/dto/response/UserInfoSimpleResponse';
 export interface ChatMessageResponse {
     id: number;
     roomId: number;

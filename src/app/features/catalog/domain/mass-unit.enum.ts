@@ -1,4 +1,4 @@
-// src/app/features/catalog/domain/mass-unit.enum.ts (Tạo file mới)
+// src/app/features/catalog/domain/mass-unit.enum.ts
 export enum MassUnit {
   KG = 'kg',
   YEN = 'yến', // 10 kg

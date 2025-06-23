@@ -23,7 +23,7 @@ export function getOrderStatusText(status: OrderStatus | string | undefined | nu
   }
 }
 
-// Optional: Hàm lấy màu sắc tương ứng (ví dụ cho badge DaisyUI)
+// Optional: Hàm lấy màu sắc tương ứng
 export function getOrderStatusCssClass(status: OrderStatus | string | undefined | null): string {
   switch (status) {
     case OrderStatus.PENDING: return 'badge-warning';

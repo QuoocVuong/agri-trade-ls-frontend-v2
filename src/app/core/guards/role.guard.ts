@@ -1,6 +1,6 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router, ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
-import { map, catchError, switchMap } from 'rxjs/operators'; // Thêm switchMap
+import { map, catchError, switchMap } from 'rxjs/operators';
 import { of, Observable } from 'rxjs';
 
 import { AuthService } from '../services/auth.service';

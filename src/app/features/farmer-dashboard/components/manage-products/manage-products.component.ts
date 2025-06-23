@@ -6,7 +6,7 @@ import { Page } from '../../../../core/models/page.model';
 import { ProductSummaryResponse } from '../../../catalog/dto/response/ProductSummaryResponse';
 import {ProductSearchParams, ProductService} from '../../../catalog/services/product.service';
 import { ProductStatus, getProductStatusText, getProductStatusCssClass } from '../../../catalog/domain/product-status.enum';
-import { ApiResponse, PagedApiResponse } from '../../../../core/models/api-response.model';
+
 import { LoadingSpinnerComponent } from '../../../../shared/components/loading-spinner/loading-spinner.component';
 import { AlertComponent } from '../../../../shared/components/alert/alert.component';
 import { PaginatorComponent } from '../../../../shared/components/paginator/paginator.component';
@@ -15,7 +15,7 @@ import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged, takeUntil, finalize } from 'rxjs/operators';
 import { AuthService } from '../../../../core/services/auth.service';
 import {FormatBigDecimalPipe} from '../../../../shared/pipes/format-big-decimal.pipe';
-import {ConfirmationService} from '../../../../shared/services/confirmation.service'; // Import AuthService
+import {ConfirmationService} from '../../../../shared/services/confirmation.service';
 
 @Component({
   selector: 'app-manage-products',
@@ -28,7 +28,7 @@ export class ManageProductsComponent implements OnInit, OnDestroy {
   private fb = inject(FormBuilder);
   private toastr = inject(ToastrService);
   private router = inject(Router);
-  private authService = inject(AuthService); // Inject AuthService
+  private authService = inject(AuthService);
   private destroy$ = new Subject<void>();
   private confirmationService = inject(ConfirmationService);
 
@@ -37,7 +37,7 @@ export class ManageProductsComponent implements OnInit, OnDestroy {
   deleteLoading = signal<Record<number, boolean>>({}); // Loading khi xóa từng sản phẩm
   errorMessage = signal<string | null>(null);
 
-  // Filter form (đơn giản hơn Admin)
+  // Filter form
   filterForm = this.fb.group({
     keyword: [''],
     status: [''] // Lọc theo trạng thái
@@ -81,7 +81,7 @@ export class ManageProductsComponent implements OnInit, OnDestroy {
       page: this.currentPage(),
       size: this.pageSize(),
       sort: this.sort(),
-      // Thêm filter nếu API getMyProducts hỗ trợ (cần cập nhật ProductService và Backend)
+      // Thêm filter
       // keyword: formValue.keyword || undefined,
       // status: formValue.status || undefined
     };

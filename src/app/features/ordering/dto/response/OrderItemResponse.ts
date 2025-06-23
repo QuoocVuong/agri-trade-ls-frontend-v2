@@ -1,6 +1,6 @@
 // src/app/features/ordering/dto/response/OrderItemResponse.ts
-import { ProductInfoResponse } from '../../../catalog/dto/response/ProductInfoResponse'; // Import DTO SP cơ bản
-import  BigDecimal  from 'js-big-decimal'; // Hoặc dùng number/string
+import { ProductInfoResponse } from '../../../catalog/dto/response/ProductInfoResponse';
+import  BigDecimal  from 'js-big-decimal';
 
 export interface OrderItemResponse {
   id: number;

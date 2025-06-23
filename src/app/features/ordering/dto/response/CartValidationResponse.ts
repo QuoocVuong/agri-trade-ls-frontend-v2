@@ -1,4 +1,4 @@
-import { CartAdjustmentInfo } from './CartAdjustmentInfo'; // Import DTO vừa tạo
+import { CartAdjustmentInfo } from './CartAdjustmentInfo';
 
 export interface CartValidationResponse {
   valid: boolean; // Giỏ hàng có hợp lệ để tiếp tục thanh toán không

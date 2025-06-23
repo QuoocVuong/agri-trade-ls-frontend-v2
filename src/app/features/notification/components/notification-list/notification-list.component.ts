@@ -15,7 +15,7 @@ import { SafeHtmlPipe } from '../../../../shared/pipes/safe-html.pipe';
 import { getNotificationTypeIcon } from '../../../../common/model/notification-type.enum';
 import {NotificationService} from '../../service/notification.service';
 import {ToastrService} from 'ngx-toastr';
-import {ConfirmationService} from '../../../../shared/services/confirmation.service'; // Import helper
+import {ConfirmationService} from '../../../../shared/services/confirmation.service';
 
 @Component({
   selector: 'app-notification-list',
@@ -142,7 +142,7 @@ export class NotificationListComponent implements OnInit, OnDestroy {
     });
   }
 
-  // ... trong class NotificationListComponent ...
+
 
   deleteNotification(notificationId: number, event: MouseEvent): void {
     event.stopPropagation(); // Ngăn sự kiện click lan tỏa lên thẻ <a> cha

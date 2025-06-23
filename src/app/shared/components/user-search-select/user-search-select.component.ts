@@ -1,12 +1,12 @@
-// src/app/shared/components/user-search-select/user-search-select.component.ts
+
 import {Component, EventEmitter, Input, Output, inject, signal, OnChanges, SimpleChanges} from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormsModule } from '@angular/forms'; // Thêm FormsModule
+import { ReactiveFormsModule, FormsModule } from '@angular/forms';
 import {of, Subject} from 'rxjs';
 import {debounceTime, distinctUntilChanged, switchMap, filter, catchError} from 'rxjs/operators';
 
 import { UserResponse } from '../../../features/user-profile/dto/response/UserResponse';
-import {RoleType} from '../../../common/model/role-type.enum';
+
 import {UserProfileService} from '../../../features/user-profile/services/user-profile.service';
 import {PagedApiResponse} from '../../../core/models/api-response.model';
 

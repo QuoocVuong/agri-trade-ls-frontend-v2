@@ -1,22 +1,22 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, ValidationErrors, AbstractControl } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import { Router, RouterLink } from '@angular/router';
+import {  RouterLink } from '@angular/router';
 import { UserProfileService } from '../../services/user-profile.service';
 import { PasswordChangeRequest } from '../../dto/request/PasswordChangeRequest';
 import { ApiResponse } from '../../../../core/models/api-response.model';
-// import { AlertComponent } from '../../../shared/components/alert/alert.component';
+
 
 @Component({
   selector: 'app-change-password',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink /*, AlertComponent */],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink ],
   templateUrl: './change-password.component.html',
 })
 export class ChangePasswordComponent {
   private fb = inject(FormBuilder);
   private userProfileService = inject(UserProfileService);
-  private router = inject(Router); // Inject Router nếu muốn điều hướng
+
 
   passwordForm: FormGroup;
   isLoading = signal(false);

@@ -1,10 +1,10 @@
 // src/app/features/notification/dto/response/NotificationResponse.ts
 
-// Import Enum nếu bạn đã tạo nó ở common/model
+
 import { NotificationType } from '../../../../common/model/notification-type.enum';
 
 export interface NotificationResponse {
-  id: number; // Hoặc Long nếu backend dùng Long
+  id: number;
   message: string;
   type: NotificationType | string; // Dùng Enum hoặc string
   isRead: boolean;

@@ -5,7 +5,7 @@ import { ReviewService } from '../../service/ReviewService';
 import { ReviewRequest } from '../../dto/request/ReviewRequest';
 import { ReviewResponse } from '../../dto/response/ReviewResponse';
 import { ApiResponse } from '../../../../core/models/api-response.model';
-import { AuthService } from '../../../../core/services/auth.service'; // Import AuthService
+import { AuthService } from '../../../../core/services/auth.service';
 import { ToastrService } from 'ngx-toastr';
 import {RouterLink} from '@angular/router';
 import {AlertComponent} from '../../../../shared/components/alert/alert.component';

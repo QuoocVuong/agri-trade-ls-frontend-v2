@@ -28,11 +28,11 @@ export enum NotificationType {
   PRODUCT_APPROVED = 'PRODUCT_APPROVED',
   /** Sản phẩm bị Admin từ chối (gửi cho Farmer) */
   PRODUCT_REJECTED = 'PRODUCT_REJECTED',
-  // Có thể thêm PRODUCT_PENDING_APPROVAL nếu cần thông báo cho Admin
+
 
   // --- Review Related ---
   /** Đánh giá đang chờ duyệt (có thể gửi cho Admin) */
-  REVIEW_PENDING = 'REVIEW_PENDING', // Thêm mới
+  REVIEW_PENDING = 'REVIEW_PENDING',
   /** Đánh giá được Admin duyệt (gửi cho Consumer) */
   REVIEW_APPROVED = 'REVIEW_APPROVED',
   /** Đánh giá bị Admin từ chối (gửi cho Consumer) */
@@ -42,17 +42,17 @@ export enum NotificationType {
   /** Chào mừng user mới (sau khi xác thực email) */
   WELCOME = 'WELCOME',
   /** Thông báo đổi mật khẩu thành công */
-  PASSWORD_RESET_SUCCESS = 'PASSWORD_RESET_SUCCESS', // Đổi tên từ PASSWORD_RESET cho rõ hơn
+  PASSWORD_RESET_SUCCESS = 'PASSWORD_RESET_SUCCESS',
   /** Thông báo email đã được xác thực */
-  EMAIL_VERIFIED = 'EMAIL_VERIFIED', // Có thể gộp với WELCOME
+  EMAIL_VERIFIED = 'EMAIL_VERIFIED',
   /** Thông báo tài khoản bị cập nhật trạng thái (active/inactive) */
-  ACCOUNT_STATUS_UPDATE = 'ACCOUNT_STATUS_UPDATE', // Thêm mới
+  ACCOUNT_STATUS_UPDATE = 'ACCOUNT_STATUS_UPDATE',
   /** Thông báo vai trò tài khoản bị thay đổi */
-  ROLES_UPDATED = 'ROLES_UPDATED', // Thêm mới
+  ROLES_UPDATED = 'ROLES_UPDATED',
   /** Hồ sơ Farmer được duyệt */
-  FARMER_PROFILE_APPROVED = 'FARMER_PROFILE_APPROVED', // Thêm mới
+  FARMER_PROFILE_APPROVED = 'FARMER_PROFILE_APPROVED',
   /** Hồ sơ Farmer bị từ chối */
-  FARMER_PROFILE_REJECTED = 'FARMER_PROFILE_REJECTED', // Thêm mới
+  FARMER_PROFILE_REJECTED = 'FARMER_PROFILE_REJECTED',
   // Có thể thêm cho Business Profile tương tự
 
   // --- System/Admin Related ---
@@ -64,7 +64,7 @@ export enum NotificationType {
   OTHER = 'OTHER'
 }
 
-// Optional: Hàm lấy text mô tả ngắn gọn cho từng loại (dùng trong UI nếu cần)
+// Optional: Hàm lấy text mô tả ngắn gọn cho từng loại
 export function getNotificationTypeText(type: NotificationType | string | undefined | null): string {
   switch (type) {
     case NotificationType.ORDER_PLACED: return 'Đơn hàng mới';
@@ -109,7 +109,7 @@ export function getNotificationTypeIcon(type: NotificationType | string | undefi
     case NotificationType.REVIEW_APPROVED: return 'fas fa-star';
     case NotificationType.REVIEW_REJECTED: return 'fas fa-comment-slash';
     case NotificationType.WELCOME: return 'fas fa-handshake';
-    // ... thêm icon cho các loại khác ...
+
     default: return 'fas fa-info-circle';
   }
 }

@@ -89,13 +89,6 @@
                 <span class="block text-xs text-base-content/60 dark:text-gray-500">/ {{ product.unit }}</span>
               </td>
 
-<!--              <td class="p-3 md:p-4 text-xs md:text-sm text-right font-medium text-secondary dark:text-teal-400 align-middle">-->
-<!--                <ng-container *ngIf="product.b2bEnabled && product.b2bBasePrice">-->
-<!--                  {{ product.b2bBasePrice | formatBigDecimal:'1.0-0' }} ₫-->
-<!--                  <span class="block text-xs text-base-content/60 dark:text-gray-500">/ {{ product.b2bUnit || product.unit }}</span>-->
-<!--                </ng-container>-->
-<!--                <span *ngIf="!product.b2bEnabled || !product.b2bBasePrice" class="text-base-content/50 dark:text-gray-600">N/A</span>-->
-<!--              </td>-->
 
               <td class="p-3 md:p-4 text-xs md:text-sm text-right font-semibold align-middle"
                   [class.text-error]="product.stockQuantity < 5" [class.dark:text-red-400]="product.stockQuantity < 5">

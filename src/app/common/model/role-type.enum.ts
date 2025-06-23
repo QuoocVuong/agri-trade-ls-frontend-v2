@@ -6,7 +6,7 @@ export enum RoleType {
   BUSINESS_BUYER = 'ROLE_BUSINESS_BUYER'
 }
 
-// Optional: Hàm lấy text tiếng Việt thân thiện
+// Optional: Hàm lấy text tiếng Việt
 export function getRoleTypeText(role: RoleType | string | undefined | null): string {
   switch (role) {
     case RoleType.ADMIN: return 'Quản trị viên';

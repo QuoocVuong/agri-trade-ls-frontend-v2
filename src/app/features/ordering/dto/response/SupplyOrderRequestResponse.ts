@@ -11,7 +11,7 @@ export interface SupplyOrderRequestResponse {
   product: ProductInfoResponse;
   requestedQuantity: number;
   requestedUnit: string;
-  proposedPricePerUnit: number | string | null; // Backend có thể trả về number hoặc string
+  proposedPricePerUnit: number | string | null;
   buyerNotes: string | null;
   shippingFullName: string | null;
   shippingPhoneNumber: string | null;

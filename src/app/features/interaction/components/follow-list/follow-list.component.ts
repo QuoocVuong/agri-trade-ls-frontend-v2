@@ -1,6 +1,6 @@
 import { Component, OnInit, inject, signal, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute, RouterLink } from '@angular/router'; // Import ActivatedRoute
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { FollowService } from '../../service/FollowService';
 import { FollowUserResponse } from '../../dto/response/FollowUserResponse';
 import { Page } from '../../../../core/models/page.model';
@@ -8,7 +8,7 @@ import { PagedApiResponse } from '../../../../core/models/api-response.model';
 import { LoadingSpinnerComponent } from '../../../../shared/components/loading-spinner/loading-spinner.component';
 import { AlertComponent } from '../../../../shared/components/alert/alert.component';
 import { PaginatorComponent } from '../../../../shared/components/paginator/paginator.component';
-import { AuthService } from '../../../../core/services/auth.service';
+
 import {Observable} from 'rxjs';
 
 type FollowListMode = 'my-following' | 'my-followers' | 'user-followers';
@@ -25,7 +25,7 @@ export class FollowListComponent implements OnInit {
   @Input() userId?: number | null; // ID của user cần xem followers (nếu mode='user-followers')
 
   private followService = inject(FollowService);
-  private authService = inject(AuthService);
+
   private route = inject(ActivatedRoute); // Có thể dùng để lấy userId từ route nếu cần
 
   usersPage = signal<Page<FollowUserResponse> | null>(null);
@@ -57,7 +57,7 @@ export class FollowListComponent implements OnInit {
     switch(this.mode) {
       case 'my-following': this.listTitle.set('Đang theo dõi'); break;
       case 'my-followers': this.listTitle.set('Người theo dõi bạn'); break;
-      case 'user-followers': this.listTitle.set('Người theo dõi'); break; // Có thể thêm tên user vào đây
+      case 'user-followers': this.listTitle.set('Người theo dõi'); break;
     }
   }
 
@@ -118,10 +118,5 @@ export class FollowListComponent implements OnInit {
     return item.userId;
   }
 
-  // TODO: Thêm hàm xử lý nút Follow/Unfollow trực tiếp trên danh sách này nếu muốn
-  toggleFollow(userToToggle: FollowUserResponse): void {
-    console.log("Toggle follow for:", userToToggle.userId);
-    // Gọi API follow/unfollow
-    // Cập nhật lại trạng thái isFollowing (cần thêm trạng thái này vào FollowUserResponse hoặc gọi API isFollowing)
-  }
+
 }

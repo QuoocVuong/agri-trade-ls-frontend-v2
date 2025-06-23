@@ -1,8 +1,6 @@
 // src/app/features/user-profile/dto/response/FarmerSummaryResponse.ts
 
-/**
- * DTO chứa thông tin tóm tắt của Farmer để hiển thị trong danh sách (ví dụ: trang chủ, trang tìm kiếm farmer).
- */
+
 export interface FarmerSummaryResponse {
   /** ID của User (Farmer) */
   userId: number;

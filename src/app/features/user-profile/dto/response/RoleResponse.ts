@@ -1,5 +1,5 @@
 // src/app/features/user-profile/dto/response/RoleResponse.ts
-import { RoleType } from '../../../../common/model/role-type.enum'; // Import RoleType
+import { RoleType } from '../../../../common/model/role-type.enum';
 
 export interface RoleResponse {
   id: number;

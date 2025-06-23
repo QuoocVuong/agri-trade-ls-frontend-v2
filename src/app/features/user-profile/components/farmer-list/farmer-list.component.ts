@@ -1,19 +1,19 @@
 
 
 import { Component, OnInit, inject, signal, OnDestroy } from '@angular/core';
-import { CommonModule, DatePipe } from '@angular/common'; // Import DatePipe nếu cần
-import { Router, RouterLink, ActivatedRoute } from '@angular/router'; // Import ActivatedRoute nếu cần đọc queryParams
+import { CommonModule, DatePipe } from '@angular/common';
+import { Router, RouterLink, ActivatedRoute } from '@angular/router';
 import {Observable, of, Subject} from 'rxjs';
-import { takeUntil, finalize, debounceTime, distinctUntilChanged } from 'rxjs/operators';
-import { Page } from '../../../../core/models/page.model';
-import { ApiResponse, PagedApiResponse } from '../../../../core/models/api-response.model';
-import { FarmerSummaryResponse } from '../../dto/response/FarmerSummaryResponse'; // DTO tóm tắt Farmer
-import { FarmerService } from '../../services/farmer.service'; // Service gọi API Farmer
-import { LocationService, Province } from '../../../../core/services/location.service'; // Service địa điểm
+import { takeUntil, debounceTime, distinctUntilChanged } from 'rxjs/operators';
+
+import { FarmerSummaryResponse } from '../../dto/response/FarmerSummaryResponse';
+import { FarmerService } from '../../services/farmer.service';
+import { LocationService, Province } from '../../../../core/services/location.service';
 import { LoadingSpinnerComponent } from '../../../../shared/components/loading-spinner/loading-spinner.component';
 import { AlertComponent } from '../../../../shared/components/alert/alert.component';
 import { PaginatorComponent } from '../../../../shared/components/paginator/paginator.component';
-import { ReactiveFormsModule, FormBuilder } from '@angular/forms'; // Import Forms
+import { ReactiveFormsModule, FormBuilder } from '@angular/forms';
+import {Page} from '../../../../core/models/page.model';
 
 @Component({
   selector: 'app-farmer-list',
@@ -21,11 +21,11 @@ import { ReactiveFormsModule, FormBuilder } from '@angular/forms'; // Import For
   imports: [
     CommonModule,
     RouterLink,
-    ReactiveFormsModule, // Thêm ReactiveFormsModule
+    ReactiveFormsModule,
     LoadingSpinnerComponent,
     AlertComponent,
     PaginatorComponent,
-    DatePipe, // Thêm nếu dùng pipe date
+    DatePipe,
 
   ],
   templateUrl: './farmer-list.component.html',
@@ -34,8 +34,8 @@ export class FarmerListComponent implements OnInit, OnDestroy {
   private farmerService = inject(FarmerService);
   private locationService = inject(LocationService);
   private fb = inject(FormBuilder);
-  private route = inject(ActivatedRoute); // Inject nếu cần đọc queryParams
-  private router = inject(Router); // Inject nếu cần navigate khi filter
+  private route = inject(ActivatedRoute);
+  private router = inject(Router);
   private destroy$ = new Subject<void>();
 
   farmersPage = signal<Page<FarmerSummaryResponse> | null>(null);
@@ -44,13 +44,13 @@ export class FarmerListComponent implements OnInit, OnDestroy {
   provinces = signal<Province[]>([]); // Danh sách tỉnh để lọc
 
   // Filter form
-  // *** SỬA FILTER FORM ***
+
   filterForm = this.fb.group({
     keyword: [''],
     provinceCode: [''],
-    sort: ['farmName,asc'] // <-- Thêm sort vào form, đặt giá trị mặc định
+    sort: ['farmName,asc']
   });
-  // **********************
+
 
   // Phân trang & Sắp xếp
   currentPage = signal(0);
@@ -71,14 +71,7 @@ export class FarmerListComponent implements OnInit, OnDestroy {
       this.loadFarmers();
     });
 
-    // (Tùy chọn) Lắng nghe queryParams nếu muốn link từ nơi khác có sẵn filter
-    // this.route.queryParams.pipe(takeUntil(this.destroy$)).subscribe(params => {
-    //   const province = params['province'];
-    //   if (province) {
-    //     this.filterForm.patchValue({ provinceCode: province }, { emitEvent: false });
-    //   }
-    //   this.loadFarmers(); // Load lại khi queryParams thay đổi
-    // });
+
   }
 
   ngOnDestroy(): void {

@@ -2,16 +2,16 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../environments/environment';
-import { ApiResponse, PagedApiResponse } from '../../../core/models/api-response.model'; // Import Page
+import { ApiResponse, PagedApiResponse } from '../../../core/models/api-response.model';
 import { CategoryResponse } from '../../catalog/dto/response/CategoryResponse';
 import { CategoryRequest } from '../../catalog/dto/request/CategoryRequest';
 import { ProductSummaryResponse } from '../../catalog/dto/response/ProductSummaryResponse';
 import { ProductDetailResponse } from '../../catalog/dto/response/ProductDetailResponse';
 import { ProductStatus } from '../../catalog/domain/product-status.enum';
-import { ProductRejectRequest } from '../../catalog/dto/request/ProductRejectRequest'; // Import DTO reject
+import { ProductRejectRequest } from '../../catalog/dto/request/ProductRejectRequest';
 
 @Injectable({
-  providedIn: 'root' // Cung cấp ở root để các module khác cũng có thể dùng nếu cần
+  providedIn: 'root'
 })
 export class AdminCatalogService {
   private http = inject(HttpClient);
@@ -32,7 +32,7 @@ export class AdminCatalogService {
   }
 
   getCategoryByIdForAdmin(id: number): Observable<ApiResponse<CategoryResponse>> {
-    // Giả sử API giống public nhưng cần quyền Admin
+
     return this.http.get<ApiResponse<CategoryResponse>>(`${this.adminCatApiUrl}/${id}`);
   }
 
@@ -41,8 +41,8 @@ export class AdminCatalogService {
       .set('page', page.toString())
       .set('size', size.toString());
     if (sort) params = params.set('sort', sort);
-    if (keyword) params = params.set('keyword', keyword); // Giả sử có API tìm kiếm category
-    // API backend cần hỗ trợ phân trang cho categories
+    if (keyword) params = params.set('keyword', keyword);
+
     return this.http.get<PagedApiResponse<CategoryResponse>>(this.adminCatApiUrl, { params });
   }
 

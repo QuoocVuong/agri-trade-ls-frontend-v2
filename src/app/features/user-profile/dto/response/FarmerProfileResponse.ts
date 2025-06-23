@@ -1,8 +1,8 @@
 // src/app/features/user-profile/dto/response/FarmerProfileResponse.ts
-import BigDecimal from 'js-big-decimal'; // Giữ lại nếu dùng
+import BigDecimal from 'js-big-decimal';
 
-// Import các Enum nếu cần (ví dụ VerificationStatus)
-import { VerificationStatus } from '../../../../common/model/verification-status.enum'; // Đường dẫn có thể khác
+
+import { VerificationStatus } from '../../../../common/model/verification-status.enum';
 
 export interface FarmerProfileResponse {
   userId: number;
@@ -23,13 +23,13 @@ export interface FarmerProfileResponse {
   address: string | null;
   status: VerificationStatus | string;
 
-  // --- CÁC TRƯỜNG TỪ USER PHẢI CÓ Ở ĐÂY ---
+
   fullName: string | null;
   phoneNumber: string | null;
   avatarUrl: string | null;
   followerCount: number | null;
   createdAt: string | null; // Ngày tham gia User
-  // ---------------------------------------
+
 
   // updatedAt của profile (nếu cần)
   updatedAt?: string | null; // Thêm ? nếu có thể không có

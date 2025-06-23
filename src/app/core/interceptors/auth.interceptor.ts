@@ -17,11 +17,9 @@ export const authInterceptor: HttpInterceptorFn = (
 ): Observable<HttpEvent<unknown>> => {
 
   const authService = inject(AuthService);
-  //const router = inject(Router);
+
   const authToken = authService.getAccessToken();
 
-  // Clone the request and add the authorization header if token exists
-  // and the request is not for the auth endpoints themselves
   let authReq = req;
 
 
@@ -33,7 +31,7 @@ export const authInterceptor: HttpInterceptorFn = (
     '/api/auth/verify',
     '/api/auth/forgot-password',
     '/api/auth/reset-password',
-    '/api/auth/oauth2/google/verify' // << QUAN TRỌNG: Thêm URL này
+    '/api/auth/oauth2/google/verify'
   ];
 
 
@@ -81,13 +79,13 @@ function handleTokenRefresh(request: HttpRequest<any>, next: HttpHandlerFn, auth
         } else {
           // authService.logout(); // AuthService.attemptRefreshToken đã xử lý logout nếu cần
           const errorMessage = tokenResponse.message || "Session expired or refresh failed. Please login again.";
-          // Ném lỗi 401 để AuthService.handleError có thể bắt và xử lý (ví dụ: hiển thị toastr)
+          // Ném lỗi 401 để AuthService.handleError có thể bắt và xử lý
           return throwError(() => new HttpErrorResponse({ error: { message: errorMessage }, status: 401, statusText: "Unauthorized" }));
         }
       }),
       catchError((refreshError) => {
         refreshTokenInProgress = false;
-        // authService.logout(); // AuthService.attemptRefreshToken đã xử lý logout nếu cần
+
         return throwError(() => refreshError); // Ném lỗi gốc từ attemptRefreshToken
       })
     );

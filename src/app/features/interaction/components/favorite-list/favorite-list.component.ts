@@ -7,8 +7,8 @@ import { PagedApiResponse } from '../../../../core/models/api-response.model';
 import { LoadingSpinnerComponent } from '../../../../shared/components/loading-spinner/loading-spinner.component';
 import { AlertComponent } from '../../../../shared/components/alert/alert.component';
 import { PaginatorComponent } from '../../../../shared/components/paginator/paginator.component';
-import { ProductCardComponent } from '../../../catalog/components/product-card/product-card.component'; // Import ProductCard
-import { AuthService } from '../../../../core/services/auth.service'; // Import AuthService
+import { ProductCardComponent } from '../../../catalog/components/product-card/product-card.component';
+import { AuthService } from '../../../../core/services/auth.service';
 
 @Component({
   selector: 'app-favorite-list',

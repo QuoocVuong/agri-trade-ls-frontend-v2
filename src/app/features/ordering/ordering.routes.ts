@@ -34,13 +34,6 @@ export const ORDERING_ROUTES: Routes = [
     title: 'Gửi Yêu Cầu Đặt Hàng Nguồn Cung'
   },
 
-  // {
-  //   path: 'my-debt-invoices', // URL: /user/orders/my-debt-invoices ( ordering.routes được load dưới /user/orders)
-  //   loadComponent: () => import('../admin-dashboard/components/manage-invoice-list/manage-invoice-list.component').then(m => m.ManageInvoiceListComponent),
-  //   canActivate: [authGuard],
-  //   data: { viewMode: 'buyer' },
-  //   title: 'Hóa Đơn Công Nợ Của Tôi'
-  // },
 
   // Route mặc định cho ordering (nếu có) - ví dụ về history
   { path: '', redirectTo: 'history', pathMatch: 'full' }

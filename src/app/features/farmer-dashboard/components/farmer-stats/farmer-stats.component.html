@@ -107,7 +107,7 @@
       <div *ngIf="isLoadingChart()" class="text-center py-10">
         <div class="spinner"></div>
       </div>
-      <!-- ****** THAY THẾ BIỂU ĐỒ ****** -->
+
       <div *ngIf="!isLoadingChart()" style="display: block; height: 300px;">
         <canvas baseChart class="chart"
                 [data]="revenueChartData"
@@ -116,7 +116,7 @@
                 [legend]="lineChartLegend">
         </canvas>
       </div>
-      <!-- *************************** -->
+
       <div *ngIf="!isLoadingChart() && revenueChartData.datasets[0].data.length === 0" class="text-center py-10 text-gray-500 dark:text-gray-400">Không có dữ liệu doanh thu.</div>
     </div>
 
@@ -126,7 +126,7 @@
       <div *ngIf="isLoadingChart()" class="text-center py-10">
         <div class="spinner"></div>
       </div>
-      <!-- ****** THAY THẾ BIỂU ĐỒ ****** -->
+
       <div *ngIf="!isLoadingChart()" style="display: block; height: 300px;">
         <canvas baseChart class="chart"
                 [data]="orderCountChartData"
@@ -135,7 +135,7 @@
                 [legend]="lineChartLegend">
         </canvas>
       </div>
-      <!-- *************************** -->
+
       <div *ngIf="!isLoadingChart() && orderCountChartData.datasets[0].data.length === 0" class="text-center py-10 text-gray-500 dark:text-gray-400">Không có dữ liệu đơn hàng.</div>
     </div>
   </div>

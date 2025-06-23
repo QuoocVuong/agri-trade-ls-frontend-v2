@@ -1,7 +1,7 @@
 
 import { Component, OnInit, inject, signal, OnDestroy, computed } from '@angular/core';
 import { CommonModule, DatePipe, DecimalPipe } from '@angular/common';
-import {RouterLink, Router, ActivatedRoute} from '@angular/router';
+import {RouterLink, ActivatedRoute} from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, FormGroup } from '@angular/forms';
 import {Observable, Subject} from 'rxjs';
 import { takeUntil, finalize, debounceTime, distinctUntilChanged } from 'rxjs/operators';
@@ -17,7 +17,7 @@ import { PaginatorComponent } from '../../../../shared/components/paginator/pagi
 import { LoadingSpinnerComponent } from '../../../../shared/components/loading-spinner/loading-spinner.component';
 import { AlertComponent } from '../../../../shared/components/alert/alert.component';
 import { ToastrService } from 'ngx-toastr';
-import { AdminOrderingService } from '../../services/admin-ordering.service'; // Để xác nhận thanh toán
+import { AdminOrderingService } from '../../services/admin-ordering.service';
 import { PaymentMethod } from '../../../ordering/domain/payment-method.enum';
 import {InvoiceSummaryResponse} from '../../../ordering/dto/response/InvoiceSummaryResponse';
 import {InvoiceStatus} from '../../../ordering/domain/invoice-status.enum';
@@ -157,8 +157,7 @@ export class ManageInvoiceListComponent implements OnInit, OnDestroy {
 
     this.isLoading.set(true);
     this.errorMessage.set(null);
-    // Không reset invoicesPage.set(null) ở đây vội, để UI không bị giật nếu load lại
-    // this.invoicesPage.set(null);
+
 
     const formValue = this.filterForm.value;
 
@@ -170,16 +169,11 @@ export class ManageInvoiceListComponent implements OnInit, OnDestroy {
     if (paymentFilter) {
       switch (paymentFilter) {
         case InvoicePaymentFilterStatus.UNPAID:
-          // Khi lọc "Chưa thanh toán", chúng ta muốn các hóa đơn có Order.paymentStatus là AWAITING_PAYMENT_TERM hoặc PENDING
-          // Và Invoice.status không phải là PAID hoặc VOID
-          // API backend cần hỗ trợ lọc theo nhiều PaymentStatus hoặc chúng ta gửi một cờ đặc biệt
-          // Hiện tại, chúng ta có thể gửi AWAITING_PAYMENT_TERM và để backend xử lý OR với PENDING nếu cần
+
           targetOrderPaymentStatus = PaymentStatus.AWAITING_PAYMENT_TERM;
-          // Nếu muốn bao gồm cả PENDING cho đơn INVOICE, backend cần xử lý
-          // Hoặc frontend gửi một mảng các status, backend hỗ trợ nhận mảng
+
           if (targetInvoiceStatus && targetInvoiceStatus === InvoiceStatus.PAID) {
-            // Nếu người dùng chọn lọc "Hóa đơn đã thanh toán" và "Chưa thanh toán đơn hàng" -> vô lý
-            // Có thể reset một trong hai hoặc ưu tiên một cái. Ở đây ví dụ reset InvoiceStatus.
+
             targetInvoiceStatus = null;
             this.filterForm.get('status')?.setValue('', { emitEvent: false }); // Cập nhật UI
           }
@@ -270,7 +264,7 @@ export class ManageInvoiceListComponent implements OnInit, OnDestroy {
   clearFilters(): void {
     console.log('[ManageInvoiceListComponent] Clearing filters.');
     this.filterForm.reset({ keyword: '', status: '', paymentStatusFilter: '' });
-    // valueChanges sẽ tự động trigger loadInvoices
+
   }
 
   // Các hàm helper cho template
@@ -287,7 +281,7 @@ export class ManageInvoiceListComponent implements OnInit, OnDestroy {
   }
 
   getInvoiceStatusClass(status: InvoiceStatus | string | null | undefined): string {
-    if (!status) return 'badge-ghost'; // Màu trung tính hơn cho N/A
+    if (!status) return 'badge-ghost';
     switch (status) {
       case InvoiceStatus.PAID: return 'badge-success';
       case InvoiceStatus.OVERDUE: return 'badge-error';
@@ -311,7 +305,7 @@ export class ManageInvoiceListComponent implements OnInit, OnDestroy {
     }
   }
 
-  // ... trong class ManageInvoiceListComponent ...
+
 
   confirmPayment(invoice: InvoiceSummaryResponse): void {
     if (!this.isAdminView()) {
@@ -323,7 +317,7 @@ export class ManageInvoiceListComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // --- PHẦN THAY THẾ ---
+
     this.confirmationService.open({
       title: 'Xác Nhận Thanh Toán',
       message: `Xác nhận khách hàng đã thanh toán cho hóa đơn #${invoice.invoiceNumber} (Đơn hàng #${invoice.orderCode})?`,
@@ -332,14 +326,13 @@ export class ManageInvoiceListComponent implements OnInit, OnDestroy {
       confirmButtonClass: 'btn-success',
       iconClass: 'fas fa-money-check-alt',
       iconColorClass: 'text-success',
-      // Thêm các ô input để thay thế prompt()
       inputs: [
         {
           key: 'paymentMethod',
-          type: 'text', // Dùng text vì modal chưa hỗ trợ select, nhưng có thể cải tiến sau
+          type: 'text',
           label: 'Phương thức thanh toán thực tế',
           placeholder: 'VD: BANK_TRANSFER, COD, OTHER',
-          initialValue: PaymentMethod.BANK_TRANSFER.toString() // Gợi ý giá trị
+          initialValue: PaymentMethod.BANK_TRANSFER.toString()
         },
         {
           key: 'transactionRef',
@@ -355,8 +348,7 @@ export class ManageInvoiceListComponent implements OnInit, OnDestroy {
         }
       ]
     }).subscribe(result => {
-      // `result` sẽ là `false` nếu người dùng nhấn Hủy
-      // hoặc là một object `{ paymentMethod: '...', transactionRef: '...', notes: '...' }` nếu nhấn Đồng ý
+
       if (result) {
         const paymentMethodConfirmed = result.paymentMethod.toUpperCase() as PaymentMethod;
         if (!Object.values(PaymentMethod).includes(paymentMethodConfirmed)) {
@@ -394,7 +386,7 @@ export class ManageInvoiceListComponent implements OnInit, OnDestroy {
       }
       // Nếu `result` là false, không làm gì cả.
     });
-    // --- KẾT THÚC PHẦN THAY THẾ ---
+
   }
 
   // Điều chỉnh routerLink cho nút xem chi tiết đơn hàng
@@ -404,7 +396,7 @@ export class ManageInvoiceListComponent implements OnInit, OnDestroy {
     } else if (this.isFarmerView()) {
       return ['/farmer/orders', orderId.toString()];
     } else { // Buyer view
-      return ['/user/orders', orderId.toString()]; // Hoặc route chi tiết đơn hàng của user
+      return ['/user/orders', orderId.toString()];
     }
   }
 

@@ -13,11 +13,11 @@ import {SidebarItemComponent} from '../sidebar-item/sidebar-item.component';
 })
 export class SidebarComponent {
   @Input() menuType: 'user' | 'farmer' | 'admin' = 'user'; // Nhận loại menu từ layout cha
-  // isMenuOpen: boolean = false; // <<< Bỏ biến cục bộ này
+
 
   private authService = inject(AuthService);
   private router = inject(Router);
-  public sidebarService = inject(SidebarService); // INJECT SERVICE và để public
+  public sidebarService = inject(SidebarService);
 
   // Sử dụng signal từ service
   isMenuOpen = this.sidebarService.isOpen; // <<< Lấy trạng thái từ service
@@ -37,9 +37,9 @@ export class SidebarComponent {
     this.router.navigate(['/auth/login']);
   }
 
-// KHÔNG CẦN toggleMenu() ở đây nữa vì nó được gọi từ service
 
-  // ****** THÊM HÀM NÀY ******
+
+
   onMenuItemClick(): void {
     // Chỉ đóng menu nếu đang ở chế độ mobile (sidebar không phải static)
     if (!this.isDesktopView()) {
@@ -56,5 +56,4 @@ export class SidebarComponent {
   }
 
 
-  // Thêm SVG icons vào các mục menu nếu muốn
 }

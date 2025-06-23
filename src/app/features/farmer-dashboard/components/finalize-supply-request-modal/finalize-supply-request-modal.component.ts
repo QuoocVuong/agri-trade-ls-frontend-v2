@@ -1,4 +1,4 @@
-// src/app/features/farmer-dashboard/components/finalize-supply-request-modal/finalize-supply-request-modal.component.ts
+
 import {
   Component,
   OnInit,
@@ -27,21 +27,21 @@ import {finalize, takeUntil} from 'rxjs/operators';
 import { ToastrService } from 'ngx-toastr';
 
 import { SupplyOrderRequestResponse } from '../../../ordering/dto/response/SupplyOrderRequestResponse';
-import { AgreedOrderRequest } from '../../../ordering/dto/request/AgreedOrderRequest'; // Dùng lại DTO này
+import { AgreedOrderRequest } from '../../../ordering/dto/request/AgreedOrderRequest';
 import { OrderResponse } from '../../../ordering/dto/response/OrderResponse';
 import { OrderService } from '../../../ordering/services/order.service';
 import { PaymentMethod, getPaymentMethodText } from '../../../ordering/domain/payment-method.enum';
-import { MassUnit, getMassUnitText, convertToKg, convertPriceToPerKg } from '../../../catalog/domain/mass-unit.enum';
+import { MassUnit, getMassUnitText } from '../../../catalog/domain/mass-unit.enum';
 
 import { LoadingSpinnerComponent } from '../../../../shared/components/loading-spinner/loading-spinner.component';
 import { AlertComponent } from '../../../../shared/components/alert/alert.component';
 import { FormatBigDecimalPipe } from '../../../../shared/pipes/format-big-decimal.pipe';
-import { LocationService, Province, District, Ward } from '../../../../core/services/location.service'; // Nếu cần cho địa chỉ
+import { LocationService, Province, District, Ward } from '../../../../core/services/location.service';
 import BigDecimal from 'js-big-decimal';
 import {ProductService} from '../../../catalog/services/product.service';
 import {ProductDetailResponse} from '../../../catalog/dto/response/ProductDetailResponse';
 
-// --- THÊM HÀM VALIDATOR NÀY VÀO BÊN NGOÀI CLASS ---
+
 export function futureDateValidator(): ValidatorFn {
   return (control: AbstractControl): ValidationErrors | null => {
     const controlValue = control.value;
@@ -83,13 +83,13 @@ export class FinalizeSupplyRequestModalComponent implements OnInit, OnChanges, O
   private destroy$ = new Subject<void>();
   private cdr = inject(ChangeDetectorRef);
 
-  // ... các injects khác ...
-  private productService = inject(ProductService); // <<< INJECT ProductService
 
-  // --- THÊM CÁC SIGNAL MỚI ---
+  private productService = inject(ProductService);
+
+
   productContext = signal<ProductDetailResponse | null>(null); // Lưu thông tin sản phẩm mới nhất
   isLoadingProductContext = signal(false);
-  // ---------------------------
+
 
   finalizeForm!: FormGroup;
   isSubmitting = signal(false);
@@ -172,7 +172,7 @@ export class FinalizeSupplyRequestModalComponent implements OnInit, OnChanges, O
     }
   }
 
-  // --- HÀM MỚI: Load dữ liệu sản phẩm và patch form ---
+
   private loadDataForFinalization(req: SupplyOrderRequestResponse): void {
     if (!req.product?.id) {
       this.errorMessage.set('Yêu cầu không có thông tin sản phẩm hợp lệ.');
@@ -235,13 +235,11 @@ export class FinalizeSupplyRequestModalComponent implements OnInit, OnChanges, O
     this.finalizeForm.patchValue({
       buyerDisplay: `${req.buyer?.fullName} (ID: ${req.buyer?.id})`,
       originalProductDisplay: `${req.product?.name} (ID: ${req.product?.id})`,
-      //paymentMethod: PaymentMethod.BANK_TRANSFER, // Mặc định
+
       shippingFullName: req.shippingFullName,
       shippingPhoneNumber: req.shippingPhoneNumber,
       shippingAddressDetail: req.shippingAddressDetail,
-      //shippingProvinceCode: req.shippingProvinceCode,
-      // shippingDistrictCode: req.shippingDistrictCode,
-      // shippingWardCode: req.shippingWardCode,
+
       farmerNotes: `Từ yêu cầu #${req.id}. Ghi chú của người mua: ${req.buyerNotes || ''}`,
       expectedDeliveryDate: req.expectedDeliveryDate
     });

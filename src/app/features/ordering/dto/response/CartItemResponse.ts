@@ -1,6 +1,6 @@
 // src/app/features/ordering/dto/response/CartItemResponse.ts
-import { ProductSummaryResponse } from '../../../catalog/dto/response/ProductSummaryResponse'; // Đường dẫn tới DTO Product
-import  BigDecimal  from 'js-big-decimal'; // Hoặc dùng number/string
+import { ProductSummaryResponse } from '../../../catalog/dto/response/ProductSummaryResponse';
+import  BigDecimal  from 'js-big-decimal';
 
 export interface CartItemResponse {
   id: number;

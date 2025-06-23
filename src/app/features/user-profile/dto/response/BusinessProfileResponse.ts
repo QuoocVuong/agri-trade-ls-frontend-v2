@@ -9,8 +9,8 @@ export interface BusinessProfileResponse {
   businessPhone: string | null;
   businessAddressDetail: string | null;
   businessProvinceCode: string | null;
-  districtCode: string | null; // Đã sửa tên ở backend mapper
-  wardCode: string | null;     // Đã sửa tên ở backend mapper
+  districtCode: string | null;
+  wardCode: string | null;
   contactPerson: string | null;
   companyName: string | null;
   address: BusinessProfileRequest | null;

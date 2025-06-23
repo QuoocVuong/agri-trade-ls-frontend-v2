@@ -2,23 +2,23 @@ import { Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChange
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { UserProfileService } from '../../services/user-profile.service';
-import { Address } from '../../domain/address.model'; // Giả sử Address model vẫn dùng provinceCode, districtCode, wardCode
+import { Address } from '../../domain/address.model';
 import { AddressRequest } from '../../dto/request/AddressRequest';
 import { ApiResponse } from '../../../../core/models/api-response.model';
-import { LocationService, Province, District, Ward } from '../../../../core/services/location.service'; // Import LocationService và models đã cập nhật
-import { Observable, of, firstValueFrom } from 'rxjs'; // Import firstValueFrom để chờ async/await
+import { LocationService, Province, District, Ward } from '../../../../core/services/location.service';
+import { Observable, of, firstValueFrom } from 'rxjs';
 import { ToastrService } from 'ngx-toastr';
 import {AlertComponent} from '../../../../shared/components/alert/alert.component';
-import {AddressResponse} from '../../dto/response/AddressResponse'; // Import Toastr
+import {AddressResponse} from '../../dto/response/AddressResponse';
 
 @Component({
   selector: 'app-address-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, AlertComponent], // Đảm bảo ReactiveFormsModule được import
+  imports: [CommonModule, ReactiveFormsModule, AlertComponent],
   templateUrl: './address-form.component.html',
 })
 export class AddressFormComponent implements OnInit, OnChanges {
- // @Input() addressToEdit: Address | null = null;
+
   @Output() addressSaved = new EventEmitter<AddressResponse>();
   @Output() cancelled = new EventEmitter<void>();
   // *** KHAI BÁO INPUT ***
@@ -45,14 +45,7 @@ export class AddressFormComponent implements OnInit, OnChanges {
     // Gọi patchFormWithLocationData trong ngOnChanges khi addressToEdit thay đổi lần đầu
   }
 
-  // ngOnChanges(changes: SimpleChanges): void {
-  //   if (changes['addressToEdit'] && this.addressForm) {
-  //     // Cần đảm bảo provinces$ đã load xong trước khi patch (hoặc xử lý bất đồng bộ)
-  //     // Cách đơn giản là gọi patch sau khi load tỉnh ở ngOnInit nếu là edit mode ban đầu
-  //     // Hoặc gọi lại patchFormWithLocationData ở đây
-  //     this.patchFormWithLocationData();
-  //   }
-  // }
+
   ngOnChanges(changes: SimpleChanges): void {
     // *** SỬA Ở ĐÂY: Kiểm tra input 'initialAddress' ***
     if (changes['initialAddress'] && this.addressForm) {
@@ -100,8 +93,7 @@ export class AddressFormComponent implements OnInit, OnChanges {
 
   // Patch form, cần xử lý bất đồng bộ khi load huyện/xã
   private async patchFormWithLocationData(): Promise<void> {
-    // if (this.addressToEdit) {
-    //   const address = this.addressToEdit;
+
     if (this.initialAddress) {
       const address = this.initialAddress; // <-- Dùng initialAddress
       // Patch các trường không phụ thuộc địa giới trước
@@ -181,14 +173,10 @@ export class AddressFormComponent implements OnInit, OnChanges {
     apiCall.subscribe({
       next: (response: ApiResponse<AddressResponse>) => {
         if (response.success && response.data) {
-        //   this.toastr.success(this.addressToEdit ? 'Cập nhật địa chỉ thành công!' : 'Thêm địa chỉ thành công!');
-        //   this.addressSaved.emit(response.data); // Gửi sự kiện lưu thành công
-        // } else {
+
           this.toastr.success(this.initialAddress ? 'Cập nhật địa chỉ thành công!' : 'Thêm địa chỉ thành công!');
-          // *** SỬA KIỂU DỮ LIỆU EMIT: Cần map AddressResponse sang Address nếu cần ***
-          // Hoặc thay đổi kiểu của EventEmitter thành AddressResponse
-          // Tạm thời giả sử Address và AddressResponse giống nhau:
-          this.addressSaved.emit(response.data); // <-- Ép kiểu tạm thời, cần xem xét lại
+
+          this.addressSaved.emit(response.data);
         } else {
           this.errorMessage.set(response.message || 'Lưu địa chỉ thất bại.');
           this.toastr.error(response.message || 'Lưu địa chỉ thất bại.');

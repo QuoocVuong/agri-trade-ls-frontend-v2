@@ -31,10 +31,7 @@
          class="w-full h-full object-cover transition-transform duration-500 hover:scale-110" />
     <!-- Badge cho sản phẩm mới hoặc giảm giá -->
     <div *ngIf="product.new" class="badge badge-secondary absolute top-3 right-3 badge-sm font-semibold">Mới</div>
-    <!-- ****** (TÙY CHỌN) THÊM BADGE B2B ****** -->
-    <div *ngIf="isBusinessBuyer() && product.b2bEnabled"
-         class="badge badge-xs badge-info ml-1 absolute top-3 left-3 font-medium">B2B</div>
-    <!-- ************************************ -->
+
   </a>
 
   <div class="card-body flex-grow flex flex-col justify-between p-4">

@@ -7,6 +7,6 @@ export interface FarmerInfoResponse {
   farmerName?: string; // Tên của farmer (tùy chọn, lấy từ User)
   farmerAvatarUrl: string | null; // Lấy từ User
   provinceCode: string | null; // Lấy từ FarmerProfile
-  // Có thể thêm rating trung bình của farmer nếu cần
-  // averageRating?: number;
+
+   averageRating?: number;
 }

@@ -1,7 +1,6 @@
-import { Pipe, PipeTransform, inject, LOCALE_ID } from '@angular/core'; // Import LOCALE_ID
+import { Pipe, PipeTransform, inject, LOCALE_ID } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
-// Giả sử bạn dùng thư viện js-big-decimal
-// Cài đặt: npm install js-big-decimal
+
 import  BigDecimal  from 'js-big-decimal';
 
 @Pipe({
@@ -14,13 +13,7 @@ export class FormatBigDecimalPipe implements PipeTransform {
   // Tạo instance của DecimalPipe với locale đã inject
   private decimalPipe = new DecimalPipe(this.locale);
 
-  /**
-   * Formats a number, string, or BigDecimal value into a locale-specific currency or decimal format.
-   * @param value The value to format (number, string, BigDecimal, null, or undefined).
-   * @param digitsInfo Format string for DecimalPipe (e.g., '1.0-0', '1.2-2'). Defaults to '1.0-0'.
-   * @param locale Optional locale format (e.g., 'vi-VN', 'en-US'). Defaults to the application's locale.
-   * @returns The formatted string, or null if the input value is null or undefined.
-   */
+
   transform(
     value: number | string | BigDecimal | null | undefined,
     digitsInfo: string = '1.0-0', // Format mặc định không có phần thập phân

@@ -11,22 +11,22 @@ import {
   of,
   Subject,
   throwError
-} from 'rxjs'; // Import thêm
+} from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { ApiResponse, PagedApiResponse } from '../../../core/models/api-response.model';
 import { ChatRoomResponse } from '../dto/response/ChatRoomResponse';
 import { ChatMessageResponse } from '../dto/response/ChatMessageResponse';
-import { ChatMessageRequest } from '../dto/request/ChatMessageRequest'; // Import request DTO
+import { ChatMessageRequest } from '../dto/request/ChatMessageRequest';
 import { AuthService } from '../../../core/services/auth.service';
-// Import thư viện WebSocket STOMP
-import { RxStomp, RxStompConfig } from '@stomp/rx-stomp'; // Dùng RxStomp cho tích hợp RxJS
+
+import { RxStomp, RxStompConfig } from '@stomp/rx-stomp';
 import { IMessage } from '@stomp/stompjs';
-import {log} from '@angular-devkit/build-angular/src/builders/ssr-dev-server';
+
 import {catchError, takeUntil} from 'rxjs/operators';
 import {ToastrService} from 'ngx-toastr';
 import {WebSocketErrorEvent} from '../dto/event/WebSocketErrorEvent';
 import {MessageReadEvent} from '../dto/event/MessageReadEvent';
-import {PresenceEvent} from '../dto/event/PresenceEvent'; // Import IMessage
+import {PresenceEvent} from '../dto/event/PresenceEvent';
 
 @Injectable({
   providedIn: 'root'
@@ -56,10 +56,10 @@ export class ChatService {
   private rxStomp: RxStomp;
 
 
-  // ****** SỬA STATE ONLINE ******
+
   private onlineUsersMap: WritableSignal<ReadonlyMap<number, boolean>> = signal(new Map());
   public onlineUsers = this.onlineUsersMap.asReadonly(); // Signal readonly cho component
-  // ******************************
+
 
   constructor(
     private toastr: ToastrService,) {
@@ -86,9 +86,9 @@ export class ChatService {
 
   }
 
-  // ****** TÁCH LOGIC CONNECT VÀ SUBSCRIBE ******
+
   private connectWebSocketAndSubscribe(): void {
-    if (this.rxStomp.active) { // Dùng active thay vì connected để kiểm tra trạng thái mong muốn
+    if (this.rxStomp.active) {
 
       return;
     }
@@ -102,13 +102,13 @@ export class ChatService {
     this.subscribeToErrors();
   }
 
-  // ******************************************
+
 
   // --- WebSocket Logic ---
 
   private configureWebSocket(): void {
     const stompConfig: RxStompConfig = {
-      brokerURL: this.wsUrl, // Ví dụ: 'ws://localhost:8080/ws'
+      brokerURL: this.wsUrl,
 
       // Headers để gửi khi connect (quan trọng cho xác thực JWT)
       connectHeaders: {
@@ -209,20 +209,14 @@ export class ChatService {
 
 
 
-  // --- Phương thức mới ---
-  /**
-   * Đánh dấu phòng chat nào đang được người dùng mở và xem.
-   * Giúp service biết để không tăng unread count cho phòng này khi có tin nhắn mới,
-   * hoặc để tự động đánh dấu đã đọc khi mở phòng.
-   * @param roomId ID của phòng đang mở, hoặc null nếu không có phòng nào đang mở.
-   */
+
   public setCurrentChatRoom(roomId: number | null): void {
     this.currentRoomIdSignal.set(roomId);
 
   }
 
 
-  // ****** THÊM HÀM SUBSCRIBE VÀO PRESENCE TOPIC ******
+
   private subscribeToPresence(): void {
     console.log("Attempting to subscribe to /topic/presence");
     this.rxStomp.watch('/topic/presence')
@@ -250,18 +244,18 @@ export class ChatService {
         complete: () => console.log("Presence subscription completed.") // Thường không xảy ra trừ khi disconnect
       });
   }
-  // **************************************************
 
-  // ****** THÊM HÀM KIỂM TRA ONLINE ******
+
+  // ******  HÀM KIỂM TRA ONLINE ******
 // Trả về boolean trực tiếp từ signal để dùng trong template không cần async pipe
   isUserOnline(userId: number | null | undefined): boolean {
     if (userId == null) return false;
     const isOnline = this.onlineUsers().get(userId);
     return isOnline ?? false; // Trả về false nếu không tìm thấy trong map
   }
-  // *************************************
 
-  // ****** THÊM ĐỊNH NGHĨA CÁC HÀM SUBSCRIBE ******
+
+  // ******  ĐỊNH NGHĨA CÁC HÀM SUBSCRIBE ******
   private subscribeToMessages(): void {
     console.log("Attempting to subscribe to /user/queue/messages");
     this.rxStomp.watch(`/user/queue/messages`)
@@ -308,9 +302,9 @@ export class ChatService {
       });
   }
 
-  // **********************************************
 
-  // ****** THÊM HÀM XỬ LÝ READ RECEIPT ******
+
+  // ******  HÀM XỬ LÝ READ RECEIPT ******
   private handleReadReceipt(readEvent: MessageReadEvent): void {
     const currentMessages = this.currentMessagesSubject.value;
     // Chỉ cập nhật nếu phòng đang mở là phòng có tin nhắn được đọc
@@ -332,7 +326,7 @@ export class ChatService {
       }
     }
   }
-  // ****************************************
+
 
 
 
@@ -357,7 +351,7 @@ export class ChatService {
                   newMap.set(userToCheck.id, userToCheck.Online);
                 }
               }
-              // Hoặc cập nhật từ user1/user2 nếu cần
+
               if (room.user1 && typeof room.user1.Online === 'boolean' && (!newMap.has(room.user1.id) || newMap.get(room.user1.id) !== room.user1.Online)) {
                  newMap.set(room.user1.id, room.user1.Online);
               }
@@ -382,8 +376,7 @@ export class ChatService {
   }
 
   getOrCreateChatRoom(recipientId: number): Observable<ApiResponse<ChatRoomResponse>> {
-    // API này có thể không cần thiết nếu dùng WebSocket để bắt đầu chat
-    // Hoặc dùng để lấy thông tin phòng trước khi mở
+
     return this.http.post<ApiResponse<ChatRoomResponse>>(`${this.apiUrl}/rooms/user/${recipientId}`, {});
   }
 
@@ -485,16 +478,15 @@ export class ChatService {
     this.disconnectWebSocket(); // Ngắt kết nối WS khi service bị hủy (thường là khi logout)
   }
 
-  // *** THÊM HÀM NÀY ***
-  /** Xóa danh sách tin nhắn hiện tại (ví dụ khi đổi phòng chat) */
+
   public clearCurrentMessages(): void {
     this.currentMessagesSubject.next([]);
   }
-  // ********************
+
 
   private handleError(error: HttpErrorResponse): Observable<never> {
     console.error('API Error:', error);
-    // Có thể thêm logic xử lý lỗi chung ở đây nếu muốn
+
     return throwError(() => error); // Ném lại lỗi để component xử lý
   }
 

@@ -7,7 +7,7 @@ import { takeUntil, finalize } from 'rxjs/operators';
 import { ToastrService } from 'ngx-toastr';
 
 import { ProductService } from '../../services/product.service';
-import { ProductDetailResponse } from '../../dto/response/ProductDetailResponse'; // Dùng lại DTO này từ backend
+import { ProductDetailResponse } from '../../dto/response/ProductDetailResponse';
 import { ApiResponse } from '../../../../core/models/api-response.model';
 import { AuthService } from '../../../../core/services/auth.service';
 import { ChatService } from '../../../interaction/service/ChatService';
@@ -20,8 +20,7 @@ import { SafeHtmlPipe } from '../../../../shared/pipes/safe-html.pipe';
 import {ConfirmationService} from '../../../../shared/services/confirmation.service';
 import {SupplyOrderRequestService} from '../../../ordering/services/supply-order-request.service';
 import {HttpErrorResponse} from '@angular/common/http';
-// Không cần ReviewList, ReviewForm nếu không hiển thị review ở đây
-// Không cần ProductCardComponent cho sản phẩm liên quan ở đây (trừ khi bạn muốn)
+
 
 @Component({
   selector: 'app-supply-source-detail',
@@ -37,7 +36,7 @@ import {HttpErrorResponse} from '@angular/common/http';
     SafeHtmlPipe
   ],
   templateUrl: './supply-source-detail.component.html',
-  // styleUrls: ['./supply-source-detail.component.css']
+
 })
 export class SupplySourceDetailComponent implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);

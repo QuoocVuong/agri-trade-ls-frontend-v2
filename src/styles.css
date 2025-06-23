@@ -21,38 +21,5 @@
 .whitespace-pre-line {
   white-space: pre-line;
 }
-/*!* Basic dark mode styles for the body *!*/
-/*body {*/
-/*  !* Light mode default *!*/
-/*  @apply bg-gray-100 text-gray-900; !* Default background and text color *!*/
-/*}*/
-
-/*.dark body {*/
-/*  @apply bg-gray-900 text-gray-200; !* Dark mode background and text color *!*/
-/*}*/
-
-/*!* Input styles for Light Mode *!*/
-/*.input { !* Target class chung của input *!*/
-/*  @apply bg-white border-gray-300 text-gray-900 placeholder-gray-400;*/
-/*}*/
-/*.input:focus {*/
-/*  @apply ring-primary border-primary;*/
-/*}*/
-
-/*!* Input styles for Dark Mode *!*/
-/*html.dark .input { !* Target input khi html có class dark *!*/
-/*  @apply bg-gray-700 border-gray-600 text-gray-200 placeholder-gray-500;*/
-/*}*/
-/*html.dark .input:focus {*/
-/*  @apply ring-primary border-primary; !* Giữ màu focus primary *!*/
-/*}*/
-
-/*!* Input Error styles (ví dụ) *!*/
-/*.input-error {*/
-/*  @apply border-red-500;*/
-/*}*/
-/*html.dark .input-error {*/
-/*  @apply border-red-400;*/
-/*}*/
 
 

@@ -4,8 +4,8 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { ApiResponse, PagedApiResponse } from '../../../core/models/api-response.model';
-import { SupplyOrderPlacementRequest } from '../dto/request/SupplyOrderPlacementRequest'; // Tạo DTO này
-import { SupplyOrderRequestResponse } from '../dto/response/SupplyOrderRequestResponse'; // Tạo DTO này
+import { SupplyOrderPlacementRequest } from '../dto/request/SupplyOrderPlacementRequest';
+import { SupplyOrderRequestResponse } from '../dto/response/SupplyOrderRequestResponse';
 import { OrderResponse } from '../dto/response/OrderResponse';
 import {SupplyOrderRequestStatus} from '../domain/supply-order-request-status.enum';
 
@@ -50,11 +50,7 @@ export class SupplyOrderRequestService {
     return this.http.post<ApiResponse<void>>(`${this.apiUrl}/${requestId}/cancel-by-buyer`, {});
   }
 
-  /**
-   * Kiểm tra xem người dùng hiện tại có quyền tạo yêu cầu cung ứng hay không.
-   * API này không tạo request thật, chỉ kiểm tra quyền và trả về success: true nếu hợp lệ.
-   * @param request Dữ liệu yêu cầu giả để backend kiểm tra.
-   */
+
   checkCreateRequestPermission(): Observable<ApiResponse<void>> {
     // Backend cần có endpoint: POST /api/supply-requests/check-permission
     return this.http.post<ApiResponse<void>>(`${this.apiUrl}/check-permission`, {});

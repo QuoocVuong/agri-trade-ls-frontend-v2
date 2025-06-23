@@ -17,12 +17,12 @@ export const AUTH_ROUTES: Routes = [
     title: 'Quên mật khẩu'
   },
   {
-    path: 'reset-password', // Thường có token trong query param
+    path: 'reset-password',
     loadComponent: () => import('./components/reset-password/reset-password.component').then(m => m.ResetPasswordComponent),
     title: 'Đặt lại mật khẩu'
   },
   {
-    path: 'verify-email', // Thường có token trong query param
+    path: 'verify-email',
     loadComponent: () => import('./components/verify-email/verify-email.component').then(m => m.VerifyEmailComponent),
     title: 'Xác thực Email'
   },

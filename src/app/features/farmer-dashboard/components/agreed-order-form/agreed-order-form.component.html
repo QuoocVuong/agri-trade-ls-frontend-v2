@@ -21,13 +21,9 @@
         </div>
       </div>
 
-<!--      <div class="form-control">-->
-<!--        <label class="label"><span class="label-text font-medium">Người Bán (Nông dân) <span class="text-error">*</span></span></label>-->
-<!--        <input type="text" class="input input-bordered" formControlName="farmerId" placeholder="ID Nông dân" [readonly]="isFarmer()">-->
-<!--        &lt;!&ndash; Nếu là Admin, có thể cần một component tìm kiếm Farmer tương tự &ndash;&gt;-->
-<!--      </div>-->
 
-      <!-- HOẶC NẾU MUỐN HIỂN THỊ THÔNG TIN FARMER ĐANG ĐĂNG NHẬP -->
+
+
       <div class="form-control" *ngIf="isFarmer() && currentUser()">
         <label class="label"><span class="label-text font-medium">Người Bán (Bạn)</span></label>
         <input type="text" class="input input-bordered input-disabled" [value]="currentUser()?.fullName + ' (ID: ' + currentUser()?.id + ')'" readonly>

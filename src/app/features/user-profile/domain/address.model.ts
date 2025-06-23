@@ -1,4 +1,4 @@
-// Thường giống hệt Address model, có thể dùng lại model hoặc tạo riêng để tách biệt
+
 export interface Address {
   id: number;
   userId: number;

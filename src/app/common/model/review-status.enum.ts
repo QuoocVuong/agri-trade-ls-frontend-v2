@@ -16,7 +16,7 @@ export function getReviewStatusText(status: ReviewStatus | string | undefined | 
   }
 }
 
-// Optional: Hàm lấy màu sắc tương ứng (ví dụ cho badge DaisyUI)
+// Optional: Hàm lấy màu sắc tương ứng
 export function getReviewStatusCssClass(status: ReviewStatus | string | undefined | null): string {
   switch (status) {
     case ReviewStatus.PENDING: return 'badge-warning';

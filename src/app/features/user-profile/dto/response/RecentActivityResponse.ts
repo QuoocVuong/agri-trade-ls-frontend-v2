@@ -1,5 +1,5 @@
 // src/app/features/user-profile/dto/response/RecentActivityResponse.ts
-import { NotificationType } from '../../../../common/model/notification-type.enum'; // Import NotificationType
+import { NotificationType } from '../../../../common/model/notification-type.enum';
 
 /**
  * Đại diện cho một hoạt động gần đây trong hệ thống.

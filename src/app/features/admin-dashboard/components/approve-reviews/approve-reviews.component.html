@@ -22,8 +22,7 @@
            }"
            (click)="selectStatus(status)">
           {{ getStatusText(status) }}
-          <!-- (Tùy chọn) Hiển thị số lượng đánh giá cho mỗi tab nếu có -->
-          <!-- <span *ngIf="getCountForStatus(status) > 0" class="badge badge-sm ml-2">{{ getCountForStatus(status) }}</span> -->
+
         </a>
       </ng-container>
     </div>
@@ -48,8 +47,7 @@
   @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
   .animate-fade-in { animation: fadeIn 0.5s ease-out forwards; }
 
-  /* Tùy chỉnh thêm cho tab active nếu cần */
   .tabs-lifted > .tab.tab-active {
-    border-bottom-color: transparent !important; /* Loại bỏ viền dưới của tab active để nó "nâng lên" */
+    border-bottom-color: transparent !important;
   }
 </style>

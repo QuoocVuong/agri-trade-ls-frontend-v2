@@ -1,6 +1,6 @@
 import { Component, OnInit, inject, signal, OnDestroy } from '@angular/core';
 import { CommonModule, DatePipe, DecimalPipe } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder } from '@angular/forms';
+import {ReactiveFormsModule, FormBuilder, Validators, FormControl} from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { Page } from '../../../../core/models/page.model';
 import { OrderSummaryResponse } from '../../../ordering/dto/response/OrderSummaryResponse';
@@ -9,7 +9,7 @@ import { AdminOrderingService } from '../../services/admin-ordering.service';
 import { LoadingSpinnerComponent } from '../../../../shared/components/loading-spinner/loading-spinner.component';
 import { AlertComponent } from '../../../../shared/components/alert/alert.component';
 import { PaginatorComponent } from '../../../../shared/components/paginator/paginator.component';
-import { OrderStatus, getOrderStatusText, getOrderStatusCssClass } from '../../../ordering/domain/order-status.enum'; // Import OrderStatus
+import { OrderStatus, getOrderStatusText, getOrderStatusCssClass } from '../../../ordering/domain/order-status.enum';
 import {
   getPaymentStatusText,
   getPaymentStatusCssClass,
@@ -22,11 +22,13 @@ import {FormatBigDecimalPipe} from '../../../../shared/pipes/format-big-decimal.
 import {getPaymentMethodText, PaymentMethod} from '../../../ordering/domain/payment-method.enum';
 import {getOrderTypeText, OrderType} from '../../../ordering/domain/order-type.enum';
 import {ConfirmationService} from '../../../../shared/services/confirmation.service';
+import {OrderStatusUpdateRequest} from '../../../ordering/dto/request/OrderStatusUpdateRequest';
+import {ModalComponent} from '../../../../shared/components/modal/modal.component';
 
 @Component({
   selector: 'app-manage-all-orders',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink, LoadingSpinnerComponent, AlertComponent, PaginatorComponent, DatePipe, DecimalPipe, FormatBigDecimalPipe],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, LoadingSpinnerComponent, AlertComponent, PaginatorComponent, DatePipe, DecimalPipe, FormatBigDecimalPipe, ModalComponent],
   templateUrl: './manage-all-orders.component.html',
 })
 export class ManageAllOrdersComponent implements OnInit, OnDestroy {
@@ -74,8 +76,27 @@ export class ManageAllOrdersComponent implements OnInit, OnDestroy {
   orderStatuses = Object.values(OrderStatus);
   getStatusText = getOrderStatusText;
   getStatusClass = getOrderStatusCssClass;
-  getPaymentStatusText = getPaymentStatusText; // Import và dùng nếu cần hiển thị PaymentStatus
+  getPaymentStatusText = getPaymentStatusText;
   getPaymentStatusClass = getPaymentStatusCssClass;
+
+
+
+  showStatusModal = signal(false);
+  orderToUpdateStatus = signal<OrderSummaryResponse | null>(null);
+  newStatusControl = new FormControl<OrderStatus | null>(null, Validators.required);
+  statusUpdateLoading = signal(false);
+  statusUpdateError = signal<string | null>(null);
+
+  // Các trạng thái Admin có thể chuyển đến (ví dụ)
+  adminAllowedStatuses = [
+    OrderStatus.CONFIRMED,
+    OrderStatus.PROCESSING,
+    OrderStatus.SHIPPING,
+    OrderStatus.DELIVERED,
+    OrderStatus.CANCELLED,
+    OrderStatus.RETURNED,
+  ];
+
 
   ngOnInit(): void {
     this.loadOrders();
@@ -139,11 +160,67 @@ export class ManageAllOrdersComponent implements OnInit, OnDestroy {
     this.router.navigate(['/admin/orders', orderId]); // Điều hướng đến route chi tiết của Admin
   }
 
-  // Hàm xử lý khi cần cập nhật trạng thái (ví dụ: mở modal hoặc gọi API trực tiếp)
-  // Cần tạo component/modal riêng cho việc cập nhật trạng thái nếu phức tạp
-  updateStatus(orderId: number): void {
-    // TODO: Implement logic mở modal hoặc form để chọn trạng thái mới và gọi API updateAdminOrderStatus
-    this.toastr.info(`Chức năng cập nhật trạng thái cho đơn hàng ${orderId} chưa được triển khai.`);
+  // Hàm xử lý khi cần cập nhật trạng thái
+
+  openUpdateStatusModal(order: OrderSummaryResponse): void {
+    // Không cho phép cập nhật các trạng thái cuối cùng
+    if (order.status === OrderStatus.DELIVERED || order.status === OrderStatus.CANCELLED || order.status === OrderStatus.RETURNED) {
+      this.toastr.info(`Đơn hàng #${order.orderCode} đã ở trạng thái cuối cùng, không thể cập nhật.`);
+      return;
+    }
+    this.orderToUpdateStatus.set(order);
+    this.newStatusControl.reset(null); // Reset về trạng thái trống
+    this.statusUpdateError.set(null);
+    this.showStatusModal.set(true);
+  }
+
+  closeStatusModal(): void {
+    this.showStatusModal.set(false);
+    this.orderToUpdateStatus.set(null);
+  }
+
+  saveNewStatus(): void {
+    if (this.newStatusControl.invalid || !this.orderToUpdateStatus()) {
+      return;
+    }
+
+    const order = this.orderToUpdateStatus()!;
+    const newStatus = this.newStatusControl.value!;
+
+    if (order.status === newStatus) {
+      this.toastr.info('Trạng thái không thay đổi.');
+      this.closeStatusModal();
+      return;
+    }
+
+    this.statusUpdateLoading.set(true);
+    this.statusUpdateError.set(null);
+
+    const request: OrderStatusUpdateRequest = { status: newStatus };
+
+    this.adminOrderingService.updateAdminOrderStatus(order.id, request)
+      .pipe(
+        takeUntil(this.destroy$),
+        finalize(() => this.statusUpdateLoading.set(false))
+      )
+      .subscribe({
+        next: (res) => {
+          if (res.success) {
+            this.toastr.success(`Đã cập nhật trạng thái đơn hàng #${order.orderCode}.`);
+            this.closeStatusModal();
+            this.loadOrders(); // Tải lại danh sách để cập nhật
+          } else {
+            const message = res.message || 'Lỗi cập nhật trạng thái.';
+            this.statusUpdateError.set(message);
+            this.toastr.error(message);
+          }
+        },
+        error: (err) => {
+          const message = err.error?.message || 'Lỗi hệ thống khi cập nhật trạng thái.';
+          this.statusUpdateError.set(message);
+          this.toastr.error(message);
+        }
+      });
   }
 
 

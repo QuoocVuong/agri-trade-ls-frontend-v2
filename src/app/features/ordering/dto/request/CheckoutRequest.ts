@@ -1,7 +1,7 @@
 // src/app/features/ordering/dto/request/CheckoutRequest.ts
-import { PaymentMethod } from '../../domain/payment-method.enum'; // Import Enum
+import { PaymentMethod } from '../../domain/payment-method.enum';
 
-// DTO cho việc tạo địa chỉ mới ngay lúc checkout (nếu hỗ trợ)
+// DTO cho việc tạo địa chỉ mới ngay lúc checkout
 export interface NewAddressRequest {
   fullName: string;
   phoneNumber: string;
@@ -9,8 +9,7 @@ export interface NewAddressRequest {
   provinceCode: string;
   districtCode: string;
   wardCode: string;
-  // type?: 'SHIPPING'; // Mặc định là SHIPPING
-  // isDefault?: boolean; // Có muốn lưu và đặt làm mặc định không?
+
 }
 
 export interface CheckoutRequest {

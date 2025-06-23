@@ -4,9 +4,9 @@ export interface PaymentCallbackRequest {
   orderCode?: string;
   transactionCode?: string;
   success?: boolean;
-  amount?: number; // Hoặc string/BigDecimal tùy backend xử lý
+  amount?: number;
   signature?: string;
   errorMessage?: string;
-  // Thêm các trường khác...
+
   [key: string]: any; // Cho phép các trường động khác từ callback
 }

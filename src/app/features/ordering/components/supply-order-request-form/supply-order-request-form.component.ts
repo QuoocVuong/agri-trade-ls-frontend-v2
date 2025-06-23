@@ -1,4 +1,4 @@
-// src/app/features/ordering/components/supply-order-request-form/supply-order-request-form.component.ts
+
 import { Component, OnInit, inject, signal, OnDestroy, ChangeDetectorRef, computed } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import {
@@ -6,13 +6,13 @@ import {
   FormBuilder,
   FormGroup,
   Validators,
-  ValidationErrors, // Thêm ValidationErrors
-  ValidatorFn,      // Thêm ValidatorFn
-  AbstractControl   // Thêm AbstractControl
+  ValidationErrors,
+  ValidatorFn,
+  AbstractControl
 } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import {of, Subject, combineLatest, startWith, firstValueFrom} from 'rxjs'; // Thêm combineLatest
-import { takeUntil, finalize, switchMap, distinctUntilChanged, tap } from 'rxjs/operators';
+import {of, Subject, firstValueFrom} from 'rxjs';
+import { takeUntil, switchMap } from 'rxjs/operators';
 import { ToastrService } from 'ngx-toastr';
 
 import { SupplyOrderRequestService } from '../../services/supply-order-request.service';
@@ -30,19 +30,7 @@ import { FormatBigDecimalPipe } from '../../../../shared/pipes/format-big-decima
 import BigDecimal from 'js-big-decimal';
 import { convertPriceToPerKg, convertToKg, getMassUnitText, MassUnit } from '../../../catalog/domain/mass-unit.enum';
 
-// Custom validator function
-export function maxQuantityValidator(max: number | null | undefined): ValidatorFn {
-  return (control: AbstractControl): ValidationErrors | null => {
-    if (max === null || max === undefined) {
-      return null;
-    }
-    const value = control.value;
-    if (value === null || value === undefined || value === '') {
-      return null;
-    }
-    return +value > max ? { maxQuantityExceeded: { max: max, actual: value } } : null;
-  };
-}
+
 export function futureDateValidator(): ValidatorFn {
   return (control: AbstractControl): ValidationErrors | null => {
     const controlValue = control.value;
@@ -135,7 +123,7 @@ export class SupplyOrderRequestFormComponent implements OnInit, OnDestroy {
     return null;
   });
 
-  // Hàm mới để quyết định hiển thị gì cho tổng tiền
+  // Hàm  để quyết định hiển thị gì cho tổng tiền
   getDisplayProposedTotal(): string {
     const totalKgAmount = this.proposedTotalAmountInKg();
     console.log('getDisplayProposedTotal - totalKgAmount:', totalKgAmount?.getValue());
@@ -253,11 +241,7 @@ export class SupplyOrderRequestFormComponent implements OnInit, OnDestroy {
             const maxAllowedRaw = stockInKg / oneSelectedUnitInKg; // Giá trị thô, có thể là thập phân
 
             if (maxAllowedRaw > 0) {
-              // Đối với Validators.max, chúng ta cần một số nguyên nếu input là số nguyên.
-              // Nếu bạn cho phép input số thập phân cho số lượng, thì có thể dùng maxAllowedRaw trực tiếp.
-              // Hiện tại, input là type="number" nên thường là số nguyên.
-              // Validator sẽ kiểm tra giá trị *sau khi* người dùng nhập.
-              // Custom validator vẫn là cách tốt nhất để xử lý quy đổi.
+
               quantityControl.addValidators((control: AbstractControl): ValidationErrors | null => {
                 const requestedQtyInput = control.value;
                 if (requestedQtyInput == null || requestedQtyInput === '') return null;

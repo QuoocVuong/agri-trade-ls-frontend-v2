@@ -1,5 +1,5 @@
-// src/app/features/user-profile/components/my-sent-supply-requests/my-sent-supply-requests.component.ts
-import { Component, OnInit, inject, signal, OnDestroy, effect } from '@angular/core';
+
+import { Component, OnInit, inject, signal, OnDestroy } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import {Router, RouterLink} from '@angular/router';
 import { Subject } from 'rxjs';
@@ -7,7 +7,7 @@ import { takeUntil, finalize } from 'rxjs/operators';
 
 import { SupplyOrderRequestService } from '../../../ordering/services/supply-order-request.service';
 import { SupplyOrderRequestResponse } from '../../../ordering/dto/response/SupplyOrderRequestResponse';
-import { PageData, PagedApiResponse } from '../../../../core/models/api-response.model';
+import { PageData } from '../../../../core/models/api-response.model';
 import {
   SupplyOrderRequestStatus,
   getSupplyOrderRequestStatusText,
@@ -153,12 +153,6 @@ export class MySentSupplyRequestsComponent implements OnInit, OnDestroy {
   }
 
 
-  // constructor() {
-  //   effect(() => {
-  //     this.loadSentRequests();
-  //   });
-  // }
-
   ngOnInit(): void {
     this.loadSentRequests();
 
@@ -231,7 +225,7 @@ export class MySentSupplyRequestsComponent implements OnInit, OnDestroy {
             if (contextProductId && contextProductName) {
               queryParams.contextProductId = contextProductId;
               queryParams.contextProductName = `Yêu cầu cho: ${contextProductName}`; // Thêm tiền tố để rõ ràng
-              // queryParams.contextProductSlug = this.selectedRequestDetail()?.product?.slug; // Nếu có slug
+
             }
             this.router.navigate(['/chat'], { queryParams });
           } else {

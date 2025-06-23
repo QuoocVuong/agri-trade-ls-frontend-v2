@@ -1,8 +1,6 @@
 // src/app/features/user-profile/dto/response/PermissionResponse.ts
 
-/**
- * Đại diện cho thông tin của một Quyền hạn (Permission).
- */
+
 export interface PermissionResponse {
   /** ID của quyền hạn */
   id: number;

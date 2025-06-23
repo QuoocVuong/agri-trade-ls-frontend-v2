@@ -1,11 +1,11 @@
 import {Component, Output, EventEmitter, inject, signal, OnDestroy, Input} from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { HttpClient, HttpEventType, HttpResponse } from '@angular/common/http'; // Import HttpClient và các kiểu liên quan
-import { finalize, catchError, tap } from 'rxjs/operators';
+import { HttpClient, HttpEventType, HttpResponse } from '@angular/common/http';
+import { finalize, catchError } from 'rxjs/operators';
 import { throwError, Subject, takeUntil } from 'rxjs';
-import { environment } from '../../../../environments/environment'; // Import environment
+import { environment } from '../../../../environments/environment';
 import { ApiResponse } from '../../../core/models/api-response.model';
-import { FileUploadResponse } from '../../../common/dto/response/FileUploadResponse'; // Import DTO response
+import { FileUploadResponse } from '../../../common/dto/response/FileUploadResponse';
 import { ToastrService } from 'ngx-toastr';
 
 @Component({
@@ -19,11 +19,11 @@ export class FileUploadComponent implements OnDestroy {
   private toastr = inject(ToastrService);
   private uploadUrl = `${environment.apiUrl}/files/upload`; // API endpoint upload
 
-  // ****** SỬ DỤNG LẠI CÁC INPUT ĐÃ SỬA ******
+
   @Input({ required: true }) uploadUrlPath!: string; // Chỉ nhận path, ví dụ: '/files/upload'
   @Input() allowedTypes: string[] = ['image/*'];
   @Input() uploadParams: { [key: string]: string } = {}; // Nhận các tham số bổ sung
-  // ******************************************
+
 
   @Output() uploadSuccess  = new EventEmitter<FileUploadResponse>(); // Event trả về thông tin file đã upload
   @Output() uploadError = new EventEmitter<string>(); // Event báo lỗi
@@ -83,17 +83,17 @@ export class FileUploadComponent implements OnDestroy {
     const formData = new FormData();
     formData.append('file', file, file.name);
 
-    // ****** SỬ DỤNG uploadParams TỪ INPUT ******
+
     for (const key in this.uploadParams) {
       if (this.uploadParams.hasOwnProperty(key)) {
         formData.append(key, this.uploadParams[key]); // Thêm 'type' và các params khác vào đây
       }
     }
-    // ***************************************
 
-    // ****** TẠO URL ĐẦY ĐỦ TỪ INPUT ******
+
+
     const fullUploadUrl = `${environment.apiUrl}${this.uploadUrlPath}`;
-    // ************************************
+
 
     this.http.post<ApiResponse<FileUploadResponse>>(fullUploadUrl, formData, {
       reportProgress: true, // Bật theo dõi tiến trình

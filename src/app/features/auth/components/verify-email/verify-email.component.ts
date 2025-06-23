@@ -1,13 +1,13 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router'; // Import ActivatedRoute, Router, RouterLink
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../../../core/services/auth.service';
 import { ApiResponse } from '../../../../core/models/api-response.model';
 
 @Component({
   selector: 'app-verify-email',
   standalone: true,
-  imports: [CommonModule, RouterLink], // Import RouterLink
+  imports: [CommonModule, RouterLink],
   templateUrl: './verify-email.component.html',
 })
 export class VerifyEmailComponent implements OnInit {

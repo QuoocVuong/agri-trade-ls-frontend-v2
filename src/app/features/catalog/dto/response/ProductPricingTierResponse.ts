@@ -1,5 +1,5 @@
 // src/app/features/catalog/dto/response/ProductPricingTierResponse.ts
-import  BigDecimal  from 'js-big-decimal'; // Hoặc dùng number/string
+import  BigDecimal  from 'js-big-decimal';
 
 export interface ProductPricingTierResponse {
   id: number;

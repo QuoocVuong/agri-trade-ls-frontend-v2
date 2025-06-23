@@ -2,14 +2,14 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ToastrService } from 'ngx-toastr';
-import { LoadingSpinnerComponent } from '../../../../shared/components/loading-spinner/loading-spinner.component'; // Import nếu cần
+import { LoadingSpinnerComponent } from '../../../../shared/components/loading-spinner/loading-spinner.component';
 
 @Component({
   selector: 'app-vnpay-result',
   standalone: true,
   imports: [CommonModule, RouterLink, LoadingSpinnerComponent],
   templateUrl: './vnpay-result.component.html',
-  // styleUrls: ['./vnpay-result.component.css']
+
 })
 export class VnpayResultComponent implements OnInit {
   private route = inject(ActivatedRoute);
@@ -23,9 +23,7 @@ export class VnpayResultComponent implements OnInit {
   transactionNo = signal<string | null>(null); // Mã giao dịch VNPAY
   vnpMessage = signal<string | null>(null); // Thông báo từ VNPAY
 
-  // Bạn có thể muốn lấy orderId từ orderCode nếu cần điều hướng chính xác
-  // private orderService = inject(OrderService);
-  // orderIdForNav = signal<number | null>(null);
+
 
   ngOnInit(): void {
     this.route.queryParams.subscribe(params => {
@@ -35,7 +33,7 @@ export class VnpayResultComponent implements OnInit {
       this.orderCode.set(params['vnp_TxnRef']);
       this.transactionNo.set(params['vnp_TransactionNo']);
       const responseCode = params['vnp_ResponseCode'];
-      const vnpMessageParam = params['vnp_Message']; // Thường là tiếng Việt có dấu, cần decode
+      const vnpMessageParam = params['vnp_Message'];
 
       try {
         this.vnpMessage.set(vnpMessageParam ? decodeURIComponent(vnpMessageParam.replace(/\+/g, ' ')) : null);
@@ -57,20 +55,13 @@ export class VnpayResultComponent implements OnInit {
         this.toastr.error(`Lý do: ${specificError} (Mã lỗi: ${responseCode})`, 'Thanh toán thất bại');
       }
 
-      // Nếu bạn muốn lấy orderId để điều hướng chính xác:
-      // if (this.orderCode()) {
-      //   this.orderService.getOrderByOrderCode(this.orderCode()!).subscribe(orderRes => {
-      //     if(orderRes.success && orderRes.data) {
-      //       this.orderIdForNav.set(orderRes.data.id);
-      //     }
-      //   });
-      // }
+
     });
   }
 
-  // Hàm dịch mã lỗi VNPAY (tham khảo tài liệu VNPAY)
+  // Hàm dịch mã lỗi VNPAY
   private getVnpayErrorMessage(responseCode: string): string {
-    // Đây là ví dụ, bạn cần thêm đầy đủ các mã lỗi từ tài liệu VNPAY
+
     switch (responseCode) {
       case '07': return 'Trừ tiền thành công. Giao dịch bị nghi ngờ (liên quan tới lừa đảo, giao dịch bất thường).';
       case '09': return 'Thẻ/Tài khoản của khách hàng chưa đăng ký VNPAY Payment.';
@@ -89,17 +80,8 @@ export class VnpayResultComponent implements OnInit {
   }
 
   navigateToOrderDetails(): void {
-    // Hiện tại, chúng ta không có orderId trực tiếp từ VNPAY return.
-    // Cách tốt nhất là điều hướng về trang lịch sử đơn hàng, nơi người dùng có thể tìm thấy đơn hàng của họ.
-    // Trạng thái sẽ được cập nhật bởi IPN.
+
     this.router.navigate(['/user/orders']);
-    // Nếu bạn có cách lấy orderId từ orderCode (ví dụ qua API), bạn có thể điều hướng chính xác hơn:
-    // if (this.orderIdForNav()) {
-    //   this.router.navigate(['/user/orders', this.orderIdForNav()]);
-    // } else if (this.orderCode()) {
-    //   this.router.navigate(['/user/orders/code', this.orderCode()]); // Nếu có route này
-    // } else {
-    //   this.router.navigate(['/user/orders']);
-    // }
+
   }
 }

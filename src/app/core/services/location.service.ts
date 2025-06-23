@@ -4,26 +4,26 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, of, map } from 'rxjs';
 import {shareReplay, catchError, switchMap} from 'rxjs/operators';
 
-// *** Cập nhật Interfaces để khớp với cấu trúc JSON ***
+
 export interface Province {
-  idProvince: string; // Đổi thành idProvince
+  idProvince: string;
   name: string;
 }
 export interface District {
   idProvince: string;
-  idDistrict: string; // Đổi thành idDistrict
+  idDistrict: string;
   name: string;
 }
 
 interface WardFromJson {
   idDistrict: string;
-  idCommune: string; // <-- Tên gốc trong JSON
+  idCommune: string;
   name: string;
 }
 
 export interface Ward {
   idDistrict: string;
-  idWard: string; // Đổi thành idWard (giả sử file wards.json có cấu trúc tương tự)
+  idWard: string;
   name: string;
 }
 
@@ -77,7 +77,7 @@ export class LocationService {
           // *** Đổi tên trường idCommune thành wardCode ***
           return wardsFromJson.map(w => ({
             idDistrict: w.idDistrict,
-            idWard: w.idCommune, // <-- Mapping ở đây
+            idWard: w.idCommune,
             name: w.name
           }));
         }),
@@ -95,7 +95,7 @@ export class LocationService {
     );
   }
 
-  // --- Các hàm tìm tên (ví dụ) ---
+  // --- Các hàm tìm tên  ---
   // Cần load data trước khi dùng hiệu quả
   findProvinceName(code: string | null): Observable<string | null> {
     if (!code) return of(null);

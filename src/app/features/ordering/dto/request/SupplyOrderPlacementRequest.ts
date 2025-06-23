@@ -1,4 +1,4 @@
-import { PaymentMethod } from '../../domain/payment-method.enum'; // Đảm bảo đường dẫn đúng
+
 
 export interface SupplyOrderPlacementRequest {
   farmerId: number;

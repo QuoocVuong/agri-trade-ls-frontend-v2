@@ -35,7 +35,7 @@ export interface Page<T> {
 export interface PageableRequest {
   page?: number;
   size?: number;
-  sort?: string; // ví dụ: "createdAt,desc"
+  sort?: string;
 }
 export interface PageableInfo {
   pageNumber: number;
@@ -52,9 +52,9 @@ export interface SortInfo {
   empty: boolean;
 }
 
-// Interface cho yêu cầu phân trang gửi lên server (tùy chọn)
+// Interface cho yêu cầu phân trang gửi lên server
 export interface PageableRequest {
   page?: number;
   size?: number;
-  sort?: string; // ví dụ: "createdAt,desc" hoặc ["createdAt,desc", "name,asc"]
+  sort?: string;
 }

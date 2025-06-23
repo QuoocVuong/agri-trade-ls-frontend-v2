@@ -1,4 +1,4 @@
-// src/app/features/catalog/components/supply-registration-form/supply-registration-form.component.ts
+
 import { Component, OnInit, inject, signal, OnDestroy, computed, ChangeDetectorRef } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { FormBuilder, FormGroup, FormArray, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -15,8 +15,7 @@ import { AlertComponent } from '../../../../shared/components/alert/alert.compon
 import { FileUploadComponent } from '../../../../shared/components/file-uploader/file-uploader.component';
 import { FileUploadResponse } from '../../../../common/dto/response/FileUploadResponse';
 import { CdkDragDrop, DragDropModule, moveItemInArray } from '@angular/cdk/drag-drop';
-// @ts-ignore
-import slugify from 'slug';
+
 import {ProductService} from '../../../catalog/services/product.service';
 import {CategoryService} from '../../../catalog/services/category.service';
 import {CategoryResponse} from '../../../catalog/dto/response/CategoryResponse';
@@ -56,12 +55,11 @@ export class SupplyRegistrationFormComponent implements OnInit, OnDestroy {
 
   supplyForm!: FormGroup;
   isLoading = signal(false);
-  isFetchingInitialData = signal(false); // Cho edit mode (nếu có)
+  isFetchingInitialData = signal(false); // Cho edit mode
   errorMessage = signal<string | null>(null);
   successMessage = signal<string | null>(null);
 
-  // Giả sử đây là form để Farmer đăng/sửa nguồn cung của họ
-  // productId sẽ có giá trị nếu là chỉnh sửa một nguồn cung đã đăng (Product ID)
+
   productId = signal<number | null>(null);
   isEditMode = computed(() => !!this.productId());
 
@@ -79,9 +77,7 @@ export class SupplyRegistrationFormComponent implements OnInit, OnDestroy {
       name: ['', [Validators.required, Validators.maxLength(255)]],
       categoryId: [null, Validators.required],
       description: ['', Validators.maxLength(2000)], // Tăng giới hạn mô tả
-      // Các trường B2C cũ có thể bỏ hoặc thay đổi ý nghĩa
-      // unit: [''], // Bỏ nếu dùng wholesaleUnit
-      // price: [null],
+
 
 
       stockQuantity: [null, [Validators.required, Validators.min(0)]], // Số lượng tồn kho
@@ -91,8 +87,7 @@ export class SupplyRegistrationFormComponent implements OnInit, OnDestroy {
       referenceWholesalePrice: [null as number | null, [Validators.min(0)]], // Giá sỉ tham khảo
 
       images: this.imagesArray,
-      // Không cần các trường B2B phức tạp như pricingTiers ở đây
-      // Trạng thái sẽ do backend xử lý khi tạo mới (PENDING_APPROVAL)
+
     });
   }
 

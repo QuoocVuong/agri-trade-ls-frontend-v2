@@ -4,12 +4,6 @@ export interface ApiResponse<T> {
   data?: T; // Dữ liệu có thể có hoặc không (optional)
   status: number; // Mã trạng thái HTTP
   timestamp: string; // Kiểu string vì JSON trả về thường là string ISO date
-  // errorCode?: string; // Mã lỗi tùy chỉnh (optional)
-  // errors?: Record<string, string>; // Chi tiết lỗi validation (optional)
-  // ****** THÊM TRƯỜNG NÀY ******
-  // details là một object chứa thông tin lỗi bổ sung (ví dụ: errorCode, availableStock)
-  // Dùng Record<string, any> để linh hoạt cho các loại lỗi khác nhau
-  // Đặt là optional (?) vì response thành công sẽ không có details
   details?: Record<string, any>;
   // ****************************
 }

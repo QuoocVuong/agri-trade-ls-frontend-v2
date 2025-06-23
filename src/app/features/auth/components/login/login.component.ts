@@ -1,11 +1,11 @@
 import {Component, OnInit, inject, signal, OnDestroy} from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import { Router, RouterLink, ActivatedRoute } from '@angular/router'; // Import ActivatedRoute
+import { Router, RouterLink, ActivatedRoute } from '@angular/router';
 import { AuthService } from '../../../../core/services/auth.service';
-import { UserLoginRequest } from '../../../user-profile/dto/request/UserLoginRequest'; // Đổi đường dẫn nếu cần
+import { UserLoginRequest } from '../../../user-profile/dto/request/UserLoginRequest';
 import { ApiResponse } from '../../../../core/models/api-response.model';
-import { LoginResponse } from '../../../user-profile/dto/response/LoginResponse';
+
 import {Subject, Subscription} from 'rxjs';
 import {
   GoogleLoginProvider,
@@ -15,7 +15,7 @@ import {
 } from '@abacritt/angularx-social-login';
 import {filter, takeUntil} from 'rxjs/operators';
 import {ToastrService} from 'ngx-toastr';
-import {AlertComponent} from '../../../../shared/components/alert/alert.component'; // Đổi đường dẫn nếu cần
+import {AlertComponent} from '../../../../shared/components/alert/alert.component';
 
 @Component({
   selector: 'app-login',
@@ -27,9 +27,9 @@ export class LoginComponent implements OnInit, OnDestroy  {
   private fb = inject(FormBuilder);
   private authService = inject(AuthService);
   private router = inject(Router);
-  private route = inject(ActivatedRoute); // Inject ActivatedRoute
+  private route = inject(ActivatedRoute);
 
-  private socialAuthService = inject(SocialAuthService); // Inject SocialAuthService
+  private socialAuthService = inject(SocialAuthService);
 
   private toastr = inject(ToastrService);
 
@@ -55,32 +55,30 @@ export class LoginComponent implements OnInit, OnDestroy  {
     if (this.authService.isAuthenticated()) {
       this.router.navigateByUrl(this.returnUrl);
     }
-    // ****** LẮNG NGHE TRẠNG THÁI SOCIAL AUTH ******
+
     this.authSubscription = this.socialAuthService.authState
       .pipe(
         takeUntil(this.destroy$),
-        filter(() => !this.authService.isLoggingOut()) // << THÊM DÒNG NÀY
+        filter(() => !this.authService.isLoggingOut())
       )
       .subscribe((user: SocialUser) => {
         console.log("Social User State Changed (not during logout):", user);
         if (user && user.provider === GoogleLoginProvider.PROVIDER_ID && user.idToken) {
           this.handleGoogleSignIn(user.idToken);
-          // Không cần signOut ở đây nữa vì autoLogin=false
-          // this.socialAuthService.signOut(true).catch(err => console.error("Error signing out from social service:", err));
+
         }
       });
-    // ******************************************
+
   }
 
-  // ****** THÊM ngOnDestroy ******
+
   private destroy$ = new Subject<void>();
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
-    // Không cần unsubscribe thủ công nếu đã dùng takeUntil
-    // this.authSubscription?.unsubscribe();
+
   }
-  // ****************************
+
 
   onSubmit(): void {
     if (this.loginForm.invalid) {
@@ -106,7 +104,7 @@ export class LoginComponent implements OnInit, OnDestroy  {
     });
   }
 
-  // ****** HÀM XỬ LÝ GOOGLE SIGN IN ******
+
   handleGoogleSignIn(idToken: string): void {
     // Không set isLoading ở đây vì AuthService sẽ làm
     this.errorMessage.set(null);
@@ -126,5 +124,5 @@ export class LoginComponent implements OnInit, OnDestroy  {
         }
       });
   }
-  // *************************************
+
 }

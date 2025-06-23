@@ -17,11 +17,7 @@ export const USER_PROFILE_ROUTES: Routes = [
     loadComponent: () => import('./components/change-password/change-password.component').then(m => m.ChangePasswordComponent),
     title: 'Đổi mật khẩu'
   },
-  // {
-  //   path: 'addresses',
-  //   loadComponent: () => import('./components/address-list/address-list.component').then(m => m.AddressListComponent),
-  //   title: 'Sổ địa chỉ'
-  // },
+
   { // Route cho form đăng ký/sửa farmer profile
     path: 'farmer-profile',
     loadComponent: () => import('./components/edit-farmer-profile/edit-farmer-profile.component').then(m => m.EditFarmerProfileComponent),

@@ -45,16 +45,12 @@ export class AdminInvoiceService {
     if (params.status) httpParams = httpParams.set('status', params.status.toString());
     if (params.paymentStatus) httpParams = httpParams.set('paymentStatus', params.paymentStatus.toString());
 
-    console.log('AdminInvoiceService: Calling API with params:', httpParams.toString()); // << THÊM LOG NÀY
+    console.log('AdminInvoiceService: Calling API with params:', httpParams.toString());
 
     return this.http.get<PagedApiResponse<InvoiceSummaryResponse>>(this.apiUrl, { params: httpParams });
   }
 
-  /**
-   * Lấy danh sách hóa đơn công nợ liên quan đến các đơn hàng của Farmer hiện tại.
-   * @param params Tham số tìm kiếm và phân trang.
-   * @returns Observable chứa PagedApiResponse với danh sách InvoiceSummaryResponse.
-   */
+
   getMyInvoicesAsFarmer(params: FarmerInvoiceSearchParams): Observable<PagedApiResponse<InvoiceSummaryResponse>> {
     let httpParams = new HttpParams();
 
@@ -79,12 +75,5 @@ export class AdminInvoiceService {
     return this.http.get<PagedApiResponse<InvoiceSummaryResponse>>(this.farmerApiUrl, { params: httpParams });
   }
 
-  // Thêm các phương thức khác nếu cần, ví dụ:
-  // markInvoiceAsVoid(invoiceId: number): Observable<ApiResponse<void>> {
-  //   return this.http.post<ApiResponse<void>>(`${this.apiUrl}/${invoiceId}/void`, {});
-  // }
-  //
-  // resendInvoiceReminder(invoiceId: number): Observable<ApiResponse<void>> {
-  //   return this.http.post<ApiResponse<void>>(`${this.apiUrl}/${invoiceId}/resend-reminder`, {});
-  // }
+
 }

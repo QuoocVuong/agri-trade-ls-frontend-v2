@@ -1,12 +1,12 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms'; // Import ReactiveFormsModule
-import { ToastrService } from 'ngx-toastr'; // Import ToastrService
+import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
+import { ToastrService } from 'ngx-toastr';
 
 @Component({
   selector: 'app-contact',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule], // Thêm ReactiveFormsModule
+  imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './contact.component.html',
 })
 export class ContactComponent {

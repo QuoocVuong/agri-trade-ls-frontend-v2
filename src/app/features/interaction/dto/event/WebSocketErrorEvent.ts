@@ -1,4 +1,4 @@
 export interface WebSocketErrorEvent {
-    error: string; // e.g., 'BadRequestException', 'InternalServerError'
+    error: string;
     message: string;
 }

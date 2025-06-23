@@ -7,7 +7,7 @@ import { ReviewResponse } from '../../interaction/dto/response/ReviewResponse';
 import { ReviewStatus } from '../../../common/model/review-status.enum';
 import { RoleResponse } from '../../user-profile/dto/response/RoleResponse';
 import { RoleUpdateRequest } from '../../user-profile/dto/request/RoleUpdateRequest';
-import { PermissionResponse } from '../../user-profile/dto/response/PermissionResponse'; // Import PermissionResponse
+import { PermissionResponse } from '../../user-profile/dto/response/PermissionResponse';
 
 @Injectable({
   providedIn: 'root'
@@ -62,14 +62,5 @@ export class AdminInteractionService {
     return this.http.get<ApiResponse<PermissionResponse[]>>(this.adminPermissionApiUrl);
   }
 
-  // --- (Tùy chọn) API CRUD cho Permissions ---
-  // createPermission(request: { name: string, description?: string }): Observable<ApiResponse<PermissionResponse>> {
-  //     return this.http.post<ApiResponse<PermissionResponse>>(this.adminPermissionApiUrl, request);
-  // }
-  // updatePermission(id: number, request: { name?: string, description?: string }): Observable<ApiResponse<PermissionResponse>> {
-  //      return this.http.put<ApiResponse<PermissionResponse>>(`${this.adminPermissionApiUrl}/${id}`, request);
-  // }
-  // deletePermission(id: number): Observable<ApiResponse<void>> {
-  //      return this.http.delete<ApiResponse<void>>(`${this.adminPermissionApiUrl}/${id}`);
-  // }
+
 }

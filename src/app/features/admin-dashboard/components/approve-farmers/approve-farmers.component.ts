@@ -41,7 +41,7 @@ export class ApproveFarmersComponent implements OnInit, OnDestroy {
   showRejectModal = signal(false);
   selectedFarmer = signal<UserProfileResponse | null>(null);
   farmerToReject = signal<{ id: number, name: string } | null>(null);
-  // rejectReason = signal('');
+
   rejectReasonControl = new FormControl('');
 
 
@@ -109,7 +109,7 @@ export class ApproveFarmersComponent implements OnInit, OnDestroy {
   closeRejectModal(): void {
     this.showRejectModal.set(false);
     this.farmerToReject.set(null);
-    this.rejectReasonControl.reset(''); // *** Reset FormControl ***
+    this.rejectReasonControl.reset('');
   }
 
 
@@ -185,14 +185,4 @@ export class ApproveFarmersComponent implements OnInit, OnDestroy {
   }
 }
 
-// Cần tạo Enum VerificationStatus và các hàm helper nếu chưa có
-// (File: src/app/common/model/verification-status.enum.ts - Mới)
-/*
-export enum VerificationStatus {
-    PENDING = 'PENDING',
-    VERIFIED = 'VERIFIED',
-    REJECTED = 'REJECTED'
-}
-export function getVerificationStatusText(status: VerificationStatus | string | undefined | null): string { ... }
-export function getVerificationStatusCssClass(status: VerificationStatus | string | undefined | null): string { ... }
-*/
+

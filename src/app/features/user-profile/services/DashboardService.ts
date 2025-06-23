@@ -8,10 +8,10 @@ import { OrderSummaryResponse } from '../../ordering/dto/response/OrderSummaryRe
 import { TopProductResponse } from '../../catalog/dto/response/TopProductResponse';
 import { RecentActivityResponse } from '../dto/response/RecentActivityResponse';
 import { TimeSeriesDataPoint } from '../dto/response/TimeSeriesDataPoint';
-import  BigDecimal  from 'js-big-decimal'; // Import nếu dùng
+import  BigDecimal  from 'js-big-decimal';
 import { LocalDate } from '@js-joda/core';
 import {UserResponse} from '../dto/response/UserResponse';
-import {FarmerSummaryResponse} from '../dto/response/FarmerSummaryResponse'; // Import nếu dùng JS Joda
+import {FarmerSummaryResponse} from '../dto/response/FarmerSummaryResponse';
 
 @Injectable({
   providedIn: 'root' // Cung cấp ở root để Admin/Farmer đều dùng được

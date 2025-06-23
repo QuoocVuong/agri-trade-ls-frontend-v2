@@ -10,20 +10,20 @@ import {
   ViewChild
 } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
-import { AuthService } from '../../../core/services/auth.service'; // Import AuthService
+import { AuthService } from '../../../core/services/auth.service';
 import {CommonModule, DatePipe} from '@angular/common';
 import {NotificationService} from '../../../features/notification/service/notification.service';
 import {CartService} from '../../../features/ordering/services/cart.service';
 import {FormatBigDecimalPipe} from '../../pipes/format-big-decimal.pipe';
 import {Subject} from 'rxjs';
 import {NotificationResponse} from '../../../features/notification/dto/response/NotificationResponse';
-import {finalize, takeUntil} from 'rxjs/operators'; // Import CommonModule for *ngIf etc.
-//import { UserResponse } from '../../../usermanagement/dto/response/UserResponse'; // Import UserResponse if needed directly
+import {finalize, takeUntil} from 'rxjs/operators';
+
 import { TimeAgoPipe } from '../../../shared/pipes/time-ago.pipe';
 import {LoadingSpinnerComponent} from '../loading-spinner/loading-spinner.component';
 import {AlertComponent} from '../alert/alert.component';
 import {getNotificationTypeIcon} from '../../../common/model/notification-type.enum';
-import {SafeHtmlPipe} from '../../pipes/safe-html.pipe';
+
 import {ThemeService} from '../../../core/services/theme.service';
 import {SidebarService} from '../../../core/services/sidebar.service';
 
@@ -31,7 +31,7 @@ import {SidebarService} from '../../../core/services/sidebar.service';
 @Component({
   selector: 'app-header',
   standalone: true,
-  imports: [CommonModule, RouterLink, RouterLinkActive, FormatBigDecimalPipe, DatePipe, TimeAgoPipe, LoadingSpinnerComponent, AlertComponent], // Import CommonModule
+  imports: [CommonModule, RouterLink, RouterLinkActive, FormatBigDecimalPipe, DatePipe, TimeAgoPipe, LoadingSpinnerComponent, AlertComponent],
   templateUrl: './header.component.html',
 })
 export class HeaderComponent implements AfterViewInit {
@@ -40,11 +40,11 @@ export class HeaderComponent implements AfterViewInit {
 
   private authService = inject(AuthService);
   private router = inject(Router);
-  private cartService = inject(CartService); // <-- Inject CartService
-  private notificationService = inject(NotificationService); // <-- Inject NotificationService
-  private themeService = inject(ThemeService); // <-- Inject ThemeService
+  private cartService = inject(CartService);
+  private notificationService = inject(NotificationService);
+  private themeService = inject(ThemeService);
   private destroy$ = new Subject<void>();
-  public sidebarService = inject(SidebarService); // INJECT SERVICE và để public
+  public sidebarService = inject(SidebarService);
 
   // Thêm signal để theo dõi trạng thái mở của sidebar từ service
   isSidebarCurrentlyOpen = this.sidebarService.isOpen;

@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal, OnDestroy, ViewChild } from '@angular/core';
+import { Component, OnInit, inject, signal, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { CategoryResponse } from '../../../catalog/dto/response/CategoryResponse';
@@ -15,12 +15,12 @@ import { SlugifyPipe } from '../../../../shared/pipes/slugify.pipe';
 import {CategoryService} from '../../../catalog/services/category.service';
 import {FileUploadComponent} from '../../../../shared/components/file-uploader/file-uploader.component';
 import {FileUploadResponse} from '../../../../common/dto/response/FileUploadResponse';
-import {ConfirmationService} from '../../../../shared/services/confirmation.service'; // Import pipe slugify (cần tạo)
+import {ConfirmationService} from '../../../../shared/services/confirmation.service';
 
 @Component({
   selector: 'app-manage-categories',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, LoadingSpinnerComponent, AlertComponent, ModalComponent, SlugifyPipe, FileUploadComponent ], // Thêm SlugifyPipe
+  imports: [CommonModule, ReactiveFormsModule, LoadingSpinnerComponent, AlertComponent, ModalComponent, SlugifyPipe, FileUploadComponent ],
   templateUrl: './manage-categories.component.html',
 })
 export class ManageCategoriesComponent implements OnInit, OnDestroy {
@@ -58,13 +58,13 @@ export class ManageCategoriesComponent implements OnInit, OnDestroy {
   initForm(): void {
     this.categoryForm = this.fb.group({
       name: ['', [Validators.required, Validators.maxLength(100)]],
-      slug: ['', Validators.maxLength(120)], // Slug có thể tự tạo
+      slug: ['', Validators.maxLength(120)],
       description: [''],
-      // imageUrl: ['', Validators.maxLength(512)], // <<< Bỏ imageUrl trực tiếp
+
       parentId: [null],
-      // Thêm controls ẩn để lưu kết quả upload
+
       blobPath: [null],
-      previewImageUrl: [null] // Lưu URL tạm thời để hiển thị preview
+      previewImageUrl: [null]
     });
   }
 
@@ -207,7 +207,7 @@ export class ManageCategoriesComponent implements OnInit, OnDestroy {
           this.toastr.success(message);
           this.closeModal();
           this.loadCategories(); // Tải lại danh sách category
-          // Không cần xóa file cũ ở đây, backend đã xử lý trong updateCategory
+
         } else {
           this.handleError(res, 'Lưu danh mục thất bại.');
         }
@@ -216,7 +216,7 @@ export class ManageCategoriesComponent implements OnInit, OnDestroy {
     });
   }
 
-// ... trong class ManageCategoriesComponent ...
+
 
   deleteCategory(category: CategoryResponse): void {
     this.confirmationService.open({

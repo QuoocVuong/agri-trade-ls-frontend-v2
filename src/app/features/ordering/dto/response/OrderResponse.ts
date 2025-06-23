@@ -1,6 +1,6 @@
 // src/app/features/ordering/dto/response/OrderResponse.ts
 import { FarmerInfoResponse } from '../../../catalog/dto/response/FarmerInfoResponse';
-import { UserResponse } from '../../../user-profile/dto/response/UserResponse'; // Import UserResponse
+import { UserResponse } from '../../../user-profile/dto/response/UserResponse';
 import { OrderStatus } from '../../domain/order-status.enum';
 import { OrderType } from '../../domain/order-type.enum';
 import { PaymentMethod } from '../../domain/payment-method.enum';
@@ -8,7 +8,7 @@ import { PaymentStatus } from '../../domain/payment-status.enum';
 import { OrderItemResponse } from './OrderItemResponse';
 import { PaymentResponse } from './PaymentResponse';
 import  BigDecimal  from 'js-big-decimal';
-import {InvoiceInfoResponse} from './InvoiceInfoResponse'; // Hoặc dùng number/string
+import {InvoiceInfoResponse} from './InvoiceInfoResponse';
 
 export interface OrderResponse {
   id: number;

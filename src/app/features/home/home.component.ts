@@ -1,12 +1,11 @@
 import {Component, OnInit, inject, signal, ElementRef, ViewChild} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {Router, RouterLink} from '@angular/router';
-import { CategoryService } from '../catalog/services/category.service'; // Import CategoryService
-import {ProductService, SupplySourceSearchParams} from '../catalog/services/product.service';   // Import ProductService
-// Import các DTOs cần thiết
+import { CategoryService } from '../catalog/services/category.service';
+import {ProductService, SupplySourceSearchParams} from '../catalog/services/product.service';
 import { CategoryResponse } from '../catalog/dto/response/CategoryResponse';
 import { ProductSummaryResponse } from '../catalog/dto/response/ProductSummaryResponse';
-// Import các component dùng chung
+
 import { LoadingSpinnerComponent } from '../../shared/components/loading-spinner/loading-spinner.component';
 import { AlertComponent } from '../../shared/components/alert/alert.component';
 import { ProductCardComponent } from '../catalog/components/product-card/product-card.component';
@@ -17,7 +16,7 @@ import {LocationService} from '../../core/services/location.service';
 import {Subject} from 'rxjs';
 import {FormsModule} from '@angular/forms';
 import {SupplySourceResponse} from '../catalog/dto/response/SupplySourceResponse';
-import {SupplySourceCardComponent} from '../catalog/components/supply-source-card/supply-source-card.component'; // Import ProductCard
+import {SupplySourceCardComponent} from '../catalog/components/supply-source-card/supply-source-card.component';
 
 @Component({
   selector: 'app-home',
@@ -30,10 +29,10 @@ import {SupplySourceCardComponent} from '../catalog/components/supply-source-car
     ProductCardComponent,
     FormsModule,
     SupplySourceCardComponent,
-    // Import component thẻ sản phẩm
+
   ],
   templateUrl: './home.component.html',
-  //styleUrl: './home.component.css' // Có thể thêm CSS riêng
+
 })
 export class HomeComponent implements OnInit {
   private categoryService = inject(CategoryService);
@@ -46,7 +45,7 @@ export class HomeComponent implements OnInit {
   // Signals để lưu trữ dữ liệu
   featuredCategories = signal<CategoryResponse[]>([]);
   newestProducts = signal<ProductSummaryResponse[]>([]);
-   featuredFarmers = signal<any[]>([]); // Cần DTO và Service riêng cho Farmer Info
+   featuredFarmers = signal<any[]>([]);
 
   // Signals cho trạng thái loading/error
   isLoadingCategories = signal(true);
@@ -178,7 +177,7 @@ export class HomeComponent implements OnInit {
     return item.productId; // Hoặc một ID duy nhất khác từ SupplySourceResponse
   }
 
-  // --- THÊM PHƯƠNG THỨC TÌM KIẾM ---
+  // --- PHƯƠNG THỨC TÌM KIẾM ---
   performHeroSearch(searchTerm: string): void {
     const trimmedSearchTerm = searchTerm?.trim();
     if (trimmedSearchTerm) {
@@ -189,7 +188,7 @@ export class HomeComponent implements OnInit {
       }
     }
   }
-  // ---------------------------------
+
 
   // Hàm trackBy cho *ngFor
   trackProductById(index: number, item: ProductSummaryResponse): number {
@@ -198,9 +197,9 @@ export class HomeComponent implements OnInit {
   trackCategoryById(index: number, item: CategoryResponse): number {
     return item.id;
   }
-  // Thêm trackBy cho farmer nếu cần
-  trackFarmerById(index: number, item: FarmerSummaryResponse): number { // Sửa any thành DTO phù hợp
-    return item.userId; // Hoặc item.userId tùy theo DTO
+
+  trackFarmerById(index: number, item: FarmerSummaryResponse): number {
+    return item.userId;
   }
 
   loadProvinceName(provinceCode: string | null | undefined): void {

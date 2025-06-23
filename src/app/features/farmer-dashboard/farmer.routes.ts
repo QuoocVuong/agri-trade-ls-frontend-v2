@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import {authGuard} from '../../core/guards/auth.guard';
+
 
 // Các route con bên trong /farmer
 export const FARMER_ROUTES: Routes = [
@@ -42,7 +42,7 @@ export const FARMER_ROUTES: Routes = [
     // Không cần canActivate và data ở đây nữa vì FARMER_ROUTES đã có rồi
   },
 
-  // { path: 'reviews', loadComponent: () => ..., title: 'Kênh người bán - Đánh giá' }, // Nếu cần xem review về SP của mình
+
   { // Link đến trang sửa profile farmer (đã có trong user-profile)
     path: 'profile',
     redirectTo: '/user/profile/farmer-profile', // Redirect đến trang sửa profile đã có

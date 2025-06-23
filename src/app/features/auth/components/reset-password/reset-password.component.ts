@@ -1,7 +1,7 @@
 import { Component, OnInit, inject, signal, WritableSignal } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, ValidationErrors, AbstractControl } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import { Router, RouterLink, ActivatedRoute } from '@angular/router'; // Import ActivatedRoute
+import { Router, RouterLink, ActivatedRoute } from '@angular/router';
 import { AuthService } from '../../../../core/services/auth.service';
 import { ResetPasswordRequest } from '../../../user-profile/dto/request/ResetPasswordRequest';
 import { ApiResponse } from '../../../../core/models/api-response.model';
@@ -43,7 +43,7 @@ export class ResetPasswordComponent implements OnInit {
   }
 
   passwordMatchValidator(control: AbstractControl): ValidationErrors | null {
-    // ... (validator giống như RegisterComponent)
+
     const newPassword = control.get('newPassword');
     const confirmPassword = control.get('confirmPassword');
     if (newPassword?.value !== confirmPassword?.value) {

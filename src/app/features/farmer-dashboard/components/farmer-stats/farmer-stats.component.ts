@@ -1,7 +1,7 @@
 import {Component, OnInit, inject, signal, OnDestroy, AfterViewInit, ViewChild} from '@angular/core';
 import { CommonModule, DatePipe, DecimalPipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { DashboardService } from '../../../user-profile/services/DashboardService'; // Sử dụng DashboardService chung
+import { DashboardService } from '../../../user-profile/services/DashboardService';
 import { DashboardStatsResponse } from '../../../user-profile/dto/response/DashboardStatsResponse';
 import { OrderSummaryResponse } from '../../../ordering/dto/response/OrderSummaryResponse';
 import { TopProductResponse } from '../../../catalog/dto/response/TopProductResponse';
@@ -10,18 +10,18 @@ import { LoadingSpinnerComponent } from '../../../../shared/components/loading-s
 import { AlertComponent } from '../../../../shared/components/alert/alert.component';
 import {forkJoin, Subject} from 'rxjs';
 import { takeUntil, finalize } from 'rxjs/operators';
-// Import các hàm helper cho trạng thái đơn hàng
-import { OrderStatus, getOrderStatusText, getOrderStatusCssClass } from '../../../ordering/domain/order-status.enum';
-import { PaymentStatus, getPaymentStatusText, getPaymentStatusCssClass } from '../../../ordering/domain/payment-status.enum';
+
+import {getOrderStatusText, getOrderStatusCssClass } from '../../../ordering/domain/order-status.enum';
+
 import {FormatBigDecimalPipe} from '../../../../shared/pipes/format-big-decimal.pipe';
 import {HttpErrorResponse} from '@angular/common/http';
 import {ToastrService} from 'ngx-toastr';
-import {NgxChartsModule} from '@swimlane/ngx-charts';
+
 import BigDecimal from 'js-big-decimal';
-import {TimeSeriesDataPoint} from '../../../user-profile/dto/response/TimeSeriesDataPoint';
+
 import {LocalDate} from '@js-joda/core';
 
-import { ChartConfiguration, ChartOptions, ChartType } from 'chart.js';
+import { ChartConfiguration, ChartOptions } from 'chart.js';
 import { BaseChartDirective } from 'ng2-charts';
 
 
@@ -143,8 +143,6 @@ export class FarmerStatsComponent implements OnInit, OnDestroy, AfterViewInit {
       }
     ]
   };
-  // ***********************************
-
 
 
   ngOnInit(): void {
@@ -153,9 +151,7 @@ export class FarmerStatsComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   ngAfterViewInit(): void {
-    // Có thể để trống hoặc thêm logic nếu cần chạy sau khi view đã khởi tạo
-    // Ví dụ: Cập nhật lại biểu đồ nếu kích thước ban đầu không đúng
-    // setTimeout(() => this.chart?.update(), 0);
+
   }
 
   ngOnDestroy(): void {
@@ -224,7 +220,7 @@ export class FarmerStatsComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   // Hàm handleError cũng nên nhận kiểu cụ thể hơn nếu có thể
-  private handleError(err: ApiResponse<any> | HttpErrorResponse | any, defaultMessage: string): void { // Thêm HttpErrorResponse
+  private handleError(err: ApiResponse<any> | HttpErrorResponse | any, defaultMessage: string): void {
     const message = err?.message || defaultMessage;
     if (!this.errorMessage()) { // Chỉ set lỗi đầu tiên gặp phải
       this.errorMessage.set(message);
@@ -258,7 +254,7 @@ export class FarmerStatsComponent implements OnInit, OnDestroy, AfterViewInit {
           const dateMapRevenue = new Map<string, number>();
           const dateMapCount = new Map<string, number>();
 
-          // ****** XỬ LÝ DỮ LIỆU TRỰC TIẾP ******
+
           if (revenue.success && revenue.data) {
             revenue.data.forEach(point => {
               if (point.label) {
@@ -294,7 +290,7 @@ export class FarmerStatsComponent implements OnInit, OnDestroy, AfterViewInit {
 
           // Trigger update cho biểu đồ
           this.chart?.update();
-          // *****************************************
+
         },
         error: (err) => {
           // Reset dữ liệu chart khi có lỗi
@@ -318,5 +314,5 @@ export class FarmerStatsComponent implements OnInit, OnDestroy, AfterViewInit {
   trackOrderById(index: number, item: OrderSummaryResponse): number { return item.id; }
   trackProductById(index: number, item: TopProductResponse): number { return item.productId; }
 
-  protected readonly getOrderStatusCssClass = getOrderStatusCssClass;
+
 }

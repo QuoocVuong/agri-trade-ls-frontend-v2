@@ -10,9 +10,9 @@ export class ThemeService {
   private _darkMode = new BehaviorSubject<boolean>(false);
   readonly darkMode$ = this._darkMode.asObservable();
 
-  // Chọn theme light và dark mặc định của DaisyUI bạn muốn dùng
-  private lightThemeName = 'light'; // Hoặc 'emerald', 'corporate', etc.
-  private darkThemeName = 'dark';   // Hoặc 'forest', etc.
+  // Chọn theme light và dark mặc định của DaisyUI
+  private lightThemeName = 'light';
+  private darkThemeName = 'dark';
 
   constructor(private rendererFactory: RendererFactory2) {
     this.renderer = rendererFactory.createRenderer(null, null);
@@ -20,7 +20,7 @@ export class ThemeService {
     if (savedMode) {
       const isDark = JSON.parse(savedMode);
       this._darkMode.next(isDark);
-      this.applyTheme(isDark); // Sửa tên hàm cho rõ ràng hơn
+      this.applyTheme(isDark);
     } else {
       const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
       this._darkMode.next(prefersDark);
@@ -35,10 +35,10 @@ export class ThemeService {
     localStorage.setItem('darkMode', JSON.stringify(isDark));
   }
 
-  // Sửa hàm này
+
   private applyTheme(isDark: boolean) {
     if (isDark) {
-      this.renderer.addClass(document.documentElement, 'dark'); // Vẫn giữ class 'dark' cho Tailwind
+      this.renderer.addClass(document.documentElement, 'dark');
       this.renderer.setAttribute(document.documentElement, 'data-theme', this.darkThemeName);
     } else {
       this.renderer.removeClass(document.documentElement, 'dark');

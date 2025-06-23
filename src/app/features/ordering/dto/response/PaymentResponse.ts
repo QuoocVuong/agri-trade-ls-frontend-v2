@@ -1,6 +1,6 @@
 // src/app/features/ordering/dto/response/PaymentResponse.ts
-import { PaymentTransactionStatus } from '../../domain/payment-transaction-status.enum'; // Import Enum
-import  BigDecimal from 'js-big-decimal'; // Hoặc dùng number/string
+import { PaymentTransactionStatus } from '../../domain/payment-transaction-status.enum';
+import  BigDecimal from 'js-big-decimal';
 
 export interface PaymentResponse {
   id: number;

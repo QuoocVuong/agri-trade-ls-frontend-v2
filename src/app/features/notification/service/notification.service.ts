@@ -1,8 +1,8 @@
-// src/app/core/services/notification.service.ts (Ví dụ)
+
 import { Injectable, signal, inject, OnDestroy, effect } from '@angular/core';
 import {HttpClient, HttpParams} from '@angular/common/http';
 
-import { RxStomp } from '@stomp/rx-stomp'; // Import RxStomp
+import { RxStomp } from '@stomp/rx-stomp';
 import { IMessage } from '@stomp/stompjs';
 import {Observable, Subject, throwError} from 'rxjs';
 import { takeUntil, catchError, tap } from 'rxjs/operators';
@@ -10,7 +10,7 @@ import { ToastrService } from 'ngx-toastr';
 import {environment} from '../../../../environments/environment';
 import {AuthService} from '../../../core/services/auth.service';
 import {ApiResponse, PagedApiResponse} from '../../../core/models/api-response.model';
-import {NotificationResponse} from '../dto/response/NotificationResponse'; // Để hiển thị toast
+import {NotificationResponse} from '../dto/response/NotificationResponse';
 
 @Injectable({
   providedIn: 'root'
@@ -25,7 +25,7 @@ export class NotificationService implements OnDestroy {
 
   // Signal chứa số lượng thông báo chưa đọc
   private unreadCountSignal = signal<number>(0);
-  public readonly unreadCount = this.unreadCountSignal.asReadonly(); // Public readonly signal
+  public readonly unreadCount = this.unreadCountSignal.asReadonly();
 
   // WebSocket Client
   private rxStomp: RxStomp;
@@ -109,10 +109,10 @@ export class NotificationService implements OnDestroy {
     }
   }
 
-  // Các phương thức khác để gọi API đánh dấu đã đọc, xóa... (nếu cần)
+
   markAsRead(notificationId: number): Observable<ApiResponse<void>> {
     return this.http.post<ApiResponse<void>>(`${this.apiUrl}/${notificationId}/read`, {}).pipe(
-      tap(() => this.loadInitialUnreadCount()) // Load lại count sau khi đánh dấu đọc
+      tap(() => this.loadInitialUnreadCount())
     );
   }
 
@@ -123,13 +123,7 @@ export class NotificationService implements OnDestroy {
     );
   }
 
-  // *** THÊM PHƯƠNG THỨC NÀY ***
-  /**
-   * Lấy danh sách thông báo gần đây của người dùng (phân trang).
-   * @param page Trang cần lấy (mặc định 0).
-   * @param size Số lượng trên mỗi trang (mặc định 5-10).
-   * @param sort Sắp xếp (mặc định theo ngày tạo giảm dần).
-   */
+
   getMyNotifications(page: number = 0, size: number = 7, sort: string = 'createdAt,desc'): Observable<PagedApiResponse<NotificationResponse>> {
     let params = new HttpParams()
       .set('page', page.toString())
@@ -137,15 +131,7 @@ export class NotificationService implements OnDestroy {
       .set('sort', sort);
     return this.http.get<PagedApiResponse<NotificationResponse>>(`${this.apiUrl}/my`, { params });
   }
-  // *****************************
 
-
-  // *** THÊM PHƯƠNG THỨC DELETE ***
-  /**
-   * Xóa một thông báo cụ thể của người dùng hiện tại.
-   * Gọi API: DELETE /api/notifications/{notificationId}
-   * @param notificationId ID của thông báo cần xóa.
-   */
   deleteNotification(notificationId: number): Observable<ApiResponse<void>> {
     // API backend sẽ kiểm tra quyền sở hữu dựa trên user đã xác thực
     return this.http.delete<ApiResponse<void>>(`${this.apiUrl}/${notificationId}`).pipe(
@@ -161,5 +147,5 @@ export class NotificationService implements OnDestroy {
       })
     );
   }
-  // *****************************
+
 }

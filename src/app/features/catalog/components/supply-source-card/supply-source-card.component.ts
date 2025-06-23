@@ -2,9 +2,9 @@
 import { Component, Input, inject, signal, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule, DecimalPipe, DatePipe } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
-import { SupplySourceResponse } from '../../dto/response/SupplySourceResponse'; // Tạo DTO này nếu chưa có
+import { SupplySourceResponse } from '../../dto/response/SupplySourceResponse';
 import { AuthService } from '../../../../core/services/auth.service';
-import { ChatService } from '../../../interaction/service/ChatService'; // Giả sử bạn có service này
+import { ChatService } from '../../../interaction/service/ChatService';
 import { ToastrService } from 'ngx-toastr';
 import { Subject } from 'rxjs';
 import { takeUntil, finalize } from 'rxjs/operators';
@@ -13,15 +13,15 @@ import { LocationService } from '../../../../core/services/location.service';
 import {SupplyOrderRequestService} from '../../../ordering/services/supply-order-request.service';
 import {HttpErrorResponse} from '@angular/common/http';
 import {ApiResponse} from '../../../../core/models/api-response.model';
-import {SupplyOrderPlacementRequest} from '../../../ordering/dto/request/SupplyOrderPlacementRequest';
-import {ConfirmationService} from '../../../../shared/services/confirmation.service'; // Import LocationService
+
+import {ConfirmationService} from '../../../../shared/services/confirmation.service';
 
 @Component({
   selector: 'app-supply-source-card',
   standalone: true,
   imports: [CommonModule, RouterLink, DecimalPipe, DatePipe, FormatBigDecimalPipe],
   templateUrl: './supply-source-card.component.html',
-  // styleUrls: ['./supply-source-card.component.css'] // Nếu có CSS riêng
+
 })
 export class SupplySourceCardComponent implements OnInit, OnDestroy {
   @Input({ required: true }) supplySource!: SupplySourceResponse;
@@ -30,7 +30,7 @@ export class SupplySourceCardComponent implements OnInit, OnDestroy {
   private chatService = inject(ChatService);
   private router = inject(Router);
   private toastr = inject(ToastrService);
-  private locationService = inject(LocationService); // Inject LocationService
+  private locationService = inject(LocationService);
   private destroy$ = new Subject<void>();
 
   private supplyRequestService = inject(SupplyOrderRequestService);
@@ -92,7 +92,7 @@ export class SupplySourceCardComponent implements OnInit, OnDestroy {
             this.router.navigate(['/chat'], {
               queryParams: {
                 roomId: roomId,
-                // Gửi thêm thông tin sản phẩm và nông dân để hiển thị trong chat nếu cần
+
                 contextProductId: this.supplySource.productId,
                 contextProductName: this.supplySource.productName,
                 contextProductSlug: this.supplySource.productSlug
@@ -134,7 +134,7 @@ export class SupplySourceCardComponent implements OnInit, OnDestroy {
     }
 
     this.isNavigatingToRequestForm.set(true); // Set loading
-    // ================== LOGIC MỚI ==================
+
     // 1. Gọi API kiểm tra quyền
 
 

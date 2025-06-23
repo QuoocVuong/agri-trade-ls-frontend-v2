@@ -1,14 +1,14 @@
 import {Component, OnInit, inject, signal, WritableSignal, effect, OnDestroy} from '@angular/core';
 import { CommonModule, DatePipe, DecimalPipe } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
-import { Page } from '../../../../core/models/page.model'; // Tạo interface Page nếu cần
+
 import { OrderSummaryResponse } from '../../dto/response/OrderSummaryResponse';
-import {BuyerOrderSearchParams, FarmerOrderSearchParams, OrderService} from '../../services/order.service';
+import {BuyerOrderSearchParams, OrderService} from '../../services/order.service';
 import { AuthService } from '../../../../core/services/auth.service';
 import { PaginatorComponent } from '../../../../shared/components/paginator/paginator.component';
 import { LoadingSpinnerComponent } from '../../../../shared/components/loading-spinner/loading-spinner.component';
 import { AlertComponent } from '../../../../shared/components/alert/alert.component';
-import { OrderStatus, getOrderStatusText, getOrderStatusCssClass } from '../../domain/order-status.enum'; // Import Enum và helpers
+import { OrderStatus, getOrderStatusText, getOrderStatusCssClass } from '../../domain/order-status.enum';
 import { PaymentStatus, getPaymentStatusText, getPaymentStatusCssClass } from '../../domain/payment-status.enum';
 import {Observable, Subject} from 'rxjs';
 import {PagedApiResponse} from '../../../../core/models/api-response.model';
@@ -16,10 +16,10 @@ import {FormatBigDecimalPipe} from '../../../../shared/pipes/format-big-decimal.
 import {debounceTime, distinctUntilChanged, takeUntil} from 'rxjs/operators';
 import {FormBuilder, FormsModule, ReactiveFormsModule} from '@angular/forms';
 import {getPaymentMethodText, PaymentMethod} from '../../domain/payment-method.enum';
-import {getOrderTypeText, OrderType} from '../../domain/order-type.enum'; // Import Enum và helpers
+import {getOrderTypeText, OrderType} from '../../domain/order-type.enum';
 
 
-// Interface cho Page (tương tự PageData nhưng đơn giản hơn)
+// Interface cho Page
 interface PageData<T> {
   content: T[];
   totalPages: number;
@@ -208,7 +208,7 @@ export class OrderHistoryComponent implements OnInit, OnDestroy  {
     this.router.navigate(['/user/orders', orderId]);
   }
 
-  // ... trong OrderHistoryComponent
+
   trackOrderById(index: number, item: OrderSummaryResponse): number {
     return item.id;
   }

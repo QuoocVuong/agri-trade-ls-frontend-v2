@@ -1,7 +1,7 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ModalComponent } from '../modal/modal.component';
-import {FormsModule} from '@angular/forms'; // Import modal gốc
+import {FormsModule} from '@angular/forms';
 export interface ConfirmationInput {
   type: 'text' | 'textarea';
   label: string;
@@ -53,8 +53,8 @@ export class ConfirmationModalComponent {
   @Input() confirmText = 'Đồng ý';
   @Input() cancelText = 'Hủy bỏ';
   @Input() confirmButtonClass = 'btn-primary';
-  @Input() iconClass: string | null = 'fas fa-question-circle'; // Ví dụ: 'fas fa-exclamation-triangle'
-  @Input() iconColorClass: string = 'text-info'; // Ví dụ: 'text-warning'
+  @Input() iconClass: string | null = 'fas fa-question-circle';
+  @Input() iconColorClass: string = 'text-info';
 
   @Output() confirmed = new EventEmitter<{ [key: string]: string }>();
   @Output() cancelled = new EventEmitter<void>();

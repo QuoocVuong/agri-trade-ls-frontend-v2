@@ -1,6 +1,6 @@
 import {Component, OnInit, inject, signal, Output, EventEmitter, Input} from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink, RouterLinkActive, ActivatedRoute, Router } from '@angular/router'; // Import ActivatedRoute, Router
+import { RouterLink, RouterLinkActive, ActivatedRoute, Router } from '@angular/router';
 import { CategoryService } from '../../services/category.service';
 import { CategoryResponse } from '../../dto/response/CategoryResponse';
 import { ApiResponse } from '../../../../core/models/api-response.model';
@@ -17,7 +17,7 @@ export class CategorySidebarComponent implements OnInit {
 
 
   private categoryService = inject(CategoryService);
-  private route = inject(ActivatedRoute); // Để lấy slug category hiện tại (nếu có)
+  private route = inject(ActivatedRoute); // Để lấy slug category hiện tại
   private router = inject(Router);
 
   categories = signal<CategoryResponse[]>([]);
@@ -46,8 +46,7 @@ export class CategorySidebarComponent implements OnInit {
       next: (response: ApiResponse<CategoryResponse[]>) => {
         if (response.success && response.data) {
           this.categories.set(response.data);
-          // Sau khi load xong, cập nhật lại active slug từ snapshot của route
-          // (vì subscribe ở ngOnInit có thể chạy trước khi categories được load lần đầu)
+
           const currentSlug = this.route.snapshot.paramMap.get('slug');
           this.activeCategorySlug.set(currentSlug);
         } else {
@@ -100,7 +99,7 @@ export class CategorySidebarComponent implements OnInit {
     }
   }
 
-  // Hàm đệ quy để hiển thị menu con (nếu cần)
+  // Hàm đệ quy để hiển thị menu con
   toggleSubmenu(event: Event): void {
     const element = event.currentTarget as HTMLElement;
     const submenu = element.nextElementSibling as HTMLElement;
@@ -110,12 +109,7 @@ export class CategorySidebarComponent implements OnInit {
     }
   }
 
-  /**
-   * Hàm kiểm tra xem category hiện tại hoặc một trong các category con của nó
-   * có đang được active hay không. Dùng để quyết định mở <details>.
-   * @param category Category cha cần kiểm tra.
-   * @returns true nếu category cha hoặc con của nó đang active.
-   */
+
   isCategoryOrChildActive(category: CategoryResponse): boolean {
     const currentActiveSlug = this.activeCategorySlug();
     if (currentActiveSlug === null) {

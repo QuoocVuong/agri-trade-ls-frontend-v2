@@ -12,7 +12,7 @@
       <!-- Search Form -->
       <div class="mb-8 max-w-md mx-auto space-y-3 sm:space-y-0 sm:flex sm:flex-col md:flex-row md:items-center md:gap-3">
 
-        <!-- Input Group (ĐÃ SỬA LẠI HOÀN TOÀN) -->
+        <!-- Input Group  -->
         <div class="flex items-center w-full bg-base-100/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-full shadow-lg border border-base-300/50 dark:border-gray-600/50 p-1 flex-grow">
           <input #heroSearchInput type="text"
                  [placeholder]="searchTypeSignal() === 'products' ? 'Tìm rau củ, trái cây...' : 'Tìm nguồn cung lớn...'"
@@ -29,7 +29,6 @@
         </div>
 
         <!-- Select Type -->
-        <!-- Select Type (Đã sửa) -->
         <select class="select select-ghost select-sm sm:select-md w-full md:w-auto rounded-full focus:outline-none focus:ring-2 focus:ring-primary/50 dark:focus:ring-green-500/50 shadow-lg text-sm bg-base-100/90 dark:bg-gray-800/90 backdrop-blur-sm border border-base-300/50 dark:border-gray-200/50 text-gray-200 dark:text-gray-300"
                 [(ngModel)]="searchTypeSignal" (ngModelChange)="updateSearchPlaceholder()"
                 aria-label="Chọn loại tìm kiếm">
@@ -122,7 +121,6 @@
   </div>
   <div *ngIf="isLoadingFarmers()" class="text-center py-12"><app-loading-spinner></app-loading-spinner></div>
   <div *ngIf="!isLoadingFarmers() && featuredFarmers().length > 0" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-    <!-- SỬA ĐOẠN CODE BÊN DƯỚI -->
     <div *ngFor="let farmer of featuredFarmers(); trackBy: trackFarmerById" class="card shadow-lg hover:shadow-xl transition-all duration-300 rounded-lg overflow-hidden">
       <div class="card-body items-center text-center p-6">
         <div class="avatar mb-3">
@@ -131,7 +129,6 @@
           </div>
         </div>
         <h3 class="card-title text-lg font-semibold text-base-content dark:text-white">{{ farmer.farmName || farmer.fullName }}</h3>
-        <!-- THAY THẾ farmer.address BẰNG farmer.provinceNameDisplay() -->
         <p class="text-sm text-base-content/70 dark:text-gray-400 flex items-center justify-center gap-1">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 opacity-70" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
             <path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
@@ -144,7 +141,6 @@
         </div>
       </div>
     </div>
-    <!-- KẾT THÚC SỬA ĐỔI -->
   </div>
   <div *ngIf="!isLoadingFarmers() && featuredFarmers().length === 0 && !errorMessage()" class="text-center py-12 text-base-content/60 dark:text-gray-400">
     Chưa có nông dân tiêu biểu nào.
@@ -189,14 +185,14 @@
     }
   }
 
-  /* Initial state for scroll-triggered sections */
+
   .scroll-section {
     opacity: 0;
     transform: translateY(50px);
     transition: opacity 0.6s ease-out, transform 0.6s ease-out;
   }
 
-  /* State when section is in view (will be triggered by JavaScript) */
+
   .scroll-section.visible {
     opacity: 1;
     transform: translateY(0);
@@ -222,7 +218,7 @@
     transition: transform 0.3s ease;
   }
 
-  /* Ensure smooth transitions for all sections */
+
   .hero, .section {
     transition: all 0.5s ease;
   }

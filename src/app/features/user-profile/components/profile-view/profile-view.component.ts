@@ -9,8 +9,8 @@ import {AlertComponent} from '../../../../shared/components/alert/alert.componen
 import {LocationService} from '../../../../core/services/location.service';
 import {switchMap} from 'rxjs/operators';
 import {FormatBigDecimalPipe} from '../../../../shared/pipes/format-big-decimal.pipe';
-import {LoadingSpinnerComponent} from '../../../../shared/components/loading-spinner/loading-spinner.component'; // Import AuthService
-import { getVerificationStatusText, getVerificationStatusCssClass } from '../../../../common/model/verification-status.enum';
+import {LoadingSpinnerComponent} from '../../../../shared/components/loading-spinner/loading-spinner.component';
+import {getVerificationStatusCssClass } from '../../../../common/model/verification-status.enum';
 
 @Component({
   selector: 'app-profile-view',
@@ -38,10 +38,9 @@ export class ProfileViewComponent implements OnInit {
 
   getVerificationStatusCssClass = getVerificationStatusCssClass;
 
-  // Lấy các signal kiểm tra role từ AuthService
-  isFarmer = this.authService.hasRoleSignal('ROLE_FARMER');
+
   isBusinessBuyer = this.authService.hasRoleSignal('ROLE_BUSINESS_BUYER');
-  //isConsumerOnly = computed(() => !this.isFarmer() && !this.isBusinessBuyer()); // Tính toán user chỉ là consumer
+
 
   hasFarmerProfile = computed(() => !!this.profile()?.farmerProfile);
   hasBusinessProfile = computed(() => !!this.profile()?.businessProfile);

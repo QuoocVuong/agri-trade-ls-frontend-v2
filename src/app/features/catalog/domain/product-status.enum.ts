@@ -19,7 +19,7 @@ export function getProductStatusText(status: ProductStatus | string | undefined 
   }
 }
 
-// *** Hàm lấy class CSS tương ứng (ví dụ cho badge DaisyUI) ***
+// *** Hàm lấy class CSS tương ứng  ***
 export function getProductStatusCssClass(status: ProductStatus | string | undefined | null): string {
   switch (status) {
     case ProductStatus.DRAFT: return 'badge-ghost'; // Màu xám nhạt

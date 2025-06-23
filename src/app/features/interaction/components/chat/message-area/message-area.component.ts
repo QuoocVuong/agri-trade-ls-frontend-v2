@@ -35,7 +35,7 @@ import { SafeHtmlPipe } from '../../../../../shared/pipes/safe-html.pipe';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, LoadingSpinnerComponent, DatePipe, AlertComponent, TimeAgoPipe, RouterLink, SafeHtmlPipe],
   templateUrl: './message-area.component.html',
-  // Không cần OnPush ở đây nữa vì chúng ta đang dùng async pipe, nó sẽ tự xử lý
+
 })
 export class MessageAreaComponent implements OnChanges, OnDestroy, OnInit {
   @Input({ required: true }) selectedRoom!: ChatRoomResponse | null;

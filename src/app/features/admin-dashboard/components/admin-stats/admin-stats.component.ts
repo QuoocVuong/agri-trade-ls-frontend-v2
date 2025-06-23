@@ -17,12 +17,12 @@ import {
   LineElement, PieController,
   PointElement,
   Tooltip
-} from 'chart.js'; // Import các kiểu dữ liệu cho biểu đồ
+} from 'chart.js';
 import { BaseChartDirective } from 'ng2-charts';
 import {DateTimeFormatter, LocalDate} from '@js-joda/core';
 import {TimeSeriesDataPoint} from '../../../user-profile/dto/response/TimeSeriesDataPoint';
 import BigDecimal from 'js-big-decimal';
-import {RecentActivityResponse} from '../../../user-profile/dto/response/RecentActivityResponse'; // Import directive cho biểu đồ
+import {RecentActivityResponse} from '../../../user-profile/dto/response/RecentActivityResponse';
 import { Chart, CategoryScale, LinearScale } from 'chart.js';
 import {UserResponse} from '../../../user-profile/dto/response/UserResponse';
 import {FarmerSummaryResponse} from '../../../user-profile/dto/response/FarmerSummaryResponse';
@@ -39,7 +39,7 @@ import {ToastrService} from 'ngx-toastr';
     DecimalPipe,
     RouterLink,
     FormatBigDecimalPipe,
-    BaseChartDirective], // Thêm BaseChartDirective
+    BaseChartDirective],
   templateUrl: './admin-stats.component.html',
 })
 export class AdminStatsComponent implements OnInit {
@@ -131,7 +131,7 @@ export class AdminStatsComponent implements OnInit {
       }
     ]
   };
-  // Bạn có thể dùng chung lineChartOptions hoặc tạo options riêng
+
   public userGrowthChartOptions: ChartConfiguration['options'] = { responsive: true,
     scales: {
       x: {
@@ -144,14 +144,14 @@ export class AdminStatsComponent implements OnInit {
   public userGrowthChartType: ChartType = 'line';
 
   ngOnInit(): void {
-    // Register all necessary Chart.js components
+
     Chart.register(
       CategoryScale,
       LinearScale,
-      LineController,  // Register the LineController
-      LineElement,    // Register LineElement for rendering lines
-      PointElement,   // Register PointElement for rendering points
-      Tooltip ,        // Register Tooltip for hover effects
+      LineController,
+      LineElement,
+      PointElement,
+      Tooltip ,
       PieController,
       ArcElement,
       Legend
@@ -348,10 +348,7 @@ export class AdminStatsComponent implements OnInit {
       }
     });
   }
-  /**
-   * So sánh hai giá trị có thể là BigDecimal, number, hoặc string.
-   * Trả về true nếu current >= previous.
-   */
+
   isGrowthOrEqual(
     current: number | string | BigDecimal | null | undefined,
     previous: number | string | BigDecimal | null | undefined
@@ -369,10 +366,7 @@ export class AdminStatsComponent implements OnInit {
     return currentVal.compareTo(previousVal) >= 0;
   }
 
-  /**
-   * So sánh hai giá trị có thể là BigDecimal, number, hoặc string.
-   * Trả về true nếu current < previous.
-   */
+
   isDecline(
     current: number | string | BigDecimal | null | undefined,
     previous: number | string | BigDecimal | null | undefined

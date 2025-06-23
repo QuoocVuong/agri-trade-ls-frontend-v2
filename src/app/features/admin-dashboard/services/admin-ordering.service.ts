@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../environments/environment';
-import { ApiResponse, PagedApiResponse } from '../../../core/models/api-response.model'; // Import Page
+import { ApiResponse, PagedApiResponse } from '../../../core/models/api-response.model';
 import { OrderResponse } from '../../ordering/dto/response/OrderResponse';
 import { OrderSummaryResponse } from '../../ordering/dto/response/OrderSummaryResponse';
 import { OrderStatusUpdateRequest } from '../../ordering/dto/request/OrderStatusUpdateRequest';
@@ -45,16 +45,13 @@ export class AdminOrderingService {
     return this.http.post<ApiResponse<OrderResponse>>(`${this.adminOrderApiUrl}/${orderId}/cancel`, {});
   }
 
-  // Ví dụ API xác nhận thanh toán chuyển khoản
-  // confirmBankTransferPayment(orderId: number): Observable<ApiResponse<OrderResponse>> {
-  //   return this.http.post<ApiResponse<OrderResponse>>(`${this.adminOrderApiUrl}/${orderId}/confirm-payment`, { paymentMethod: 'BANK_TRANSFER' }); // Ví dụ body
-  // }
+
 
   confirmOrderPayment(orderId: number, paymentMethod: PaymentMethod, payload?: { notes?: string | null, transactionReference?: string | null }): Observable<ApiResponse<OrderResponse>> {
     return this.http.post<ApiResponse<OrderResponse>>(`${this.adminOrderApiUrl}/${orderId}/confirm-payment?paymentMethod=${paymentMethod}`, payload || {});
   }
 
-  // *** THÊM PHƯƠNG THỨC MỚI ĐỂ XUẤT FILE ***
+
   exportOrders(params: {
     status?: OrderStatus | string | null,
     paymentMethod?: PaymentMethod | string | null,

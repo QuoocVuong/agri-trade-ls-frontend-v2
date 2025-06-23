@@ -17,7 +17,7 @@ import {InvoiceStatus} from '../domain/invoice-status.enum';
 import {InvoiceSummaryResponse} from '../dto/response/InvoiceSummaryResponse';
 import {PaymentNotificationRequest} from '../dto/request/PaymentNotificationRequest';
 import {PaymentStatus} from '../domain/payment-status.enum';
-import {OrderType} from '../domain/order-type.enum'; // Import Enum
+import {OrderType} from '../domain/order-type.enum';
 
 // Interface cho tham số tìm kiếm đơn hàng của Farmer
 export interface FarmerOrderSearchParams {
@@ -42,7 +42,7 @@ export interface BuyerOrderSearchParams {
   orderType?: OrderType | string | null;
 }
 
-export interface BuyerInvoiceSearchParams { // Có thể giống FarmerInvoiceSearchParams
+export interface BuyerInvoiceSearchParams {
   page?: number;
   size?: number;
   sort?: string;
@@ -96,20 +96,14 @@ export class OrderService {
     return this.http.post<ApiResponse<OrderResponse>>(`${this.orderApiUrl}/${orderId}/cancel`, {});
   }
 
-  // ****** THÊM PHƯƠNG THỨC NÀY ******
-  /**
-   * Gọi API backend để tạo URL thanh toán cho một đơn hàng với phương thức thanh toán cụ thể.
-   * @param orderId ID của đơn hàng
-   * @param paymentMethod Phương thức thanh toán (VNPAY, MOMO, ...)
-   * @returns Observable chứa ApiResponse với PaymentUrlResponse
-   */
+
   createPaymentUrl(orderId: number, paymentMethod: PaymentMethod): Observable<ApiResponse<PaymentUrlResponse>> {
-    let params = new HttpParams().set('paymentMethod', paymentMethod); // Gửi paymentMethod làm query param
+    let params = new HttpParams().set('paymentMethod', paymentMethod);
     // Backend endpoint là: POST /api/orders/{orderId}/create-payment-url
     return this.http.post<ApiResponse<PaymentUrlResponse>>(`${this.orderApiUrl}/${orderId}/create-payment-url`, null, { params });
-    // Truyền null cho body nếu API POST không yêu cầu body, chỉ cần query param
+
   }
-  // **********************************
+
 
   getBankTransferInfo(orderId: number): Observable<ApiResponse<BankTransferInfoResponse>> {
     return this.http.get<ApiResponse<BankTransferInfoResponse>>(`${this.orderApiUrl}/${orderId}/bank-transfer-info`);
@@ -135,7 +129,7 @@ export class OrderService {
     if (params.size !== undefined) httpParams = httpParams.set('size', params.size.toString());
     if (params.sort) httpParams = httpParams.set('sort', params.sort);
 
-    // THÊM XỬ LÝ CHO KEYWORD VÀ STATUS
+    //  XỬ LÝ CHO KEYWORD VÀ STATUS
     if (params.keyword?.trim()) { // Kiểm tra trim() để không gửi chuỗi rỗng
       httpParams = httpParams.set('keyword', params.keyword.trim());
     }
@@ -153,12 +147,6 @@ export class OrderService {
     return this.http.get<PagedApiResponse<OrderSummaryResponse>>(`${this.farmerOrderApiUrl}/my`, { params: httpParams });
   }
 
-  getFarmerOrderDetails(orderId: number): Observable<ApiResponse<OrderResponse>> {
-    // Dùng chung API getMyOrderDetailsById vì backend đã kiểm tra quyền
-    return this.http.get<ApiResponse<OrderResponse>>(`${this.orderApiUrl}/${orderId}`);
-    // Hoặc dùng API riêng của farmer nếu có:
-    // return this.http.get<ApiResponse<OrderResponse>>(`${this.farmerOrderApiUrl}/${orderId}`);
-  }
 
   updateFarmerOrderStatus(orderId: number, request: OrderStatusUpdateRequest): Observable<ApiResponse<OrderResponse>> {
     return this.http.put<ApiResponse<OrderResponse>>(`${this.farmerOrderApiUrl}/${orderId}/status`, request);
@@ -200,45 +188,24 @@ export class OrderService {
     return this.http.post<ApiResponse<OrderCalculationResponse>>(`${this.orderApiUrl}/calculate-totals`, request);
   }
 
-  // --- THÊM PHƯƠNG THỨC MỚI CHO ĐƠN HÀNG THỎA THUẬN ---
-  /**
-   * Gọi API backend để tạo một "Đơn hàng thỏa thuận".
-   * @param request Dữ liệu của đơn hàng thỏa thuận.
-   * @returns Observable chứa ApiResponse với OrderResponse của đơn hàng vừa tạo.
-   */
+
   createAgreedOrder(request: AgreedOrderRequest): Observable<ApiResponse<OrderResponse>> {
-    // Endpoint backend là: POST /api/orders/agreed-order
-    // Giả sử endpoint chung là /api/orders/agreed-order và backend sẽ kiểm tra quyền của người gọi
+
     return this.http.post<ApiResponse<OrderResponse>>(`${this.orderApiUrl}/agreed-order`, request);
   }
-  // ----------------------------------------------------
 
-  /**
-   * Tải PDF hóa đơn theo Order ID.
-   * @param orderId ID của đơn hàng.
-   * @returns Observable chứa Blob của file PDF.
-   */
   downloadInvoiceByOrderId(orderId: number): Observable<Blob> {
     const url = `${this.orderApiUrl}/${orderId}/invoice/download`;
     return this.http.get(url, { responseType: 'blob' });
   }
 
-  /**
-   * Tải PDF hóa đơn theo Invoice ID.
-   * @param invoiceId ID của hóa đơn.
-   * @returns Observable chứa Blob của file PDF.
-   */
+
   downloadInvoiceByInvoiceId(invoiceId: number): Observable<Blob> {
     const url = `${this.invoiceDownloadApiUrl}/${invoiceId}/download`; // API backend: /api/invoices/{invoiceId}/download
     return this.http.get(url, { responseType: 'blob' });
   }
 
-  /**
-   * Gửi thông báo từ Buyer rằng họ đã thực hiện thanh toán cho một đơn hàng.
-   * @param orderId ID của đơn hàng.
-   * @param payload Dữ liệu thông báo (mã tham chiếu, ghi chú).
-   * @returns Observable chứa ApiResponse (có thể là void nếu không cần data trả về).
-   */
+
   notifyPaymentMade(orderId: number, payload: PaymentNotificationRequest): Observable<ApiResponse<void>> {
     const url = `${this.orderApiUrl}/${orderId}/notify-payment-made`;
     return this.http.post<ApiResponse<void>>(url, payload);

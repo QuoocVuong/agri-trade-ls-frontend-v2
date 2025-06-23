@@ -1,6 +1,6 @@
 import { Pipe, PipeTransform, inject } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
-import  BigDecimal  from 'js-big-decimal'; // Import nếu cần xử lý BigDecimal
+import  BigDecimal  from 'js-big-decimal';
 
 @Pipe({
   name: 'formatCurrency',

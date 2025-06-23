@@ -1,20 +1,19 @@
 import { Component, OnInit, inject, signal, computed, WritableSignal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, FormArray, FormControl, ReactiveFormsModule } from '@angular/forms'; // Import Forms
-import { AdminInteractionService } from '../../services/admin-interaction.service'; // Import Service
+import { FormBuilder, FormGroup, FormArray, FormControl, ReactiveFormsModule } from '@angular/forms';
+import { AdminInteractionService } from '../../services/admin-interaction.service';
 import { RoleResponse } from '../../../user-profile/dto/response/RoleResponse';
 import { PermissionResponse } from '../../../user-profile/dto/response/PermissionResponse';
 import { RoleUpdateRequest } from '../../../user-profile/dto/request/RoleUpdateRequest';
-import { ApiResponse } from '../../../../core/models/api-response.model';
+
 import { LoadingSpinnerComponent } from '../../../../shared/components/loading-spinner/loading-spinner.component';
 import { AlertComponent } from '../../../../shared/components/alert/alert.component';
 import { ModalComponent } from '../../../../shared/components/modal/modal.component';
 import { ToastrService } from 'ngx-toastr';
 import {forkJoin, Subject} from 'rxjs';
-import { takeUntil, finalize, } from 'rxjs/operators'; // Import forkJoin
-import { getRoleTypeText, RoleType } from '../../../../common/model/role-type.enum';
-import {PermissionTranslatePipe} from '../../../../shared/pipes/permission-translate.pipe'; // Import RoleType helpers
-
+import { takeUntil, finalize, } from 'rxjs/operators';
+import { getRoleTypeText } from '../../../../common/model/role-type.enum';
+import {PermissionTranslatePipe} from '../../../../shared/pipes/permission-translate.pipe';
 @Component({
   selector: 'app-manage-roles',
   standalone: true,

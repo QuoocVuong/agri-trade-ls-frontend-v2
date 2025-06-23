@@ -10,7 +10,7 @@ import { CartItemUpdateRequest } from '../dto/request/CartItemUpdateRequest';
 import { AuthService } from '../../../core/services/auth.service';
 import BigDecimal from 'js-big-decimal';
 import {catchError} from 'rxjs/operators';
-import {CartValidationResponse} from '../dto/response/CartValidationResponse'; // Import AuthService
+import {CartValidationResponse} from '../dto/response/CartValidationResponse';
 
 @Injectable({
   providedIn: 'root' // Cung cấp ở root để dễ dàng truy cập từ header/các nơi khác
@@ -47,7 +47,7 @@ export class CartService {
     // Gọi hàm helper để tính tổng
     return this.calculateCartSubTotal(cart.items);
   });
-  // *********************************************************
+
 
 
 
@@ -70,8 +70,6 @@ export class CartService {
     return this.cartSubject.getValue();
   }
 
-  // Signal tính toán tổng số lượng item trong giỏ
-  //public totalItems = computed(() => this.cartSubject.value?.totalItems ?? 0);
 
   // Tải giỏ hàng từ API
   loadCart(): Observable<ApiResponse<CartResponse>> {
@@ -151,7 +149,7 @@ export class CartService {
     );
   }
 
-  // ****** THÊM PHƯƠNG THỨC VALIDATE CART ******
+  // ******  PHƯƠNG THỨC VALIDATE CART ******
   validateCart(): Observable<ApiResponse<CartValidationResponse>> {
     this.isLoading.set(true); // Có thể dùng một signal loading riêng cho validate
     return this.http.post<ApiResponse<CartValidationResponse>>(`${this.apiUrl}/validate`, {}).pipe(
@@ -166,9 +164,7 @@ export class CartService {
       finalize(() => this.isLoading.set(false))
     );
   }
-  // *******************************************
 
-  // ****** THÊM HÀM NÀY ******
   // Hàm để component gọi khi cần cập nhật số lượng item trong state mà không gọi API
   forceCartItemQuantityUpdate(itemId: number, newQuantity: number): void {
     const currentCart = this.getCurrentCart();
@@ -206,7 +202,7 @@ export class CartService {
       });
     }
   }
-  // ****************************
+
 
   // Thông báo cập nhật (nếu cần cho các component khác lắng nghe)
   notifyCartUpdated(): void {
@@ -222,33 +218,16 @@ export class CartService {
     return throwError(() => error);
   }
 
-  // ****** THÊM CÁC HÀM HELPER TÍNH TOÁN GIÁ B2B/B2C ******
+  // ******  CÁC HÀM HELPER TÍNH TOÁN GIÁ B2B/B2C ******
   // Hàm này có thể để public nếu component khác cần dùng trực tiếp
   public getDisplayPriceAndUnit(item: CartItemResponse): { price: BigDecimal | null, unit: string | null } {
     const product = item.product;
     const quantity = item.quantity;
     if (!product) return { price: null, unit: 'N/A' };
 
-    // Dùng signal isBusinessBuyer đã inject
-    // if (this.isBusinessBuyer() && product.b2bEnabled) { // Giả sử tên trường là b2bEnabled
-    //   let finalPrice = product.b2bBasePrice ? new BigDecimal(product.b2bBasePrice.toString()) : null;
-    //   const unit = product.b2bUnit ?? product.unit;
-    //
-    //   if (product.pricingTiers && product.pricingTiers.length > 0) {
-    //     const applicableTier = product.pricingTiers
-    //       .filter(tier => quantity >= tier.minQuantity)
-    //       .sort((a, b) => b.minQuantity - a.minQuantity)[0];
-    //     if (applicableTier?.pricePerUnit) {
-    //       finalPrice = new BigDecimal(applicableTier.pricePerUnit.toString());
-    //     }
-    //   }
-    //   if (finalPrice === null) {
-    //     finalPrice = product.price ? new BigDecimal(product.price.toString()) : null;
-    //   }
-    //   return { price: finalPrice, unit: unit };
-    // } else {
+
       return { price: product.price ? new BigDecimal(product.price.toString()) : null, unit: product.unit };
-    //}
+
   }
 
   // Hàm này có thể để public
@@ -269,5 +248,5 @@ export class CartService {
       return sum.add(this.calculateItemTotal(item)); // Gọi hàm helper trong cùng service
     }, new BigDecimal(0));
   }
-  // *********************************************************
+
 }

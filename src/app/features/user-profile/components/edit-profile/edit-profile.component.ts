@@ -1,5 +1,5 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms'; // Import ReactiveFormsModule
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { UserProfileService } from '../../services/user-profile.service';
@@ -8,13 +8,12 @@ import { UserResponse } from '../../dto/response/UserResponse';
 import { UserUpdateRequest } from '../../dto/request/UserUpdateRequest';
 import { ApiResponse } from '../../../../core/models/api-response.model';
 import {AlertComponent} from '../../../../shared/components/alert/alert.component';
-// Import component Alert nếu có
-// import { AlertComponent } from '../../../shared/components/alert/alert.component';
+
 
 @Component({
   selector: 'app-edit-profile',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink, AlertComponent, /*, AlertComponent */],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, AlertComponent, ],
   templateUrl: './edit-profile.component.html',
 })
 export class EditProfileComponent implements OnInit {

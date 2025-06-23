@@ -4,20 +4,20 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink, NavigationExtras } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { Subject, combineLatest, of } from 'rxjs';
-import { debounceTime, distinctUntilChanged, map, switchMap, takeUntil, tap } from 'rxjs/operators';
+import { map, switchMap, takeUntil, tap } from 'rxjs/operators';
 
-import { ProductService, SupplySourceSearchParams } from '../../services/product.service'; // ProductService chứa findSupplySources
+import { ProductService, SupplySourceSearchParams } from '../../services/product.service';
 import { CategoryService } from '../../services/category.service';
 import { SupplySourceResponse } from '../../dto/response/SupplySourceResponse';
 import { CategoryResponse } from '../../dto/response/CategoryResponse';
-import { PageData, PagedApiResponse, ApiResponse } from '../../../../core/models/api-response.model';
+import { PageData, ApiResponse } from '../../../../core/models/api-response.model';
 
-import { SupplySourceCardComponent } from '../supply-source-card/supply-source-card.component'; // Card mới
-import { CategorySidebarComponent } from '../category-sidebar/category-sidebar.component'; // Có thể tái sử dụng
+import { SupplySourceCardComponent } from '../supply-source-card/supply-source-card.component';
+import { CategorySidebarComponent } from '../category-sidebar/category-sidebar.component';
 import { PaginatorComponent } from '../../../../shared/components/paginator/paginator.component';
 import { LoadingSpinnerComponent } from '../../../../shared/components/loading-spinner/loading-spinner.component';
 import { AlertComponent } from '../../../../shared/components/alert/alert.component';
-import {District, LocationService, Province, Ward} from '../../../../core/services/location.service'; // Thêm AlertComponent
+import {District, LocationService, Province, Ward} from '../../../../core/services/location.service';
 
 @Component({
   selector: 'app-supply-source-list',
@@ -26,32 +26,31 @@ import {District, LocationService, Province, Ward} from '../../../../core/servic
     CommonModule,
     RouterLink,
     ReactiveFormsModule,
-    SupplySourceCardComponent, // Sử dụng card mới
+    SupplySourceCardComponent,
     CategorySidebarComponent,
     PaginatorComponent,
     LoadingSpinnerComponent,
-    AlertComponent // Thêm AlertComponent
+    AlertComponent
   ],
   templateUrl: './supply-source-list.component.html',
-  // styleUrls: ['./supply-source-list.component.css']
+
 })
 export class SupplySourceListComponent implements OnInit, OnDestroy {
   private productService = inject(ProductService);
-  private categoryService = inject(CategoryService); // Vẫn có thể dùng để lấy category nếu cần lọc theo category slug
+  private categoryService = inject(CategoryService);
   public route = inject(ActivatedRoute);
   private router = inject(Router);
   private fb = inject(FormBuilder);
 
-  private locationService = inject(LocationService); // Inject LocationService
-  private cdr = inject(ChangeDetectorRef); // Inject ChangeDetectorRef
+  private locationService = inject(LocationService);
+  private cdr = inject(ChangeDetectorRef);
 
 
   supplySources = signal<SupplySourceResponse[]>([]);
   paginationData = signal<PageData<SupplySourceResponse> | null>(null);
   isLoading = signal(true);
   errorMessage = signal<string | null>(null);
-  currentCategoryContext = signal<CategoryResponse | null>(null); // Nếu muốn hiển thị tên category đang lọc
-
+  currentCategoryContext = signal<CategoryResponse | null>(null);
   // Signals cho danh sách địa phương
   provinces = signal<Province[]>([]);
   districts = signal<District[]>([]);

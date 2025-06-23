@@ -1,16 +1,16 @@
 import {Component, OnInit, inject, signal, computed, OnDestroy, ChangeDetectorRef} from '@angular/core';
-import { CommonModule, DecimalPipe, DatePipe } from '@angular/common'; // Import Pipes
+import { CommonModule, DecimalPipe, DatePipe } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ProductService } from '../../services/product.service';
 import { ProductDetailResponse } from '../../dto/response/ProductDetailResponse';
 import { ApiResponse } from '../../../../core/models/api-response.model';
 import { LoadingSpinnerComponent } from '../../../../shared/components/loading-spinner/loading-spinner.component';
-import { ProductCardComponent } from '../product-card/product-card.component'; // Import ProductCard
-import { ReviewListComponent } from '../../../interaction/components/review-list/review-list.component'; // Import ReviewList
-import { ReviewFormComponent } from '../../../interaction/components/review-form/review-form.component'; // Import ReviewForm
-import { AuthService } from '../../../../core/services/auth.service'; // Import AuthService
-import { CartService } from '../../../ordering/services/cart.service'; // Import CartService
-import { FavoriteService } from '../../../interaction/service/FavoriteService'; // Import FavoriteService
+import { ProductCardComponent } from '../product-card/product-card.component';
+import { ReviewListComponent } from '../../../interaction/components/review-list/review-list.component';
+import { ReviewFormComponent } from '../../../interaction/components/review-form/review-form.component';
+import { AuthService } from '../../../../core/services/auth.service';
+import { CartService } from '../../../ordering/services/cart.service';
+import { FavoriteService } from '../../../interaction/service/FavoriteService';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { CartItemRequest } from '../../../ordering/dto/request/CartItemRequest';
 import { Subject } from 'rxjs';
@@ -20,7 +20,7 @@ import { FormatBigDecimalPipe } from '../../../../shared/pipes/format-big-decima
 import { SafeHtmlPipe } from '../../../../shared/pipes/safe-html.pipe';
 import { ReviewResponse } from '../../../interaction/dto/response/ReviewResponse';
 import { ProductSummaryResponse } from '../../dto/response/ProductSummaryResponse';
-import { LocationService } from '../../../../core/services/location.service'; // Import Forms
+import { LocationService } from '../../../../core/services/location.service';
 import {
   trigger,
   transition,
@@ -36,17 +36,17 @@ import {AlertComponent} from '../../../../shared/components/alert/alert.componen
   imports: [
     CommonModule,
     RouterLink,
-    DecimalPipe, // Thêm Pipe
-    DatePipe,    // Thêm Pipe
-    ReactiveFormsModule, // Thêm Forms
+    DecimalPipe,
+    DatePipe,
+    ReactiveFormsModule,
     LoadingSpinnerComponent,
-    ProductCardComponent, // Component sản phẩm liên quan
-    ReviewListComponent, // Component danh sách review
+    ProductCardComponent,
+    ReviewListComponent,
     ReviewFormComponent,
     FormatBigDecimalPipe,
     SafeHtmlPipe,
     AlertComponent,
-    // Component form review
+
   ],
   templateUrl: './product-detail.component.html',
   animations: [
@@ -85,13 +85,13 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
   isFavorite = signal(false); // Trạng thái yêu thích hiện tại
   farmerProvinceName = signal<string | null>(null);
 
-  // *** THÊM COMPUTED SIGNAL KIỂM TRA SẢN PHẨM CỦA MÌNH ***
+
   isMyProduct = computed(() => {
     const currentUserId = this.authService.currentUser()?.id;
     const farmerId = this.product()?.farmer?.farmerId;
     return this.isAuthenticated() && currentUserId != null && farmerId != null && currentUserId === farmerId;
   });
-  // *******************************************************
+
 
   // Form để nhập số lượng
   quantityForm = this.fb.group({
@@ -147,7 +147,7 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
             } else {
               this.farmerProvinceName.set('Không xác định');
             }
-            // ******************************
+
 
             // Kiểm tra trạng thái yêu thích nếu user đã đăng nhập
             if (this.isAuthenticated() && response.data.id) {
@@ -244,38 +244,18 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // Kiểm tra tồn kho client-side trước khi gọi API (tăng UX)
+    // Kiểm tra tồn kho client-side trước khi gọi API
     const requestedQuantity = this.quantityForm.value.quantity ?? 1;
     const availableStock = this.product()?.stockQuantity ?? 0;
     const productName = this.product()?.name ?? 'Sản phẩm';
 
-    // if (requestedQuantity > availableStock) {
-    //   this.toastr.error(`Chỉ còn ${availableStock} ${this.product()?.name ?? 'sản phẩm'} trong kho.`);
-    //   this.quantityForm.controls.quantity.setValue(availableStock); // Set về max
-    //   return; // Không gọi API
-    // }
+
     if (availableStock <= 0) {
       this.toastr.error(`${this.product()?.name ?? 'Sản phẩm'} đã hết hàng.`);
       return; // Không gọi API
     }
 
-    // // ****** THÊM KIỂM TRA CLIENT-SIDE ******
-    // const currentCart = this.cartService.getCurrentCart();
-    // const itemInCart = currentCart?.items.find(item => item.product?.id === this.product()?.id);
-    // const quantityInCart = itemInCart?.quantity ?? 0;
-    //
-    // if ((quantityInCart + requestedQuantity) > availableStock) {
-    //   const canAdd = availableStock - quantityInCart;
-    //   if (canAdd > 0) {
-    //     this.toastr.error(`Chỉ có thể thêm tối đa ${canAdd} "${productName}" nữa (hiện có ${quantityInCart} trong giỏ).`);
-    //     // Set lại giá trị input về mức tối đa có thể thêm (nếu muốn)
-    //     // this.quantityForm.controls.quantity.setValue(canAdd);
-    //   } else {
-    //     this.toastr.error(`Số lượng "${productName}" trong giỏ đã đạt mức tối đa (${availableStock}).`);
-    //   }
-    //   return; // Không gọi API
-    // }
-    // // ************************************
+
     // Lấy số lượng trong giỏ TRƯỚC KHI THÊM
     const currentCart = this.cartService.getCurrentCart();
     const itemInCart = currentCart?.items.find(item => item.product?.id === this.product()?.id);
@@ -312,29 +292,7 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
       .subscribe({
         next: () => {
           this.toastr.success(`Đã thêm ${request.quantity} "${productName}" vào giỏ hàng!`);
-          // // ****** THÊM KIỂM TRA SAU KHI THÊM THÀNH CÔNG ******
-          // const updatedCart = this.cartService.getCurrentCart();
-          // const addedItem = updatedCart?.items.find(item => item.product?.id === this.product()?.id);
-          // const newQuantityInCart = addedItem?.quantity ?? 0;
-          // const stock = this.product()?.stockQuantity ?? 0; // Lấy stock từ product detail
-          // // ****** THÊM CONSOLE LOG ******
-          // console.log(`--- After Add Success (Product ID: ${this.product()?.id}) ---`); // Hoặc this.product()?.id
-          // console.log(`Stock: ${stock}`);
-          // console.log(`Quantity in Cart (from getCurrentCart): ${newQuantityInCart}`);
-          // console.log(`Is newQuantityInCart === stock? : ${newQuantityInCart === stock}`);
-          // console.log('Current Cart State:', updatedCart); // Xem toàn bộ giỏ hàng
-          // // ******************************
-          //
-          // if (newQuantityInCart > 0 && stock > 0 && newQuantityInCart === stock) {
-          //   console.log('>>> Condition MET! Showing info toastr.'); // Thêm log này
-          //   setTimeout(() => {
-          //     this.toastr.info(`Đã đạt số lượng tối đa (${stock}) cho "${productName}" trong giỏ hàng.`);
-          //     this.cdr.markForCheck();
-          //   }, 100);
-          // } else {
-          //   console.log('>>> Condition NOT MET.'); // Thêm log này
-          // }
-          // // ****************************************************
+
           // ****** KIỂM TRA DỰA TRÊN SỐ LƯỢNG CŨ VÀ SỐ LƯỢNG VỪA THÊM ******
           const expectedNewQuantityInCart = quantityInCartBeforeAdd + requestedQuantity;
           const stock = this.product()?.stockQuantity ?? 0; // Lấy lại stock
@@ -357,7 +315,7 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
           } else {
             console.log('>>> Condition NOT MET.');
           }
-          // ******************************************************************
+
         },
         error: (err: any) => { // Dùng any hoặc HttpErrorResponse
           console.error('Error adding to cart:', err);
@@ -376,7 +334,7 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
                 this.updateQuantityValidators(0);
               }
             } else {
-              // Trường hợp không có availableStock từ server (ít xảy ra)
+              // Trường hợp không có availableStock từ server
               this.toastr.error(`Thêm thất bại. Số lượng ${productName} không đủ.`);
             }
           } else {
@@ -405,8 +363,8 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
     const productId = this.product()!.id;
 
     const action = currentIsFavorite
-      ? this.favoriteService.removeFavorite(productId) // Gọi service đã sửa
-      : this.favoriteService.addFavorite(productId);    // Gọi service đã sửa
+      ? this.favoriteService.removeFavorite(productId)
+      : this.favoriteService.addFavorite(productId);
 
     action
       .pipe(
@@ -425,7 +383,7 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
 
 
 
-  // Hàm mới để lấy tên hiển thị của farmer
+  // Hàm  để lấy tên hiển thị của farmer
   getFarmerDisplayName(farmer: ProductDetailResponse['farmer']): string {
     if (!farmer) return 'Nông dân';
     return farmer.farmName || 'Nông dân'; // Ưu tiên farmName, rồi đến fullName
@@ -434,18 +392,18 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
   // Hàm xử lý khi review được gửi thành công từ ReviewFormComponent
   onReviewSubmitted(newReview: ReviewResponse): void {
     console.log('New review submitted in parent:', newReview);
-    // Toastr đã được hiển thị ở form con, không cần ở đây nữa
+
 
     // ****** TẢI LẠI DỮ LIỆU SẢN PHẨM ******
-    // Cách tốt nhất để cập nhật cả ratingCount và danh sách review
+
     const currentProduct = this.product();
     if (currentProduct) {
-      console.log(`Reloading product data for slug: ${currentProduct.slug}`); // Thêm log
+
       this.loadProduct(currentProduct.slug); // Gọi lại hàm loadProduct
     } else {
       console.error("Cannot reload product data because current product is null.");
     }
-    // ***************************************
+
   }
 
   // Helper xử lý lỗi
@@ -454,7 +412,7 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
     const status = err?.status;
     if (errorType === 'add_to_cart') {
       if (status === 400) {
-        // Check more detail in the backend error message
+
         if (err.message.includes('Quantity')) {
           message = "Số lượng bạn chọn không hợp lệ.";
         } else if (err.message.includes('Product not found')) {
@@ -486,7 +444,7 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
     console.error(err);
   }
 
-  // *** THÊM HÀM BẮT ĐẦU CHAT ***
+  // ***  HÀM BẮT ĐẦU CHAT ***
   startChatWithFarmer(): void {
     const farmerId = this.product()?.farmer?.farmerId;
     if (!this.isAuthenticated()) {
@@ -524,7 +482,7 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
       }
     });
   }
-  // ****************************
+
 
 
 

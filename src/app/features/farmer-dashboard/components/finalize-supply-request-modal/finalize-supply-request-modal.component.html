@@ -145,7 +145,7 @@
       <label class="label pb-1"><span class="label-text font-medium">Ngày giao hàng dự kiến (chốt)</span></label>
       <input type="date" formControlName="expectedDeliveryDate" class="input input-bordered" [ngClass]="{'input-error': finalizeForm.get('expectedDeliveryDate')?.invalid && finalizeForm.get('expectedDeliveryDate')?.touched}">
 
-      <!-- SỬA LẠI KHỐI HIỂN THỊ LỖI -->
+
       <div *ngIf="finalizeForm.get('expectedDeliveryDate')?.invalid && finalizeForm.get('expectedDeliveryDate')?.touched" class="text-error text-xs mt-1">
     <span *ngIf="finalizeForm.get('expectedDeliveryDate')?.errors?.['required']">
       Vui lòng chọn ngày giao hàng dự kiến.

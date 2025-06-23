@@ -2,10 +2,10 @@ import { ProductStatus } from '../../domain/product-status.enum';
 import { CategoryInfoResponse } from './CategoryInfoResponse';
 import { FarmerInfoResponse } from './FarmerInfoResponse';
 import { ProductImageResponse } from './ProductImageResponse';
-import { ProductPricingTierResponse } from './ProductPricingTierResponse';
+
 import { ProductSummaryResponse } from './ProductSummaryResponse';
 import BigDecimal from 'js-big-decimal';
-// import { ReviewResponse } from '../../../interaction/dto/response/ReviewResponse'; // Nếu cần reviews chi tiết
+
 
 export interface ProductDetailResponse {
   id: number;
@@ -45,6 +45,5 @@ export interface ProductDetailResponse {
   wholesaleUnit?: string | null;
   referenceWholesalePrice?: number | string | BigDecimal | null;
 
-  // Nếu sau này muốn hiển thị đánh giá cụ thể
-  // reviews?: ReviewResponse[] | null;
+
 }
