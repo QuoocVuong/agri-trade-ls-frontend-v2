@@ -68,10 +68,12 @@ export class RegisterComponent implements OnInit {
     this.authService.register(registerData).subscribe({
       next: (response: ApiResponse<UserResponse>) => {
         if (response.success) {
-          this.successMessage.set(response.message || 'Đăng ký thành công! Vui lòng kiểm tra email để xác thực tài khoản.');
+          this.successMessage.set(
+            'Đăng ký thành công! Một email xác thực đã được gửi đến địa chỉ của bạn. Vui lòng kiểm tra hộp thư (bao gồm cả thư mục spam) và làm theo hướng dẫn để kích hoạt tài khoản.'
+          );
           this.registerForm.reset();
           // Không chuyển hướng ngay, để user đọc thông báo
-           setTimeout(() => this.router.navigate(['/auth/login']), 3000);
+           //setTimeout(() => this.router.navigate(['/auth/login']), 3000);
         } else {
           this.errorMessage.set(response.message || 'Đăng ký thất bại.');
         }
