@@ -182,7 +182,20 @@ export class HomeComponent implements OnInit {
     const trimmedSearchTerm = searchTerm?.trim();
     if (trimmedSearchTerm) {
       const targetPath = this.searchTypeSignal() === 'products' ? '/products' : '/supply-sources';
-      this.router.navigate([targetPath], { queryParams: { keyword: trimmedSearchTerm } });
+
+      // Tạo queryParams động dựa trên loại tìm kiếm
+      const queryParams: any = {};
+      if (this.searchTypeSignal() === 'products') {
+        // Trang sản phẩm dùng 'keyword'
+        queryParams.keyword = trimmedSearchTerm;
+      } else {
+        // Trang nguồn cung dùng 'productKeyword'
+        queryParams.productKeyword = trimmedSearchTerm;
+      }
+
+      // Sử dụng object queryParams đã tạo
+      this.router.navigate([targetPath], { queryParams: queryParams });
+
       if (this.heroSearchInputRef) {
         this.heroSearchInputRef.nativeElement.value = '';
       }

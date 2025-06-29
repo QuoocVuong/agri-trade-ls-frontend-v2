@@ -12,5 +12,5 @@ export const environment = {
   appBankAccountNumber: '0123456789',
   appBankName: 'VIETCOMBANK - CN LANG SON',
   appBankBranch: '', // Có thể gộp vào tên ngân hàng
-  appBankQrCodeUrl: 'https://img.vietqr.io/image/VCB-0123456789-compact.png?accountName=CONG%20TY%20TNHH%20AGRI%20TRADELS' // Đường dẫn đến ảnh QR của bạn
+  appBankQrCodeUrl: 'https://img.vietqr.io/image/VCB-0123456789-compact.png?accountName=CONG%20TY%20TNHH%20AGRI%20TRADELS' // Đường dẫn đến ảnh QR
 };
