@@ -3,7 +3,13 @@
 
 <div class="flex flex-col min-h-screen">
   <!-- Nội dung chính của trang public -->
-  <main class="flex-grow container mx-auto pt-16">
+  <main class="flex-grow container mx-auto ">
+
+    <!-- THÊM BREADCRUMB VÀO ĐÂY -->
+    <div class="p-2 md:p-2 mx-4">
+      <app-breadcrumb></app-breadcrumb>
+    </div>
+
     <router-outlet></router-outlet> <!-- Nội dung của các trang con sẽ hiển thị ở đây -->
   </main>
 

@@ -7,7 +7,8 @@ export const INTERACTION_ROUTES: Routes = [
     path: '',
     loadComponent: () => import('./components/chat/chat-layout/chat-layout.component').then(m => m.ChatLayoutComponent),
     canActivate: [authGuard], // Chat yêu cầu đăng nhập
-    title: 'Tin nhắn'
+    title: 'Tin nhắn',
+    data: { breadcrumb: 'Tin nhắn' }
   },
 
 ];

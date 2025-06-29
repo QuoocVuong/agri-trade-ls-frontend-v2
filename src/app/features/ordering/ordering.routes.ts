@@ -18,20 +18,23 @@ export const ORDERING_ROUTES: Routes = [
     path: 'history', // Route: /user/orders (đã định nghĩa ở app.routes.ts)
     loadComponent: () => import('./components/order-history/order-history.component').then(m => m.OrderHistoryComponent),
     canActivate: [authGuard],
-    title: 'Lịch sử đơn hàng'
+    title: 'Lịch sử đơn hàng',
+    data: { breadcrumb: 'Lịch sử đơn hàng' }
   },
   {
     path: ':id', // Route: /user/orders/:id (hoặc /orders/:id nếu dùng layout public)
     loadComponent: () => import('./components/order-detail/order-detail.component').then(m => m.OrderDetailComponent),
     canActivate: [authGuard],
-    title: 'Chi tiết đơn hàng'
+    title: 'Chi tiết đơn hàng',
+    data: { breadcrumb: 'Chi tiết đơn hàng' }
   },
 
   {
     path: 'supply-request/new', // URL: /user/orders/supply-request/new (nếu ORDERING_ROUTES nằm trong user)
     loadComponent: () => import('./components/supply-order-request-form/supply-order-request-form.component').then(m => m.SupplyOrderRequestFormComponent),
     canActivate: [authGuard], // Yêu cầu đăng nhập
-    title: 'Gửi Yêu Cầu Đặt Hàng Nguồn Cung'
+    title: 'Gửi Yêu Cầu Đặt Hàng Nguồn Cung',
+    data: { breadcrumb: 'Gửi Yêu Cầu Đặt Hàng Nguồn Cung' }
   },
 
 
