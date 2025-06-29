@@ -1,85 +1,97 @@
 <!-- src/app/features/catalog/components/supply-source-list/supply-source-list.component.html -->
 <div class="flex flex-col md:flex-row gap-6 lg:gap-8 container mx-auto px-4 py-8">
   <!-- Sidebar Filters -->
-  <aside class="w-full md:w-1/4 lg:w-1/5 flex-shrink-0">
-    <!-- Category Sidebar -->
-    <div class="rounded-xl shadow-md p-4 mb-6">
-      <h3 class="text-lg font-semibold mb-3 text-primary dark:text-green-400">Lọc theo Danh mục</h3>
-      <app-category-sidebar [pageType]="'supply-sources'"
-                            (categorySelected)="navigateToCategory($event)"></app-category-sidebar>
+  <aside class="w-full md:w-1/4 lg:w-1/5 flex-shrink-0 md:sticky md:top-24 self-start md:h-[calc(100vh-7rem)] md:overflow-y-auto custom-scrollbar">
 
-    </div>
+    <!-- SỬA LẠI CẤU TRÚC Ở ĐÂY -->
+    <div class="space-y-4">
 
-    <!-- Bộ lọc cho Nguồn Cung -->
-    <div class="rounded-xl shadow-md p-4">
-      <h3 class="text-lg font-semibold mb-4 text-primary dark:text-green-400">Bộ lọc Nguồn Cung</h3>
-      <form [formGroup]="filterForm" (ngSubmit)="applyFilters(false)">
-        <div class="form-control mb-4">
-          <label class="label dark:text-base-content"><span class="label-text font-medium">Tên nông sản</span></label>
-          <input type="text" placeholder="VD: Cà chua, Khoai lang..."
-                 class="input input-sm input-bordered w-full rounded-full focus:ring-2 focus:ring-primary dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                 formControlName="productKeyword" />
+      <!-- Phần 1: Lọc theo Danh mục (Collapsible) -->
+      <div class="collapse collapse-arrow bg-base-100 dark:bg-gray-800 shadow-md rounded-xl">
+        <input type="checkbox" name="filter-accordion" checked="checked" />
+        <div class="collapse-title text-lg font-semibold text-primary dark:text-green-400">
+          Lọc theo Danh mục
         </div>
-        <!-- Tỉnh/Thành phố Dropdown -->
-        <div class="form-control mb-4">
-          <label class="label dark:text-base-content"><span class="label-text font-medium">Tỉnh/Thành phố</span></label>
-          <select class="select select-sm select-bordered w-full rounded-full ..."
-                  formControlName="provinceCode">
-            <option value="">-- Chọn Tỉnh/Thành --</option>
-            <option *ngFor="let province of provinces()" [value]="province.idProvince">
-              {{ province.name }}
-            </option>
-          </select>
+        <div class="collapse-content">
+          <!-- Đưa component category-sidebar vào đây -->
+          <app-category-sidebar [pageType]="'supply-sources'"
+                                (categorySelected)="navigateToCategory($event)"></app-category-sidebar>
         </div>
+      </div>
 
-        <!-- Quận/Huyện Dropdown -->
-        <div class="form-control mb-4">
-          <label class="label dark:text-base-content"><span class="label-text font-medium">Quận/Huyện</span></label>
-          <select class="select select-sm select-bordered w-full rounded-full ..."
-                  formControlName="districtCode"
-                  [disabled]="!filterForm.get('provinceCode')?.value || districts().length === 0">
-            <option value="">-- Chọn Quận/Huyện --</option>
-            <option *ngFor="let district of districts()" [value]="district.idDistrict">
-              {{ district.name }}
-            </option>
-          </select>
+      <!-- Phần 2: Bộ lọc Nguồn Cung (Collapsible) -->
+      <div class="collapse collapse-arrow bg-base-100 dark:bg-gray-800 shadow-md rounded-xl">
+        <input type="checkbox" name="filter-accordion" checked="checked" />
+        <div class="collapse-title text-lg font-semibold text-primary dark:text-green-400">
+          Bộ lọc Nguồn Cung
         </div>
+        <div class="collapse-content">
+          <!-- Đưa form lọc vào đây -->
+          <form [formGroup]="filterForm" (ngSubmit)="applyFilters(false)" class="pt-2">
+            <div class="form-control mb-4">
+              <label class="label dark:text-base-content"><span class="label-text font-medium">Tên nông sản</span></label>
+              <input type="text" placeholder="VD: Cà chua, Khoai lang..."
+                     class="input input-sm input-bordered w-full rounded-full focus:ring-2 focus:ring-primary dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                     formControlName="productKeyword" />
+            </div>
+            <!-- ... các trường input khác của form giữ nguyên ... -->
+            <div class="form-control mb-4">
+              <label class="label dark:text-base-content"><span class="label-text font-medium">Tỉnh/Thành phố</span></label>
+              <select class="select select-sm select-bordered w-full rounded-full ..."
+                      formControlName="provinceCode">
+                <option value="">-- Chọn Tỉnh/Thành --</option>
+                <option *ngFor="let province of provinces()" [value]="province.idProvince">
+                  {{ province.name }}
+                </option>
+              </select>
+            </div>
+            <div class="form-control mb-4">
+              <label class="label dark:text-base-content"><span class="label-text font-medium">Quận/Huyện</span></label>
+              <select class="select select-sm select-bordered w-full rounded-full ..."
+                      formControlName="districtCode"
+                      [disabled]="!filterForm.get('provinceCode')?.value || districts().length === 0">
+                <option value="">-- Chọn Quận/Huyện --</option>
+                <option *ngFor="let district of districts()" [value]="district.idDistrict">
+                  {{ district.name }}
+                </option>
+              </select>
+            </div>
+            <div class="form-control mb-4">
+              <label class="label dark:text-base-content"><span class="label-text font-medium">Xã/Phường</span></label>
+              <select class="select select-sm select-bordered w-full rounded-full ..."
+                      formControlName="wardCode"
+                      [disabled]="!filterForm.get('districtCode')?.value || wards().length === 0">
+                <option value="">-- Chọn Xã/Phường --</option>
+                <option *ngFor="let ward of wards()" [value]="ward.idWard">
+                  {{ ward.name }}
+                </option>
+              </select>
+            </div>
+            <div class="form-control mb-4">
+              <label class="label dark:text-base-content"><span class="label-text font-medium">Số lượng cần (tối thiểu)</span></label>
+              <input type="number" placeholder="VD: 1000 (kg, tấn...)"
+                     class="input input-sm input-bordered w-full rounded-full dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                     formControlName="minQuantityNeeded" />
+            </div>
+            <!-- ... các nút bấm của form giữ nguyên ... -->
+            <button type="submit" class="btn btn-sm btn-primary w-full rounded-full mt-4 dark:bg-green-600 dark:hover:bg-green-700 dark:border-green-600"
+                    [disabled]="filterForm.invalid">
+              <span *ngIf="currentCategoryContext()">Lọc trong "{{currentCategoryContext()?.name}}"</span>
+              <span *ngIf="!currentCategoryContext()">Tìm nguồn cung</span>
+            </button>
+            <button type="button" class="btn btn-sm btn-secondary w-full rounded-full mt-2 dark:bg-teal-600 dark:hover:bg-teal-700 dark:border-teal-600"
+                    (click)="applyFilters(true)"
+                    [disabled]="!filterForm.dirty && !filterForm.touched && !this.route.snapshot.paramMap.get('categorySlug')">
+              Tìm trên tất cả
+            </button>
+            <button type="button" class="btn btn-sm btn-ghost w-full rounded-full mt-2 text-base-content/70 hover:bg-base-200 dark:hover:bg-gray-700"
+                    (click)="resetFilters()">
+              Xóa bộ lọc
+            </button>
+          </form>
+        </div>
+      </div>
 
-        <!-- Xã/Phường Dropdown (MỚI) -->
-        <div class="form-control mb-4">
-          <label class="label dark:text-base-content"><span class="label-text font-medium">Xã/Phường</span></label>
-          <select class="select select-sm select-bordered w-full rounded-full ..."
-                  formControlName="wardCode"
-                  [disabled]="!filterForm.get('districtCode')?.value || wards().length === 0">
-            <option value="">-- Chọn Xã/Phường --</option>
-            <option *ngFor="let ward of wards()" [value]="ward.idWard"> <!-- Giả sử idWard là mã xã -->
-              {{ ward.name }}
-            </option>
-          </select>
-        </div>
-        <!-- Số lượng cần -->
-        <div class="form-control mb-4">
-          <label class="label dark:text-base-content"><span class="label-text font-medium">Số lượng cần (tối thiểu)</span></label>
-          <input type="number" placeholder="VD: 1000 (kg, tấn...)"
-                 class="input input-sm input-bordered w-full rounded-full dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                 formControlName="minQuantityNeeded" />
-        </div>
-
-        <button type="submit" class="btn btn-sm btn-primary w-full rounded-full mt-4 dark:bg-green-600 dark:hover:bg-green-700 dark:border-green-600"
-                [disabled]="filterForm.invalid">
-          <span *ngIf="currentCategoryContext()">Lọc trong "{{currentCategoryContext()?.name}}"</span>
-          <span *ngIf="!currentCategoryContext()">Tìm nguồn cung</span>
-        </button>
-        <button type="button" class="btn btn-sm btn-secondary w-full rounded-full mt-2 dark:bg-teal-600 dark:hover:bg-teal-700 dark:border-teal-600"
-                (click)="applyFilters(true)"
-                [disabled]="!filterForm.dirty && !filterForm.touched && !this.route.snapshot.paramMap.get('categorySlug')">
-          Tìm trên tất cả
-        </button>
-        <button type="button" class="btn btn-sm btn-ghost w-full rounded-full mt-2 text-base-content/70 hover:bg-base-200 dark:hover:bg-gray-700"
-                (click)="resetFilters()">
-          Xóa bộ lọc
-        </button>
-      </form>
     </div>
   </aside>
 
@@ -132,3 +144,20 @@
     </div>
   </div>
 </div>
+<style>
+  /* Custom scrollbar (tùy chọn, để thanh cuộn đẹp hơn) */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background-color: rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
+    border: 2px solid transparent;
+  }
+  html.dark .custom-scrollbar::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0.2);
+  }
+</style>

@@ -1,86 +1,95 @@
 <div class="flex flex-col md:flex-row gap-6 lg:gap-8 container mx-auto px-4 py-8">
   <!-- Sidebar Filters -->
-  <aside class="w-full md:w-1/4 lg:w-1/5 flex-shrink-0">
-    <!-- Component Category Sidebar -->
-    <div class="rounded-xl shadow-md p-4 mb-6">
-      <h3 class="text-lg font-semibold mb-3 text-primary">Danh mục</h3>
-      <app-category-sidebar [pageType]="'products'"
-                            (categorySelected)="navigateToProductCategory($event)"></app-category-sidebar>
-    </div>
+  <!-- SỬA LẠI CẤU TRÚC CỦA ASIDE -->
+  <aside class="w-full md:w-1/4 lg:w-1/5 flex-shrink-0 md:sticky md:top-24 self-start md:h-[calc(100vh-7rem)] md:overflow-y-auto custom-scrollbar">
 
-    <!-- Các bộ lọc khác -->
-    <div class="rounded-xl shadow-md p-4">
-      <h3 class="text-lg font-semibold mb-4 text-primary">Bộ lọc tìm kiếm</h3>
-      <form [formGroup]="filterForm" (ngSubmit)="applyFilters(false)">
-        <div class="form-control mb-4">
-          <label class="label dark:text-base-content"><span class="label-text font-medium">Tìm theo tên</span></label>
-          <div class="relative">
-            <input type="text"
-                   placeholder="Nhập từ khóa..."
-                   class="input input-sm input-bordered w-full pl-10 rounded-full focus:ring-2 focus:ring-primary"
-                   formControlName="keyword"
-                   aria-label="Tìm kiếm sản phẩm theo từ khóa" />
-            <svg class="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-base-content/50"
-                 xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-          </div>
+    <!-- Bọc các bộ lọc trong một div với space-y -->
+    <div class="space-y-4">
+
+      <!-- Phần 1: Lọc theo Danh mục (Collapsible) -->
+      <div class="collapse collapse-arrow bg-base-100 dark:bg-gray-800 shadow-md rounded-xl">
+        <input type="checkbox" name="product-filter-accordion" checked="checked" />
+        <div class="collapse-title text-lg font-semibold text-primary dark:text-green-400">
+          Lọc theo Danh mục
         </div>
-        <!-- Bộ lọc giá -->
-        <div class="form-control mb-4">
-          <label class="label dark:text-base-content"><span class="label-text font-medium">Khoảng giá</span></label>
-          <div class="flex gap-2">
-            <input type="number"
-                   placeholder="Từ"
-                   class="input input-sm input-bordered w-full rounded-full dark:text-base-content dark:border-base-content/20 dark:bg-base-200"
-                   formControlName="minPrice"
-                   aria-label="Giá tối thiểu" />
-            <input type="number"
-                   placeholder="Đến"
-                   class="input input-sm input-bordered w-full rounded-full dark:text-base-content dark:border-base-content/20 dark:bg-base-200"
-                   formControlName="maxPrice"
-                   aria-label="Giá tối đa" />
-          </div>
+        <div class="collapse-content p-0"> <!-- Thêm p-0 để loại bỏ padding mặc định -->
+          <app-category-sidebar [pageType]="'products'"
+                                (categorySelected)="navigateToProductCategory($event)"></app-category-sidebar>
         </div>
-        <!-- Bộ lọc đánh giá -->
-        <div class="form-control mb-4">
-          <label class="label dark:text-base-content"><span class="label-text font-medium">Đánh giá tối thiểu</span></label>
-          <select class="select select-sm select-bordered w-full rounded-full"
-                  formControlName="minRating"
-                  aria-label="Chọn đánh giá tối thiểu">
-            <option [ngValue]="0">Tất cả</option> <!-- Sửa value thành [ngValue] cho number -->
-            <option [ngValue]="1">1 sao trở lên</option>
-            <option [ngValue]="2">2 sao trở lên</option>
-            <option [ngValue]="3">3 sao trở lên</option>
-            <option [ngValue]="4">4 sao trở lên</option>
-          </select>
+      </div>
+
+      <!-- Phần 2: Bộ lọc tìm kiếm (Collapsible) -->
+      <div class="collapse collapse-arrow bg-base-100 dark:bg-gray-800 shadow-md rounded-xl">
+        <input type="checkbox" name="product-filter-accordion" checked="checked" />
+        <div class="collapse-title text-lg font-semibold text-primary dark:text-green-400">
+          Bộ lọc tìm kiếm
         </div>
-        <button type="submit"
-                class="btn btn-sm btn-primary w-full rounded-full mt-4 ..."
-                [disabled]="filterForm.invalid">
-          <!-- Thay đổi text tùy theo ngữ cảnh -->
-          <span *ngIf="currentCategory()">Lọc trong "{{currentCategory()?.name}}"</span>
-          <span *ngIf="!currentCategory()">Áp dụng bộ lọc</span>
-        </button>
+        <div class="collapse-content">
+          <form [formGroup]="filterForm" (ngSubmit)="applyFilters(false)" class="pt-2">
+            <div class="form-control mb-4">
+              <label class="label dark:text-base-content"><span class="label-text font-medium">Tìm theo tên</span></label>
+              <div class="relative">
+                <input type="text"
+                       placeholder="Nhập từ khóa..."
+                       class="input input-sm input-bordered w-full pl-10 rounded-full focus:ring-2 focus:ring-primary"
+                       formControlName="keyword"
+                       aria-label="Tìm kiếm sản phẩm theo từ khóa" />
+                <svg class="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-base-content/50"
+                     xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
+            </div>
+            <!-- Bộ lọc giá -->
+            <div class="form-control mb-4">
+              <label class="label dark:text-base-content"><span class="label-text font-medium">Khoảng giá</span></label>
+              <div class="flex gap-2">
+                <input type="number"
+                       placeholder="Từ"
+                       class="input input-sm input-bordered w-full rounded-full dark:text-base-content dark:border-base-content/20 dark:bg-base-200"
+                       formControlName="minPrice"
+                       aria-label="Giá tối thiểu" />
+                <input type="number"
+                       placeholder="Đến"
+                       class="input input-sm input-bordered w-full rounded-full dark:text-base-content dark:border-base-content/20 dark:bg-base-200"
+                       formControlName="maxPrice"
+                       aria-label="Giá tối đa" />
+              </div>
+            </div>
+            <!-- Bộ lọc đánh giá -->
+            <div class="form-control mb-4">
+              <label class="label dark:text-base-content"><span class="label-text font-medium">Đánh giá tối thiểu</span></label>
+              <select class="select select-sm select-bordered w-full rounded-full"
+                      formControlName="minRating"
+                      aria-label="Chọn đánh giá tối thiểu">
+                <option [ngValue]="0">Tất cả</option>
+                <option [ngValue]="1">1 sao trở lên</option>
+                <option [ngValue]="2">2 sao trở lên</option>
+                <option [ngValue]="3">3 sao trở lên</option>
+                <option [ngValue]="4">4 sao trở lên</option>
+              </select>
+            </div>
+            <button type="submit"
+                    class="btn btn-sm btn-primary w-full rounded-full mt-4"
+                    [disabled]="filterForm.invalid">
+              <span *ngIf="currentCategory()">Lọc trong "{{currentCategory()?.name}}"</span>
+              <span *ngIf="!currentCategory()">Áp dụng bộ lọc</span>
+            </button>
+            <button type="button"
+                    class="btn btn-sm btn-secondary w-full rounded-full mt-2"
+                    (click)="applyFilters(true)"
+                    [disabled]="!filterForm.dirty && !filterForm.touched && !this.route.snapshot.paramMap.get('slug')">
+              Tìm trên tất cả sản phẩm
+            </button>
+            <button type="button"
+                    class="btn btn-sm btn-ghost w-full rounded-full mt-2 text-base-content/70 hover:bg-base-200 dark:hover:bg-base-300/20"
+                    (click)="resetFilters()">
+              Xóa bộ lọc
+            </button>
+          </form>
+        </div>
+      </div>
 
-        <!-- Nút tìm trên tất cả sản phẩm -->
-        <button type="button"
-                class="btn btn-sm btn-secondary w-full rounded-full mt-2 ..."
-                (click)="applyFilters(true)"
-                [disabled]="!filterForm.dirty && !filterForm.touched && !this.route.snapshot.paramMap.get('slug')">
-          <!-- Disable nếu form không thay đổi VÀ đang ở trang /products -->
-          Tìm trên tất cả sản phẩm
-        </button>
-
-
-        <button type="button"
-        class="btn btn-sm btn-ghost w-full rounded-full mt-2 text-base-content/70 hover:bg-base-200 dark:hover:bg-base-300/20"
-        (click)="resetFilters()">
-        Xóa bộ lọc
-        </button>
-
-
-      </form>
     </div>
   </aside>
 
@@ -154,5 +163,21 @@
   }
   .btn-primary-dark {
     background-color: #1e40af; /* Darker primary color for hover */
+  }
+
+  /* Custom scrollbar (tùy chọn, để thanh cuộn đẹp hơn) */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background-color: rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
+    border: 2px solid transparent;
+  }
+  html.dark .custom-scrollbar::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0.2);
   }
 </style>
